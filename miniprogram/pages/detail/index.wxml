@@ -1,0 +1,48 @@
+<view class="container">
+  <block wx:if="{{!loading && movie}}">
+    <view class="poster-section">
+      <image class="poster" src="{{movie.poster}}" mode="aspectFill" />
+    </view>
+
+    <view class="info-section">
+      <text class="title">{{movie.title}}</text>
+      <text class="title-en" wx:if="{{movie.titleEn}}">{{movie.titleEn}}</text>
+      
+      <view class="meta-row">
+        <text class="rating">★ {{movie.rating}}</text>
+        <text class="meta-item" wx:if="{{movie.year}}">{{movie.year}}</text>
+        <text class="meta-item" wx:if="{{movie.episodes}}">{{movie.episodes}}集</text>
+        <text class="meta-item">{{movie.region === 'cn' ? '中国' : movie.region === 'kr' ? '韩国' : movie.region === 'jp' ? '日本' : movie.region === 'us' ? '欧美' : ''}}</text>
+      </view>
+
+      <view class="tags">
+        <text class="tag" wx:for="{{movie.genres}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="section" wx:if="{{movie.description}}">
+      <text class="section-title">剧情简介</text>
+      <text class="description">{{movie.description}}</text>
+    </view>
+
+    <view class="section" wx:if="{{movie.cast && movie.cast.length > 0}}">
+      <text class="section-title">演员阵容</text>
+      <view class="cast-list">
+        <text class="cast-item" wx:for="{{movie.cast}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="section" wx:if="{{movie.director}}">
+      <text class="section-title">导演</text>
+      <text class="director">{{movie.director}}</text>
+    </view>
+  </block>
+
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <view class="error-wrap" wx:if="{{!loading && !movie}}">
+    <text>加载失败</text>
+  </view>
+</view>

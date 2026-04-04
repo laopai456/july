@@ -1,0 +1,11 @@
+<view class="movie-list-section">
+  <view class="section-header" wx:if="{{title}}">
+    <text class="section-title">{{title}}</text>
+    <text class="section-more" wx:if="{{showMore}}" bindtap="onMoreTap">更多 ></text>
+  </view>
+  <scroll-view class="movie-scroll" scroll-x enable-flex>
+    <view class="movie-item" wx:for="{{list}}" wx:key="_id">
+      <movie-card movie="{{item}}" size="small" />
+    </view>
+  </scroll-view>
+</view>

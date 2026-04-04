@@ -1,0 +1,29 @@
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 20rpx 30rpx;
+  background: transparent;
+}
+
+.filter-item {
+  padding: 14rpx 32rpx;
+  margin-right: 16rpx;
+  margin-bottom: 12rpx;
+  font-size: 26rpx;
+  color: #7a8a9a;
+  background: linear-gradient(145deg, #f0f8ff, #e8f0f0);
+  border-radius: 30rpx;
+  box-shadow: 4rpx 4rpx 8rpx #c8d8e8, -4rpx -4rpx 8rpx #ffffff;
+  transition: all 0.3s ease;
+  font-weight: 300;
+}
+
+.filter-item.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #b8d4f0, #f0b8c8);
+  box-shadow: inset 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.1), inset -3rpx -3rpx 6rpx rgba(255, 255, 255, 0.5);
+}
+
+.filter-item:last-child {
+  margin-right: 0;
+}

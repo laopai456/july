@@ -1,0 +1,37 @@
+.movie-list-section {
+  margin-bottom: 30rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 30rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 400;
+  color: #5a6a7a;
+  letter-spacing: 1rpx;
+}
+
+.section-more {
+  font-size: 24rpx;
+  color: #9aa8b8;
+  font-weight: 300;
+}
+
+.movie-scroll {
+  white-space: nowrap;
+  padding: 0 30rpx;
+}
+
+.movie-item {
+  display: inline-block;
+  margin-right: 20rpx;
+}
+
+.movie-item:last-child {
+  margin-right: 0;
+}

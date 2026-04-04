@@ -1,0 +1,11 @@
+<view class="filter-bar">
+  <view 
+    class="filter-item {{activeTab === item.code ? 'active' : ''}}" 
+    wx:for="{{tabs}}" 
+    wx:key="code"
+    data-code="{{item.code}}"
+    bindtap="onTabTap"
+  >
+    {{item.name}}
+  </view>
+</view>

@@ -1,0 +1,19 @@
+<view class="movie-card {{size === 'small' ? 'movie-card-small' : ''}}" bindtap="onTap">
+  <image 
+    class="movie-poster" 
+    src="{{movie.poster || defaultPoster}}" 
+    mode="aspectFill"
+    lazy-load
+    binderror="onImageError"
+  />
+  <view class="movie-info">
+    <text class="movie-title text-ellipsis">{{movie.title}}</text>
+    <view class="movie-meta" wx:if="{{movie.rating}}">
+      <text class="movie-rating">★ {{movie.rating}}</text>
+      <text class="movie-year" wx:if="{{movie.year}}">{{movie.year}}</text>
+    </view>
+    <view class="movie-tags" wx:if="{{movie.genres && movie.genres.length > 0}}">
+      <text class="tag" wx:for="{{movie.genres}}" wx:key="index" wx:if="{{index < 2}}">{{item}}</text>
+    </view>
+  </view>
+</view>
