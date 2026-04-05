@@ -75,3 +75,9 @@
   border-radius: 16rpx;
   box-shadow: 2rpx 2rpx 4rpx #d0dae4, -2rpx -2rpx 4rpx #ffffff;
 }
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

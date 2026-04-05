@@ -128,5 +128,20 @@ Page({
     wx.navigateTo({
       url: `/pages/detail/index?id=${id}`
     })
+  },
+
+  goToAdmin() {
+    wx.navigateTo({
+      url: '/pages/admin/index'
+    })
+  },
+
+  onPosterError(e) {
+    const { index } = e.currentTarget.dataset
+    const list = this.data.list
+    if (list[index]) {
+      list[index].poster = ''
+      this.setData({ list })
+    }
   }
 })

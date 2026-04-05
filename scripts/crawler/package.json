@@ -1,0 +1,17 @@
+{
+  "name": "crawler",
+  "version": "1.0.0",
+  "description": "影视数据爬虫",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "tmdb": "node sources/tmdb.js",
+    "douban": "node sources/douban.js",
+    "bangumi": "node sources/bangumi.js",
+    "merge": "node merge.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12"
+  }
+}

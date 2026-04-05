@@ -11,6 +11,7 @@
         {{item}}
       </view>
     </view>
+    <view class="debug-btn" bindtap="goToAdmin">调试</view>
   </view>
 
   <view class="sub-tabs">
@@ -36,7 +37,7 @@
           bindtap="goToDetail"
         >
           <view class="rank">{{index + 1}}</view>
-          <image class="poster" src="{{item.poster}}" mode="aspectFill" lazy-load />
+          <image class="poster" src="{{item.poster || '/images/default-poster.png'}}" mode="aspectFill" lazy-load binderror="onPosterError" data-index="{{index}}" />
           <view class="info">
             <view class="title-row">
               <text class="title">{{item.title}}</text>

@@ -5,14 +5,27 @@
 }
 
 .header {
-  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 20rpx 0;
 }
 
 .tabs {
   display: flex;
   justify-content: center;
+  flex: 1;
   padding: 0 20rpx;
+}
+
+.debug-btn {
+  font-size: 22rpx;
+  color: #9aa8b8;
+  padding: 12rpx 20rpx;
+  background: linear-gradient(145deg, #f0f8ff, #e8f0f0);
+  border-radius: 20rpx;
+  box-shadow: 3rpx 3rpx 6rpx #d0d8e0, -3rpx -3rpx 6rpx #ffffff;
+  margin-right: 10rpx;
 }
 
 .tab-item {
@@ -112,6 +125,10 @@
   background: linear-gradient(145deg, #e8f0f0, #f0f8ff);
   box-shadow: 6rpx 6rpx 12rpx #c0d0e0, -6rpx -6rpx 12rpx #ffffff;
   margin: 0 16rpx;
+  background-color: #e8f0f0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .info {
