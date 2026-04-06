@@ -1,4 +1,5 @@
 const { movieApi } = require('../../utils/api')
+const tmdb = require('../../utils/tmdb')
 
 const TABS = ['综艺', '电影', '热剧']
 
@@ -73,50 +74,87 @@ Page({
   },
 
   async loadData() {
-    const { currentTabName, currentSubName, page } = this.data
+    const { currentTabName, page } = this.data
     
     this.setData({ loading: true })
 
     try {
       const result = await movieApi.getList({
         mainCategory: currentTabName,
-        subCategory: currentSubName,
         page,
         pageSize: 20,
         sortBy: 'rating'
       })
 
+      const list = result.list || []
+      
       this.setData({
-        list: result.list,
+        list,
         hasMore: result.hasMore,
         loading: false
       })
+      
+      this.loadPosters(list)
+
     } catch (err) {
-      console.error(err)
-      this.setData({ loading: false })
+      if (err.errCode === -502005) {
+        console.log('数据库正在初始化...')
+        this.setData({ list: [], loading: false, hasMore: false })
+      } else {
+        console.error(err)
+        this.setData({ loading: false })
+      }
+    }
+  },
+
+  async loadPosters(list) {
+    const promises = list.map(async (item, i) => {
+      if (!item.poster || !item.poster.includes('tmdb.org')) {
+        const poster = await tmdb.getPoster(item)
+        return { index: i, poster }
+      }
+      return null
+    })
+    
+    const results = await Promise.all(promises)
+    
+    const updates = results.filter(r => r && r.poster)
+    if (updates.length > 0) {
+      const currentList = this.data.list
+      updates.forEach(({ index, poster }) => {
+        if (currentList[index]) {
+          currentList[index].poster = poster
+        }
+      })
+      this.setData({ list: currentList })
     }
   },
 
   async loadMore() {
-    const { currentTabName, currentSubName, page, list } = this.data
+    const { currentTabName, page, list } = this.data
     
     this.setData({ loading: true })
 
     try {
       const result = await movieApi.getList({
         mainCategory: currentTabName,
-        subCategory: currentSubName,
         page: page + 1,
         pageSize: 20,
         sortBy: 'rating'
       })
 
+      const newList = result.list || []
+      const combinedList = [...list, ...newList]
+      
       this.setData({
-        list: [...list, ...result.list],
+        list: combinedList,
         page: page + 1,
         hasMore: result.hasMore,
         loading: false
       })
+      
+      this.loadPosters(newList)
+
     } catch (err) {
       console.error(err)
       this.setData({ loading: false })

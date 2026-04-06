@@ -5,61 +5,30 @@
   </view>
 
   <view class="section">
-    <text class="section-title">缓存状态</text>
-    <text class="status-text">已缓存: {{cachedCount}} / {{totalCount}}</text>
-    <text class="status-text">未缓存: {{uncachedCount}}</text>
-    <text class="status-text">有效图片: {{validPosterCount}}</text>
-    <button class="btn" bindtap="checkCacheStatus" size="mini">刷新状态</button>
-    <button class="btn" bindtap="checkPosterStatus" size="mini">检查图片</button>
+    <text class="section-title">数据状态</text>
+    <text class="status-text">总计: {{totalCount}} 条</text>
+    <text class="status-text">综艺: {{varietyCount}} | 电影: {{movieCount}} | 热剧: {{dramaCount}}</text>
+    <button class="btn" bindtap="checkDataStatus" size="mini">刷新状态</button>
   </view>
 
   <view class="section">
-    <text class="section-title">重置缓存状态</text>
-    <button class="btn-warning" bindtap="resetCacheStatus" size="mini">重置所有缓存状态</button>
-    <text class="hint">如果图片加载失败，点击重置后重新缓存</text>
-  </view>
-
-  <view class="section">
-    <text class="section-title">图片缓存</text>
-    <button class="btn-primary" bindtap="cacheImages" loading="{{cacheLoading}}">
-      缓存所有图片
-    </button>
-    <text class="progress" wx:if="{{cacheProgress > 0}}">{{cacheProgress}} / {{cacheTotal}}</text>
-  </view>
-
-  <view class="section">
-    <text class="section-title">综艺数据 (20条)</text>
-    <button class="btn" bindtap="importVariety" loading="{{varietyLoading}}" disabled="{{varietyDone}}">
-      {{varietyDone ? '已完成' : '导入综艺'}}
-    </button>
-    <text class="progress" wx:if="{{varietyProgress > 0}}">{{varietyProgress}}/20</text>
-  </view>
-
-  <view class="section">
-    <text class="section-title">电影数据 (50条)</text>
-    <button class="btn" bindtap="importMovies" loading="{{movieLoading}}" disabled="{{movieDone}}">
-      {{movieDone ? '已完成' : '导入电影'}}
-    </button>
-    <text class="progress" wx:if="{{movieProgress > 0}}">{{movieProgress}}/50</text>
-  </view>
-
-  <view class="section">
-    <text class="section-title">热剧数据 (50条)</text>
-    <button class="btn" bindtap="importDramas" loading="{{dramaLoading}}" disabled="{{dramaDone}}">
-      {{dramaDone ? '已完成' : '导入热剧'}}
-    </button>
-    <text class="progress" wx:if="{{dramaProgress > 0}}">{{dramaProgress}}/50</text>
-  </view>
-
-  <view class="section">
-    <text class="section-title">一键导入全部</text>
+    <text class="section-title">导入数据</text>
     <button class="btn-primary" bindtap="importAll" loading="{{allLoading}}">
       导入全部数据
     </button>
+    <text class="hint">综艺10条 + 电影10条 + 热剧10条 = 30条</text>
+  </view>
+
+  <view class="section">
+    <text class="section-title">清空数据</text>
+    <text class="hint">请到云开发控制台操作：</text>
+    <text class="hint">1. 点击顶部「云开发」按钮</text>
+    <text class="hint">2. 数据库 → 右键 movies → 删除集合</text>
+    <text class="hint">3. 重新创建 movies 集合</text>
   </view>
 
   <view class="log" wx:if="{{logs.length > 0}}">
-    <text class="log-title">导入日志</text>
+    <text class="log-title">操作日志</text>
     <text class="log-item" wx:for="{{logs}}" wx:key="*this">{{item}}</text>
   </view>
 </view>

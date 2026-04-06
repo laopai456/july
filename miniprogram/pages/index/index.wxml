@@ -14,7 +14,7 @@
     <view class="debug-btn" bindtap="goToAdmin">调试</view>
   </view>
 
-  <view class="sub-tabs">
+  <view class="sub-tabs" hidden>
     <view 
       class="sub-item {{currentSub === index ? 'active' : ''}}" 
       wx:for="{{subCategories}}" 
@@ -37,7 +37,20 @@
           bindtap="goToDetail"
         >
           <view class="rank">{{index + 1}}</view>
-          <image class="poster" src="{{item.poster || '/images/default-poster.png'}}" mode="aspectFill" lazy-load binderror="onPosterError" data-index="{{index}}" />
+          <view class="poster-wrap">
+            <image 
+              wx:if="{{item.poster}}" 
+              class="poster" 
+              src="{{item.poster}}" 
+              mode="aspectFill" 
+              lazy-load 
+              binderror="onPosterError" 
+              data-index="{{index}}" 
+            />
+            <view wx:else class="poster-placeholder">
+              <text>{{item.title[0]}}</text>
+            </view>
+          </view>
           <view class="info">
             <view class="title-row">
               <text class="title">{{item.title}}</text>
@@ -56,7 +69,10 @@
       </view>
       
       <view class="loading-more" wx:if="{{loading}}">
-        <text>加载中...</text>
+        <text class="loading-text">服务器摸鱼中</text>
+        <image class="emoji-bounce" src="/images/loading.png" mode="aspectFit" />
+        <image class="emoji-bounce delay-1" src="/images/loading.png" mode="aspectFit" />
+        <image class="emoji-bounce delay-2" src="/images/loading.png" mode="aspectFit" />
       </view>
       
       <view class="no-more" wx:if="{{!hasMore && list.length > 0}}">
@@ -69,7 +85,10 @@
     </view>
 
     <view class="loading-wrap" wx:if="{{loading && list.length === 0}}">
-      <text>加载中...</text>
+      <text class="loading-text">服务器摸鱼中</text>
+      <image class="emoji-bounce" src="/images/loading.png" mode="aspectFit" />
+      <image class="emoji-bounce delay-1" src="/images/loading.png" mode="aspectFit" />
+      <image class="emoji-bounce delay-2" src="/images/loading.png" mode="aspectFit" />
     </view>
   </view>
 </view>

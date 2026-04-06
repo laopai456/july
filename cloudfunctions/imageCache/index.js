@@ -6,40 +6,44 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 const TMDB_API_KEY = '96ac6a609d077c2d49da61e620697ea7'
-const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w500'
 
-async function searchTMDB(title, type, titleEn) {
+async function fetchPosterByTmdbId(tmdbId, type) {
+  if (!tmdbId) return null
+  
+  const endpoint = type === 'movie' ? 'movie' : 'tv'
+  try {
+    const res = await axios.get(`https://api.themoviedb.org/3/${endpoint}/${tmdbId}`, {
+      params: { api_key: TMDB_API_KEY },
+      timeout: 2500
+    })
+    if (res.data?.poster_path) {
+      return `${TMDB_IMAGE_URL}${res.data.poster_path}`
+    }
+  } catch (err) {
+    console.error('获取海报失败:', tmdbId, err.message)
+  }
+  return null
+}
+
+async function searchTMDB(title, type) {
   const searchType = type === 'movie' ? 'movie' : 'tv'
   
-  const searchQueries = [
-    { query: title, language: 'zh-CN' },
-    { query: title, language: 'en' },
-    { query: titleEn || title }
-  ]
-  
-  for (const params of searchQueries) {
-    try {
-      const res = await axios.get(`${TMDB_BASE_URL}/search/${searchType}`, {
-        params: {
-          api_key: TMDB_API_KEY,
-          query: params.query,
-          ...(params.language ? { language: params.language } : {})
-        },
-        timeout: 3000
-      })
-      
-      if (res.data.results?.length > 0) {
-        const result = res.data.results[0]
-        if (result.poster_path) {
-          return result
-        }
-      }
-    } catch (err) {
-      console.error('TMDB 搜索失败:', params.query, err.message)
+  try {
+    const res = await axios.get(`https://api.themoviedb.org/3/search/${searchType}`, {
+      params: { 
+        api_key: TMDB_API_KEY, 
+        query: title
+      },
+      timeout: 2000
+    })
+    
+    if (res.data.results?.[0]?.poster_path) {
+      return `${TMDB_IMAGE_URL}${res.data.results[0].poster_path}`
     }
+  } catch (err) {
+    console.error('搜索失败:', title)
   }
-  
   return null
 }
 
@@ -60,16 +64,21 @@ exports.main = async (event, context) => {
       }
       
       const item = list.data[0]
-      const tmdbResult = await searchTMDB(item.title, item.type, item.titleEn)
+      let posterUrl = null
       
-      if (tmdbResult?.poster_path) {
-        const posterUrl = `${TMDB_IMAGE_URL}${tmdbResult.poster_path}`
-        
+      if (item.tmdbId) {
+        posterUrl = await fetchPosterByTmdbId(item.tmdbId, item.type)
+      }
+      
+      if (!posterUrl && item.title) {
+        posterUrl = await searchTMDB(item.title, item.type)
+      }
+      
+      if (posterUrl) {
         await db.collection('movies').doc(item._id).update({
           data: {
             poster: posterUrl,
             posterCached: true,
-            tmdbId: tmdbResult.id,
             updatedAt: db.serverDate()
           }
         })
@@ -77,25 +86,13 @@ exports.main = async (event, context) => {
         return {
           code: 0,
           message: '成功',
-          data: {
-            title: item.title,
-            poster: posterUrl
-          }
+          data: { title: item.title, poster: posterUrl }
         }
       } else {
-        await db.collection('movies').doc(item._id).update({
-          data: {
-            posterCached: true,
-            updatedAt: db.serverDate()
-          }
-        })
-        
         return {
           code: 0,
-          message: '未找到',
-          data: {
-            title: item.title
-          }
+          message: '跳过',
+          data: { title: item.title, skipped: true }
         }
       }
     } catch (err) {
@@ -110,11 +107,16 @@ exports.main = async (event, context) => {
         posterCached: true
       }).count()
       
+      const withPosterRes = await db.collection('movies').where({
+        poster: _.neq('')
+      }).count()
+      
       return {
         code: 0,
         data: {
           total: totalRes.total,
           cached: cachedRes.total,
+          withPoster: withPosterRes.total,
           uncached: totalRes.total - cachedRes.total
         }
       }

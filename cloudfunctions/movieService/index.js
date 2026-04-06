@@ -1,8 +1,6 @@
 const cloud = require('wx-server-sdk')
 
-cloud.init({
-  env: cloud.DYNAMIC_CURRENT_ENV
-})
+cloud.init({ env: 'cloud1-5gl9tqz7860b840c' })
 
 const db = cloud.database()
 const _ = db.command
@@ -22,6 +20,8 @@ async function getList(event) {
   if (mainCategory && mainCategory !== 'all') {
     query.mainCategory = mainCategory
   }
+  
+  console.log('查询条件:', JSON.stringify(query), '排序:', sortBy)
   
   if (subCategory && subCategory !== 'all') {
     query.subCategory = subCategory
