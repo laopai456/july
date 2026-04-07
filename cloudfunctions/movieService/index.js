@@ -5,6 +5,25 @@ cloud.init({ env: 'cloud1-5gl9tqz7860b840c' })
 const db = cloud.database()
 const _ = db.command
 
+async function ensureCollection(collectionName) {
+  try {
+    await db.collection(collectionName).limit(1).get()
+    return true
+  } catch (err) {
+    if (err.errCode === -502005) {
+      try {
+        await db.createCollection(collectionName)
+        console.log(`集合 ${collectionName} 创建成功`)
+        return true
+      } catch (e) {
+        console.error(`创建集合 ${collectionName} 失败:`, e)
+        return false
+      }
+    }
+    return true
+  }
+}
+
 async function getList(event) {
   const { type, mainCategory, subCategory, region, genre, page = 1, pageSize = 20, sortBy = 'rating' } = event
   
@@ -118,6 +137,172 @@ async function getDetail(event) {
   }
 }
 
+async function getSubCategoryList(event) {
+  const { mainCategory, subCategory, page = 1, pageSize = 30, showReserve = false } = event
+  
+  if (!mainCategory || !subCategory) {
+    return { code: 1001, message: '参数错误：缺少mainCategory或subCategory' }
+  }
+  
+  const collection = db.collection('movies')
+  
+  let query = {
+    mainCategory,
+    subCategory,
+    year: _.gte(2020)
+  }
+  
+  if (!showReserve) {
+    query.isReserve = false
+  }
+  
+  const countResult = await collection.where(query).count()
+  const total = countResult.total
+  
+  const limit = Math.min(pageSize, 30)
+  
+  const listResult = await collection
+    .where(query)
+    .orderBy('rating', 'desc')
+    .limit(limit)
+    .field({
+      _id: true,
+      title: true,
+      titleEn: true,
+      type: true,
+      mainCategory: true,
+      subCategory: true,
+      region: true,
+      year: true,
+      genres: true,
+      poster: true,
+      rating: true,
+      episodes: true,
+      status: true,
+      tags: true,
+      isReserve: true
+    })
+    .get()
+  
+  const configCollection = db.collection('config')
+  let refreshAt = null
+  try {
+    const configResult = await configCollection.doc(`refresh_${mainCategory}_${subCategory}`).get()
+    refreshAt = configResult.data?.refreshAt || null
+  } catch (e) {
+    console.log('未找到刷新时间记录')
+  }
+  
+  return {
+    code: 0,
+    data: {
+      list: listResult.data,
+      total: Math.min(total, 30),
+      page: 1,
+      pageSize: 30,
+      hasMore: false,
+      refreshAt
+    }
+  }
+}
+
+async function refreshSubCategory(event) {
+  const { mainCategory, subCategory } = event
+  
+  if (!mainCategory || !subCategory) {
+    return { code: 1001, message: '参数错误：缺少mainCategory或subCategory' }
+  }
+  
+  const collection = db.collection('movies')
+  
+  const allItems = await collection
+    .where({
+      mainCategory,
+      subCategory,
+      year: _.gte(2020)
+    })
+    .orderBy('rating', 'desc')
+    .limit(60)
+    .get()
+  
+  const items = allItems.data
+  const primaryList = items.slice(0, 30)
+  const reserveList = items.slice(30, 50)
+  
+  for (const item of primaryList) {
+    await collection.doc(item._id).update({
+      data: {
+        isReserve: false,
+        refreshAt: db.serverDate()
+      }
+    })
+  }
+  
+  for (const item of reserveList) {
+    await collection.doc(item._id).update({
+      data: {
+        isReserve: true,
+        refreshAt: db.serverDate()
+      }
+    })
+  }
+  
+  await ensureCollection('config')
+  
+  const configCollection = db.collection('config')
+  await configCollection.doc(`refresh_${mainCategory}_${subCategory}`).set({
+    data: {
+      refreshAt: db.serverDate(),
+      mainCategory,
+      subCategory
+    }
+  })
+  
+  return {
+    code: 0,
+    data: {
+      refreshed: true,
+      totalCount: primaryList.length + reserveList.length,
+      primaryCount: primaryList.length,
+      reserveCount: reserveList.length,
+      refreshAt: new Date()
+    }
+  }
+}
+
+async function batchRefreshAll(event) {
+  const subCategories = [
+    { mainCategory: '综艺', subCategory: '恋爱' },
+    { mainCategory: '综艺', subCategory: '搞笑' },
+    { mainCategory: '综艺', subCategory: '真人秀' },
+    { mainCategory: '电影', subCategory: '悬疑' },
+    { mainCategory: '电影', subCategory: '恋爱' },
+    { mainCategory: '电影', subCategory: '喜剧' },
+    { mainCategory: '热剧', subCategory: '韩剧' },
+    { mainCategory: '热剧', subCategory: '日剧' },
+    { mainCategory: '热剧', subCategory: '国产剧' }
+  ]
+  
+  const results = []
+  
+  for (const { mainCategory, subCategory } of subCategories) {
+    const result = await refreshSubCategory({ mainCategory, subCategory })
+    results.push({
+      mainCategory,
+      subCategory,
+      count: result.data.totalCount
+    })
+  }
+  
+  return {
+    code: 0,
+    data: {
+      results,
+      refreshAt: new Date()
+    }
+  }
+}
+
 exports.main = async (event, context) => {
   const { action } = event
   
@@ -127,6 +312,12 @@ exports.main = async (event, context) => {
         return await getList(event)
       case 'getDetail':
         return await getDetail(event)
+      case 'getSubCategoryList':
+        return await getSubCategoryList(event)
+      case 'refreshSubCategory':
+        return await refreshSubCategory(event)
+      case 'batchRefreshAll':
+        return await batchRefreshAll(event)
       default:
         return { code: -1, message: '无效的action' }
     }

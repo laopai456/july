@@ -62,16 +62,19 @@ function formatMovie(item, detail, rank) {
   
   const cast = detail?.credits?.cast?.slice(0, 5).map(c => c.name) || []
   const director = detail?.credits?.crew?.find(c => c.job === 'Director')?.name || ''
+  const genres = item.genre_ids?.map(id => getGenreName(id)).filter(g => g) || []
+  const region = getRegion(item.original_language)
+  const subCategory = getSubCategory('电影', genres, region)
   
   return {
     title: item.title || item.name,
     titleEn: item.original_title || item.original_name,
     type: 'movie',
     mainCategory: '电影',
-    subCategory: '',
-    region: getRegion(item.original_language),
+    subCategory,
+    region,
     year: parseInt((item.release_date || item.first_air_date || '').substring(0, 4)) || 0,
-    genres: item.genre_ids?.map(id => getGenreName(id)) || [],
+    genres,
     poster,
     rating: Math.round(item.vote_average * 10) / 10,
     ratingSource: 'tmdb',
@@ -83,6 +86,9 @@ function formatMovie(item, detail, rank) {
     rank,
     sourceId: String(item.id),
     sourceUrl: `https://www.themoviedb.org/movie/${item.id}`,
+    isReserve: false,
+    rankScore: Math.round(item.vote_average * 10),
+    refreshAt: null,
     createdAt: new Date(),
     updatedAt: new Date()
   }
@@ -94,16 +100,19 @@ function formatTV(item, detail, rank) {
     : ''
   
   const cast = detail?.credits?.cast?.slice(0, 5).map(c => c.name) || []
+  const genres = item.genre_ids?.map(id => getGenreName(id)).filter(g => g) || []
+  const region = getRegion(item.original_language)
+  const subCategory = getSubCategory('热剧', genres, region)
   
   return {
     title: item.name,
     titleEn: item.original_name,
     type: 'drama',
     mainCategory: '热剧',
-    subCategory: '',
-    region: getRegion(item.original_language),
+    subCategory,
+    region,
     year: parseInt((item.first_air_date || '').substring(0, 4)) || 0,
-    genres: item.genre_ids?.map(id => getGenreName(id)) || [],
+    genres,
     poster,
     rating: Math.round(item.vote_average * 10) / 10,
     ratingSource: 'tmdb',
@@ -116,6 +125,9 @@ function formatTV(item, detail, rank) {
     rank,
     sourceId: String(item.id),
     sourceUrl: `https://www.themoviedb.org/tv/${item.id}`,
+    isReserve: false,
+    rankScore: Math.round(item.vote_average * 10),
+    refreshAt: null,
     createdAt: new Date(),
     updatedAt: new Date()
   }
@@ -143,6 +155,44 @@ function getGenreName(id) {
     10765: '科幻奇幻', 10766: '肥皂剧', 10767: '脱口秀', 10768: '战争政治'
   }
   return genres[id] || ''
+}
+
+function getSubCategory(mainCategory, genres, region) {
+  if (mainCategory === '综艺') {
+    const firstGenre = genres[0] || ''
+    if (['恋爱', '情感'].includes(firstGenre)) return '恋爱'
+    if (['搞笑', '喜剧'].includes(firstGenre)) return '搞笑'
+    if (firstGenre === '真人秀') return '真人秀'
+    for (let i = 1; i < genres.length; i++) {
+      const g = genres[i]
+      if (['恋爱', '情感'].includes(g)) return '恋爱'
+      if (['搞笑', '喜剧'].includes(g)) return '搞笑'
+      if (g === '真人秀') return '真人秀'
+    }
+    return '搞笑'
+  }
+  
+  if (mainCategory === '电影') {
+    const firstGenre = genres[0] || ''
+    if (['悬疑', '犯罪', '惊悚'].includes(firstGenre)) return '悬疑'
+    if (['爱情', '恋爱'].includes(firstGenre)) return '恋爱'
+    if (['喜剧', '搞笑'].includes(firstGenre)) return '喜剧'
+    for (let i = 1; i < genres.length; i++) {
+      const g = genres[i]
+      if (['悬疑', '犯罪', '惊悚'].includes(g)) return '悬疑'
+      if (['爱情', '恋爱'].includes(g)) return '恋爱'
+      if (['喜剧', '搞笑'].includes(g)) return '喜剧'
+    }
+    return '喜剧'
+  }
+  
+  if (mainCategory === '热剧') {
+    if (region === 'kr') return '韩剧'
+    if (region === 'jp') return '日剧'
+    return '国产剧'
+  }
+  
+  return ''
 }
 
 async function fetchMovies(count = 150) {

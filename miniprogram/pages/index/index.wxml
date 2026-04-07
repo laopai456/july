@@ -14,7 +14,7 @@
     <view class="debug-btn" bindtap="goToAdmin">调试</view>
   </view>
 
-  <view class="sub-tabs" hidden>
+  <view class="sub-tabs">
     <view 
       class="sub-item {{currentSub === index ? 'active' : ''}}" 
       wx:for="{{subCategories}}" 
@@ -76,7 +76,7 @@
       </view>
       
       <view class="no-more" wx:if="{{!hasMore && list.length > 0}}">
-        <text>没有更多了</text>
+        <text>— 已加载全部 —</text>
       </view>
     </block>
 

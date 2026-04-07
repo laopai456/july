@@ -11,12 +11,30 @@
     <button class="btn" bindtap="checkDataStatus" size="mini">刷新状态</button>
   </view>
 
+  <view class="section" wx:if="{{subCategoryStats.length > 0}}">
+    <text class="section-title">子分类统计</text>
+    <view class="sub-stats">
+      <view class="sub-stat-item" wx:for="{{subCategoryStats}}" wx:key="subCategory">
+        <text class="sub-stat-label">{{item.mainCategory}}-{{item.subCategory}}</text>
+        <text class="sub-stat-count">{{item.count}}部</text>
+      </view>
+    </view>
+  </view>
+
   <view class="section">
     <text class="section-title">导入数据</text>
     <button class="btn-primary" bindtap="importAll" loading="{{allLoading}}">
       导入全部数据
     </button>
     <text class="hint">综艺10条 + 电影10条 + 热剧10条 = 30条</text>
+  </view>
+
+  <view class="section">
+    <text class="section-title">榜单刷新</text>
+    <button class="btn-primary btn-refresh" bindtap="refreshAllCategories" loading="{{refreshLoading}}">
+      刷新全部榜单
+    </button>
+    <text class="hint">计算每个子分类的正式榜(30部)和递补池(20部)</text>
   </view>
 
   <view class="section">

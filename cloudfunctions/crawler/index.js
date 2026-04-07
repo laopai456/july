@@ -5,6 +5,44 @@ cloud.init({ env: 'cloud1-5gl9tqz7860b840c' })
 const db = cloud.database()
 const _ = db.command
 
+function getSubCategory(mainCategory, genres, region) {
+  if (mainCategory === '综艺') {
+    const firstGenre = genres[0] || ''
+    if (['恋爱', '情感'].includes(firstGenre)) return '恋爱'
+    if (['搞笑', '喜剧'].includes(firstGenre)) return '搞笑'
+    if (firstGenre === '真人秀') return '真人秀'
+    for (let i = 1; i < genres.length; i++) {
+      const g = genres[i]
+      if (['恋爱', '情感'].includes(g)) return '恋爱'
+      if (['搞笑', '喜剧'].includes(g)) return '搞笑'
+      if (g === '真人秀') return '真人秀'
+    }
+    return '搞笑'
+  }
+  
+  if (mainCategory === '电影') {
+    const firstGenre = genres[0] || ''
+    if (['悬疑', '犯罪', '惊悚'].includes(firstGenre)) return '悬疑'
+    if (['爱情', '恋爱'].includes(firstGenre)) return '恋爱'
+    if (['喜剧', '搞笑'].includes(firstGenre)) return '喜剧'
+    for (let i = 1; i < genres.length; i++) {
+      const g = genres[i]
+      if (['悬疑', '犯罪', '惊悚'].includes(g)) return '悬疑'
+      if (['爱情', '恋爱'].includes(g)) return '恋爱'
+      if (['喜剧', '搞笑'].includes(g)) return '喜剧'
+    }
+    return '喜剧'
+  }
+  
+  if (mainCategory === '热剧') {
+    if (region === 'kr') return '韩剧'
+    if (region === 'jp') return '日剧'
+    return '国产剧'
+  }
+  
+  return ''
+}
+
 const VARIETY_DATA = [
   { title: 'Running Man', titleEn: 'Running Man', region: 'kr', year: 2010, rating: 8.6, genres: ['真人秀', '游戏'] },
   { title: '新西游记', titleEn: 'New Journey to the West', region: 'kr', year: 2015, rating: 9.5, genres: ['真人秀', '旅行'] },
@@ -136,11 +174,14 @@ exports.main = async (event, context) => {
         return { code: 0, message: '完成', data: { done: true } }
       }
       
+      const subCategory = getSubCategory('综艺', item.genres, item.region)
+      
       await collection.add({
         data: {
           ...item,
           type: 'variety',
           mainCategory: '综艺',
+          subCategory,
           poster: '',
           posterCached: false,
           ratingSource: 'manual',
@@ -148,6 +189,9 @@ exports.main = async (event, context) => {
           cast: [],
           status: 'ongoing',
           viewCount: 0,
+          isReserve: false,
+          rankScore: item.rating * 10,
+          refreshAt: null,
           sourceId: `variety_${index + 1}`,
           updatedAt: db.serverDate()
         }
@@ -162,11 +206,14 @@ exports.main = async (event, context) => {
         return { code: 0, message: '完成', data: { done: true } }
       }
       
+      const subCategory = getSubCategory('电影', item.genres, item.region)
+      
       await collection.add({
         data: {
           ...item,
           type: 'movie',
           mainCategory: '电影',
+          subCategory,
           poster: '',
           posterCached: false,
           ratingSource: 'tmdb',
@@ -174,6 +221,9 @@ exports.main = async (event, context) => {
           cast: [],
           status: 'completed',
           viewCount: 0,
+          isReserve: false,
+          rankScore: item.rating * 10,
+          refreshAt: null,
           sourceId: `movie_${item.tmdbId || index + 1}`,
           updatedAt: db.serverDate()
         }
@@ -188,11 +238,14 @@ exports.main = async (event, context) => {
         return { code: 0, message: '完成', data: { done: true } }
       }
       
+      const subCategory = getSubCategory('热剧', item.genres, item.region)
+      
       await collection.add({
         data: {
           ...item,
           type: 'drama',
           mainCategory: '热剧',
+          subCategory,
           poster: '',
           posterCached: false,
           ratingSource: 'tmdb',
@@ -201,6 +254,9 @@ exports.main = async (event, context) => {
           episodes: 0,
           status: 'completed',
           viewCount: 0,
+          isReserve: false,
+          rankScore: item.rating * 10,
+          refreshAt: null,
           sourceId: `drama_${item.tmdbId || index + 1}`,
           updatedAt: db.serverDate()
         }

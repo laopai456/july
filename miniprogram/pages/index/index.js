@@ -4,10 +4,12 @@ const tmdb = require('../../utils/tmdb')
 const TABS = ['综艺', '电影', '热剧']
 
 const SUB_CATEGORIES = {
-  '综艺': ['搞笑', '竞技', '恋爱'],
-  '电影': ['国内', '国外'],
-  '热剧': ['国内', '日剧', '韩剧']
+  '综艺': ['恋爱', '搞笑', '真人秀'],
+  '电影': ['悬疑', '恋爱', '喜剧'],
+  '热剧': ['韩剧', '日剧', '国产剧']
 }
+
+const REFRESH_INTERVAL = 6 * 60 * 60 * 1000
 
 Page({
   data: {
@@ -16,27 +18,57 @@ Page({
     currentTabName: '综艺',
     subCategories: SUB_CATEGORIES['综艺'],
     currentSub: 0,
-    currentSubName: '搞笑',
+    currentSubName: '恋爱',
     list: [],
     loading: true,
     page: 1,
-    hasMore: true
+    hasMore: false,
+    refreshAt: null,
+    refreshing: false
   },
 
   onLoad() {
+    this.checkAndRefresh()
+  },
+
+  async checkAndRefresh() {
+    const lastRefresh = wx.getStorageSync('lastRefreshTime') || 0
+    const now = Date.now()
+    
+    if (now - lastRefresh > REFRESH_INTERVAL) {
+      this.setData({ refreshing: true })
+      try {
+        await movieApi.batchRefreshAll()
+        wx.setStorageSync('lastRefreshTime', now)
+        console.log('榜单已自动刷新')
+      } catch (err) {
+        console.log('自动刷新失败:', err)
+      }
+      this.setData({ refreshing: false })
+    }
+    
     this.loadData()
   },
 
   onPullDownRefresh() {
-    this.resetAndLoad().then(() => {
+    this.manualRefresh().then(() => {
       wx.stopPullDownRefresh()
     })
   },
 
-  onReachBottom() {
-    if (this.data.hasMore && !this.data.loading) {
-      this.loadMore()
+  async manualRefresh() {
+    this.setData({ list: [], loading: true, refreshing: true })
+    
+    try {
+      await movieApi.batchRefreshAll()
+      wx.setStorageSync('lastRefreshTime', Date.now())
+      wx.showToast({ title: '榜单已更新', icon: 'success' })
+    } catch (err) {
+      console.log('刷新失败:', err)
     }
+    
+    this.setData({ refreshing: false })
+    await this.loadData()
   },
 
   onTabChange(e) {
@@ -49,8 +81,7 @@ Page({
       currentSub: 0,
       currentSubName: SUB_CATEGORIES[tabName][0],
       list: [],
-      page: 1,
-      hasMore: true
+      loading: true
     })
     this.loadData()
   },
@@ -62,36 +93,35 @@ Page({
       currentSub: index,
       currentSubName: subName,
       list: [],
-      page: 1,
-      hasMore: true
+      loading: true
     })
     this.loadData()
   },
 
   async resetAndLoad() {
-    this.setData({ page: 1, hasMore: true, list: [] })
+    this.setData({ list: [], loading: true })
     await this.loadData()
   },
 
   async loadData() {
-    const { currentTabName, page } = this.data
+    const { currentTabName, currentSubName } = this.data
     
     this.setData({ loading: true })
 
     try {
-      const result = await movieApi.getList({
+      const result = await movieApi.getSubCategoryList({
         mainCategory: currentTabName,
-        page,
-        pageSize: 20,
-        sortBy: 'rating'
+        subCategory: currentSubName,
+        pageSize: 30
       })
 
       const list = result.list || []
       
       this.setData({
         list,
-        hasMore: result.hasMore,
-        loading: false
+        hasMore: false,
+        loading: false,
+        refreshAt: result.refreshAt
       })
       
       this.loadPosters(list)
@@ -127,37 +157,6 @@ Page({
         }
       })
       this.setData({ list: currentList })
-    }
-  },
-
-  async loadMore() {
-    const { currentTabName, page, list } = this.data
-    
-    this.setData({ loading: true })
-
-    try {
-      const result = await movieApi.getList({
-        mainCategory: currentTabName,
-        page: page + 1,
-        pageSize: 20,
-        sortBy: 'rating'
-      })
-
-      const newList = result.list || []
-      const combinedList = [...list, ...newList]
-      
-      this.setData({
-        list: combinedList,
-        page: page + 1,
-        hasMore: result.hasMore,
-        loading: false
-      })
-      
-      this.loadPosters(newList)
-
-    } catch (err) {
-      console.error(err)
-      this.setData({ loading: false })
     }
   },
 

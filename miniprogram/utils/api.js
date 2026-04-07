@@ -25,7 +25,10 @@ const movieApi = {
   getDetail: (params) => callFunction('movieService', 'getDetail', params),
   getRecommendations: (params) => callFunction('movieService', 'getRecommendations', params),
   getSimilar: (params) => callFunction('movieService', 'getSimilar', params),
-  getBanner: (params) => callFunction('movieService', 'getBanner', params)
+  getBanner: (params) => callFunction('movieService', 'getBanner', params),
+  getSubCategoryList: (params) => callFunction('movieService', 'getSubCategoryList', params),
+  refreshSubCategory: (params) => callFunction('movieService', 'refreshSubCategory', params),
+  batchRefreshAll: () => callFunction('movieService', 'batchRefreshAll')
 }
 
 const searchApi = {

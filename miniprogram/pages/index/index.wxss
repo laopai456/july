@@ -251,3 +251,17 @@
     transform: translateY(-10rpx);
   }
 }
+
+.no-more {
+  text-align: center;
+  padding: 30rpx;
+  color: #9aa8b8;
+  font-size: 24rpx;
+}
+
+.empty {
+  text-align: center;
+  padding: 100rpx;
+  color: #9aa8b8;
+  font-size: 28rpx;
+}

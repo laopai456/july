@@ -58,13 +58,14 @@ function parseItem($, item, rank, type, mainCategory) {
   
   const region = parseRegion(infoText)
   const genres = parseGenres(infoText)
+  const subCategory = getSubCategory(mainCategory, genres, region)
   
   return {
     title,
     titleEn: '',
     type,
     mainCategory,
-    subCategory: '',
+    subCategory,
     region,
     year,
     genres,
@@ -80,6 +81,9 @@ function parseItem($, item, rank, type, mainCategory) {
     rank,
     sourceId: doubanId,
     sourceUrl: href,
+    isReserve: false,
+    rankScore: rating * 10,
+    refreshAt: null,
     createdAt: new Date(),
     updatedAt: new Date()
   }
@@ -95,11 +99,49 @@ function parseRegion(info) {
 
 function parseGenres(info) {
   const genres = []
-  const genreList = ['喜剧', '爱情', '动作', '科幻', '悬疑', '恐怖', '奇幻', '动画', '剧情', '犯罪', '战争', '历史', '传记', '音乐', '歌舞', '家庭', '冒险', '灾难', '纪录片', '真人秀']
+  const genreList = ['喜剧', '爱情', '动作', '科幻', '悬疑', '恐怖', '奇幻', '动画', '剧情', '犯罪', '战争', '历史', '传记', '音乐', '歌舞', '家庭', '冒险', '灾难', '纪录片', '真人秀', '恋爱', '情感', '搞笑', '惊悚']
   genreList.forEach(g => {
     if (info.includes(g)) genres.push(g)
   })
   return genres.slice(0, 3)
+}
+
+function getSubCategory(mainCategory, genres, region) {
+  if (mainCategory === '综艺') {
+    const firstGenre = genres[0] || ''
+    if (['恋爱', '情感'].includes(firstGenre)) return '恋爱'
+    if (['搞笑', '喜剧'].includes(firstGenre)) return '搞笑'
+    if (firstGenre === '真人秀') return '真人秀'
+    for (let i = 1; i < genres.length; i++) {
+      const g = genres[i]
+      if (['恋爱', '情感'].includes(g)) return '恋爱'
+      if (['搞笑', '喜剧'].includes(g)) return '搞笑'
+      if (g === '真人秀') return '真人秀'
+    }
+    return '搞笑'
+  }
+  
+  if (mainCategory === '电影') {
+    const firstGenre = genres[0] || ''
+    if (['悬疑', '犯罪', '惊悚'].includes(firstGenre)) return '悬疑'
+    if (['爱情', '恋爱'].includes(firstGenre)) return '恋爱'
+    if (['喜剧', '搞笑'].includes(firstGenre)) return '喜剧'
+    for (let i = 1; i < genres.length; i++) {
+      const g = genres[i]
+      if (['悬疑', '犯罪', '惊悚'].includes(g)) return '悬疑'
+      if (['爱情', '恋爱'].includes(g)) return '恋爱'
+      if (['喜剧', '搞笑'].includes(g)) return '喜剧'
+    }
+    return '喜剧'
+  }
+  
+  if (mainCategory === '热剧') {
+    if (region === 'kr') return '韩剧'
+    if (region === 'jp') return '日剧'
+    return '国产剧'
+  }
+  
+  return ''
 }
 
 function parseEpisodes(info) {
@@ -122,15 +164,17 @@ async function fetchVariety(count = 150) {
     if (data && data.subjects) {
       for (let i = 0; i < Math.min(data.subjects.length, count); i++) {
         const item = data.subjects[i]
+        const genres = []
+        const subCategory = getSubCategory('综艺', genres, 'cn')
         items.push({
           title: item.title,
           titleEn: '',
           type: 'variety',
           mainCategory: '综艺',
-          subCategory: '',
+          subCategory,
           region: parseRegion(item.title),
           year: item.year ? parseInt(item.year) : 0,
-          genres: [],
+          genres,
           poster: item.cover || '',
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
@@ -142,6 +186,9 @@ async function fetchVariety(count = 150) {
           rank: i + 1,
           sourceId: String(item.id),
           sourceUrl: item.url || '',
+          isReserve: false,
+          rankScore: (parseFloat(item.rate) || 0) * 10,
+          refreshAt: null,
           createdAt: new Date(),
           updatedAt: new Date()
         })
@@ -178,15 +225,18 @@ async function fetchMovies(count = 150) {
     if (data && data.subjects) {
       for (let i = 0; i < Math.min(data.subjects.length, count); i++) {
         const item = data.subjects[i]
+        const genres = []
+        const region = parseRegion(item.title)
+        const subCategory = getSubCategory('电影', genres, region)
         items.push({
           title: item.title,
           titleEn: '',
           type: 'movie',
           mainCategory: '电影',
-          subCategory: '',
-          region: parseRegion(item.title),
+          subCategory,
+          region,
           year: item.year ? parseInt(item.year) : 0,
-          genres: [],
+          genres,
           poster: item.cover || '',
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
@@ -198,6 +248,9 @@ async function fetchMovies(count = 150) {
           rank: i + 1,
           sourceId: String(item.id),
           sourceUrl: item.url || '',
+          isReserve: false,
+          rankScore: (parseFloat(item.rate) || 0) * 10,
+          refreshAt: null,
           createdAt: new Date(),
           updatedAt: new Date()
         })
@@ -221,15 +274,18 @@ async function fetchDramas(count = 150) {
     if (data && data.subjects) {
       for (let i = 0; i < Math.min(data.subjects.length, count); i++) {
         const item = data.subjects[i]
+        const genres = []
+        const region = 'cn'
+        const subCategory = getSubCategory('热剧', genres, region)
         items.push({
           title: item.title,
           titleEn: '',
           type: 'drama',
           mainCategory: '热剧',
-          subCategory: '',
-          region: 'cn',
+          subCategory,
+          region,
           year: item.year ? parseInt(item.year) : 0,
-          genres: [],
+          genres,
           poster: item.cover || '',
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
@@ -242,6 +298,9 @@ async function fetchDramas(count = 150) {
           rank: i + 1,
           sourceId: String(item.id),
           sourceUrl: item.url || '',
+          isReserve: false,
+          rankScore: (parseFloat(item.rate) || 0) * 10,
+          refreshAt: null,
           createdAt: new Date(),
           updatedAt: new Date()
         })

@@ -127,3 +127,35 @@
   line-height: 1.8;
   font-family: monospace;
 }
+
+.sub-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.sub-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 20rpx;
+  background: linear-gradient(145deg, #f5faff, #e8f0f0);
+  border-radius: 12rpx;
+  box-shadow: 2rpx 2rpx 6rpx #d0dae4, -2rpx -2rpx 6rpx #ffffff;
+  min-width: 200rpx;
+}
+
+.sub-stat-label {
+  font-size: 22rpx;
+  color: #6a7a8a;
+}
+
+.sub-stat-count {
+  font-size: 24rpx;
+  color: #5a6a7a;
+  font-weight: 500;
+}
+
+.btn-refresh {
+  background: linear-gradient(135deg, #a8d8b8, #b8c8f0) !important;
+}
