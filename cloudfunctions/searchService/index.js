@@ -124,6 +124,50 @@ async function getHotKeywords(event) {
   }
 }
 
+async function fullIndex(event) {
+  const { page = 1, pageSize = 100 } = event
+
+  const skip = (page - 1) * pageSize
+  const collection = db.collection('movies')
+
+  const result = await collection
+    .orderBy('rating', 'desc')
+    .skip(skip)
+    .limit(pageSize)
+    .field({
+      _id: true,
+      title: true,
+      titleEn: true,
+      type: true,
+      mainCategory: true,
+      region: true,
+      year: true,
+      genres: true,
+      poster: true,
+      rating: true,
+      episodes: true,
+      status: true,
+      tags: true,
+      description: true,
+      cast: true,
+      director: true
+    })
+    .get()
+
+  const countResult = await collection.count()
+
+  return {
+    code: 0,
+    data: {
+      list: result.data,
+      total: countResult.total,
+      page,
+      pageSize,
+      hasMore: skip + result.data.length < countResult.total
+    }
+  }
+}
+
 exports.main = async (event, context) => {
   const { action } = event
   
@@ -133,6 +177,8 @@ exports.main = async (event, context) => {
         return await search(event)
       case 'getHotKeywords':
         return await getHotKeywords(event)
+      case 'fullIndex':
+        return await fullIndex(event)
       default:
         return { code: -1, message: '无效的action' }
     }
