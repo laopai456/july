@@ -25,7 +25,10 @@ Page({
     hasMore: false,
     refreshAt: null,
     refreshing: false,
-    subCategoryCounts: [0, 0, 0]
+    subCategoryCounts: [0, 0, 0],
+    showSearchBar: false,
+    searchKeyword: '',
+    isSearching: false
   },
 
   onLoad() {
@@ -153,7 +156,7 @@ Page({
         list,
         hasMore: false,
         loading: false,
-        refreshAt: result.refreshAt
+        refreshAt: this.formatRefreshTime(result.refreshAt)
       })
       
       this.loadPosters(list)
@@ -211,6 +214,97 @@ Page({
     if (list[index]) {
       list[index].poster = ''
       this.setData({ list })
+    }
+  },
+
+  formatRefreshTime(time) {
+    if (!time) return ''
+    
+    const date = new Date(time)
+    const now = new Date()
+    const diff = now - date
+    
+    if (diff < 60000) return '刚刚'
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
+    
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    const hour = date.getHours().toString().padStart(2, '0')
+    const minute = date.getMinutes().toString().padStart(2, '0')
+    
+    return `${month}月${day}日 ${hour}:${minute}`
+  },
+
+  onShareAppMessage() {
+    const { currentTabName, currentSubName } = this.data
+    return {
+      title: `${currentTabName} · ${currentSubName} - 影视排行榜`,
+      path: `/pages/index/index`
+    }
+  },
+
+  onShareTimeline() {
+    const { currentTabName, currentSubName } = this.data
+    return {
+      title: `${currentTabName} · ${currentSubName} - 影视排行榜`,
+      query: ''
+    }
+  },
+
+  showSearch() {
+    this.setData({ showSearchBar: true })
+  },
+
+  hideSearch() {
+    this.setData({ 
+      showSearchBar: false, 
+      searchKeyword: '',
+      isSearching: false
+    })
+    this.loadData()
+  },
+
+  onSearchInput(e) {
+    this.setData({ searchKeyword: e.detail.value })
+  },
+
+  onSearchConfirm() {
+    const { searchKeyword } = this.data
+    if (searchKeyword.trim()) {
+      this.searchMovies(searchKeyword.trim())
+    }
+  },
+
+  clearSearch() {
+    this.setData({ searchKeyword: '' })
+  },
+
+  async searchMovies(keyword) {
+    this.setData({ loading: true, isSearching: true })
+    
+    const db = wx.cloud.database()
+    
+    try {
+      const res = await db.collection('movies')
+        .where({
+          title: db.RegExp({
+            regexp: keyword,
+            options: 'i'
+          })
+        })
+        .orderBy('rating', 'desc')
+        .limit(30)
+        .get()
+      
+      this.setData({
+        list: res.data,
+        loading: false,
+        hasMore: false
+      })
+    } catch (err) {
+      console.error('搜索失败:', err)
+      this.setData({ loading: false, list: [] })
     }
   }
 })

@@ -46,7 +46,8 @@ Page({
         dramaCount: dramaRes.total
       })
       
-      this.addLog(`总计:${totalRes.total} 综艺:${varietyRes.total} 电影:${movieRes.total} 热剧:${dramaRes.total}`)
+      this.addLog(`状态已刷新: 总计${totalRes.total}条`)
+      wx.showToast({ title: '状态已更新', icon: 'success' })
       
       await this.checkSubCategoryStats()
     } catch (err) {
@@ -101,49 +102,31 @@ Page({
     if (this.data.allLoading) return
     
     this.setData({ allLoading: true })
-    let successCount = 0
     
-    this.addLog('=== 导入综艺 (10条) ===')
-    for (let i = 0; i < 10; i++) {
-      try {
-        const res = await this.callCrawler({ type: 'variety', index: i })
-        if (res.code === 0 && res.data?.title) {
-          successCount++
-          this.addLog(`✓ ${res.data.title}`)
-        }
-      } catch (err) {}
-      await this.sleep(50)
+    try {
+      this.addLog('=== 批量导入综艺 ===')
+      const varietyRes = await this.callCrawler({ type: 'variety', batch: true })
+      this.addLog(`✓ 综艺: ${varietyRes.data?.count || 0}条`)
+      
+      this.addLog('=== 批量导入电影 ===')
+      const movieRes = await this.callCrawler({ type: 'movie', batch: true })
+      this.addLog(`✓ 电影: ${movieRes.data?.count || 0}条`)
+      
+      this.addLog('=== 批量导入热剧 ===')
+      const dramaRes = await this.callCrawler({ type: 'drama', batch: true })
+      this.addLog(`✓ 热剧: ${dramaRes.data?.count || 0}条`)
+      
+      const total = (varietyRes.data?.count || 0) + (movieRes.data?.count || 0) + (dramaRes.data?.count || 0)
+      this.addLog(`=== 完成! 共导入 ${total} 条 ===`)
+      
+      await this.checkDataStatus()
+      wx.showToast({ title: `导入 ${total} 条`, icon: 'success' })
+    } catch (err) {
+      this.addLog(`导入失败: ${err.message}`)
+      wx.showToast({ title: '导入失败', icon: 'error' })
     }
-
-    this.addLog('=== 导入电影 (10条) ===')
-    for (let i = 0; i < 10; i++) {
-      try {
-        const res = await this.callCrawler({ type: 'movie', index: i })
-        if (res.code === 0 && res.data?.title) {
-          successCount++
-          this.addLog(`✓ ${res.data.title}`)
-        }
-      } catch (err) {}
-      await this.sleep(50)
-    }
-
-    this.addLog('=== 导入热剧 (10条) ===')
-    for (let i = 0; i < 10; i++) {
-      try {
-        const res = await this.callCrawler({ type: 'drama', index: i })
-        if (res.code === 0 && res.data?.title) {
-          successCount++
-          this.addLog(`✓ ${res.data.title}`)
-        }
-      } catch (err) {}
-      await this.sleep(50)
-    }
-
+    
     this.setData({ allLoading: false })
-    this.addLog(`=== 完成! 成功 ${successCount} 条 ===`)
-    
-    await this.checkDataStatus()
-    wx.showToast({ title: `导入 ${successCount} 条`, icon: 'success' })
   },
 
   async refreshAllCategories() {
@@ -154,11 +137,7 @@ Page({
     
     try {
       const result = await movieApi.batchRefreshAll()
-      
-      for (const item of result.results) {
-        this.addLog(`✓ ${item.mainCategory}-${item.subCategory}: ${item.count}部`)
-      }
-      
+      this.addLog(`✓ ${result.message || '刷新时间已更新'}`)
       this.addLog(`=== 刷新完成! ===`)
       wx.showToast({ title: '刷新成功', icon: 'success' })
       

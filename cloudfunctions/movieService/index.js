@@ -215,37 +215,18 @@ async function refreshSubCategory(event) {
   
   const collection = db.collection('movies')
   
-  const allItems = await collection
+  await collection
     .where({
       mainCategory,
       subCategory,
       year: _.gte(2020)
     })
-    .orderBy('rating', 'desc')
-    .limit(60)
-    .get()
-  
-  const items = allItems.data
-  const primaryList = items.slice(0, 30)
-  const reserveList = items.slice(30, 50)
-  
-  for (const item of primaryList) {
-    await collection.doc(item._id).update({
+    .update({
       data: {
         isReserve: false,
         refreshAt: db.serverDate()
       }
     })
-  }
-  
-  for (const item of reserveList) {
-    await collection.doc(item._id).update({
-      data: {
-        isReserve: true,
-        refreshAt: db.serverDate()
-      }
-    })
-  }
   
   await ensureCollection('config')
   
@@ -258,13 +239,19 @@ async function refreshSubCategory(event) {
     }
   })
   
+  const countResult = await collection
+    .where({
+      mainCategory,
+      subCategory,
+      year: _.gte(2020)
+    })
+    .count()
+  
   return {
     code: 0,
     data: {
       refreshed: true,
-      totalCount: primaryList.length + reserveList.length,
-      primaryCount: primaryList.length,
-      reserveCount: reserveList.length,
+      totalCount: countResult.total,
       refreshAt: new Date()
     }
   }
@@ -283,21 +270,27 @@ async function batchRefreshAll(event) {
     { mainCategory: '热剧', subCategory: '国产剧' }
   ]
   
-  const results = []
+  await ensureCollection('config')
   
-  for (const { mainCategory, subCategory } of subCategories) {
-    const result = await refreshSubCategory({ mainCategory, subCategory })
-    results.push({
-      mainCategory,
-      subCategory,
-      count: result.data.totalCount
+  const configCollection = db.collection('config')
+  const now = db.serverDate()
+  
+  const promises = subCategories.map(({ mainCategory, subCategory }) => {
+    return configCollection.doc(`refresh_${mainCategory}_${subCategory}`).set({
+      data: {
+        refreshAt: now,
+        mainCategory,
+        subCategory
+      }
     })
-  }
+  })
+  
+  await Promise.all(promises)
   
   return {
     code: 0,
     data: {
-      results,
+      message: '刷新时间已更新',
       refreshAt: new Date()
     }
   }
