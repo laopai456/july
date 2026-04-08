@@ -22,7 +22,8 @@
       data-index="{{index}}"
       bindtap="onSubChange"
     >
-      {{item}}
+      <text class="sub-name">{{item}}</text>
+      <text class="sub-count" wx:if="{{subCategoryCounts[index] > 0}}">{{subCategoryCounts[index]}}</text>
     </view>
   </view>
 

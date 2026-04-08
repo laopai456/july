@@ -24,7 +24,8 @@ Page({
     page: 1,
     hasMore: false,
     refreshAt: null,
-    refreshing: false
+    refreshing: false,
+    subCategoryCounts: [0, 0, 0]
   },
 
   onLoad() {
@@ -47,6 +48,7 @@ Page({
       this.setData({ refreshing: false })
     }
     
+    this.loadSubCategoryCounts()
     this.loadData()
   },
 
@@ -68,6 +70,7 @@ Page({
     }
     
     this.setData({ refreshing: false })
+    this.loadSubCategoryCounts()
     await this.loadData()
   },
 
@@ -81,8 +84,10 @@ Page({
       currentSub: 0,
       currentSubName: SUB_CATEGORIES[tabName][0],
       list: [],
-      loading: true
+      loading: true,
+      subCategoryCounts: [0, 0, 0]
     })
+    this.loadSubCategoryCounts()
     this.loadData()
   },
 
@@ -101,6 +106,33 @@ Page({
   async resetAndLoad() {
     this.setData({ list: [], loading: true })
     await this.loadData()
+  },
+
+  async loadSubCategoryCounts() {
+    const { currentTabName, subCategories } = this.data
+    const db = wx.cloud.database()
+    const counts = []
+    
+    for (const subCategory of subCategories) {
+      try {
+        const res = await db.collection('movies')
+          .where({
+            mainCategory: currentTabName,
+            subCategory,
+            year: db.command.gte(2020),
+            isReserve: false
+          })
+          .count()
+        console.log(`${currentTabName}-${subCategory}: ${res.total}`)
+        counts.push(res.total)
+      } catch (err) {
+        console.error('查询失败:', err)
+        counts.push(0)
+      }
+    }
+    
+    console.log('subCategoryCounts:', counts)
+    this.setData({ subCategoryCounts: counts })
   },
 
   async loadData() {

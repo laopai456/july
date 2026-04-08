@@ -39,7 +39,7 @@
   </block>
 
   <view class="loading-wrap" wx:if="{{loading}}">
-    <text>加载中...</text>
+    <loading text="服务器摸鱼中" />
   </view>
 
   <view class="error-wrap" wx:if="{{!loading && !movie}}">

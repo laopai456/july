@@ -54,6 +54,8 @@
 }
 
 .sub-item {
+  display: flex;
+  align-items: center;
   padding: 16rpx 32rpx;
   margin-right: 16rpx;
   font-size: 26rpx;
@@ -64,10 +66,31 @@
   transition: all 0.3s ease;
 }
 
+.sub-name {
+  margin-right: 8rpx;
+}
+
+.sub-count {
+  min-width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  padding: 0 10rpx;
+  font-size: 20rpx;
+  color: #ffffff;
+  background: linear-gradient(135deg, #b8d4f0, #f0b8c8);
+  border-radius: 18rpx;
+  text-align: center;
+}
+
 .sub-item.active {
   color: #ffffff;
   background: linear-gradient(145deg, #a8b4fc, #f0a0b8);
   box-shadow: inset 3rpx 3rpx 6rpx #d0d8e0, inset -3rpx -3rpx 6rpx #ffffff;
+}
+
+.sub-item.active .sub-count {
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
 }
 
 .list-container {

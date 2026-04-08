@@ -1,12 +1,6 @@
-# Auto detect text files and perform LF normalization
-* text=auto eol=lf
-
-# Source code
+* text=auto
 *.js text eol=lf
 *.json text eol=lf
 *.wxml text eol=lf
 *.wxss text eol=lf
 *.md text eol=lf
-
-# Windows files
-*.bat text eol=crlf
