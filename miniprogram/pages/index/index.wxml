@@ -44,7 +44,7 @@
       bindtap="onSubChange"
     >
       <text class="sub-name">{{item}}</text>
-      <text class="sub-count" wx:if="{{subCategoryCounts[index] > 0}}">{{subCategoryCounts[index]}}</text>
+      <text class="sub-count">{{subCategoryCounts[index] || 0}}</text>
     </view>
   </view>
 

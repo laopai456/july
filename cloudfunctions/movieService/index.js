@@ -148,8 +148,7 @@ async function getSubCategoryList(event) {
   
   let query = {
     mainCategory,
-    subCategory,
-    year: _.gte(2020)
+    subCategory
   }
   
   if (!showReserve) {
@@ -218,8 +217,7 @@ async function refreshSubCategory(event) {
   await collection
     .where({
       mainCategory,
-      subCategory,
-      year: _.gte(2020)
+      subCategory
     })
     .update({
       data: {
@@ -242,8 +240,7 @@ async function refreshSubCategory(event) {
   const countResult = await collection
     .where({
       mainCategory,
-      subCategory,
-      year: _.gte(2020)
+      subCategory
     })
     .count()
   

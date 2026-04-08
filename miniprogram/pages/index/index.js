@@ -1,15 +1,15 @@
-const { movieApi } = require('../../utils/api')
 const tmdb = require('../../utils/tmdb')
 
 const TABS = ['综艺', '电影', '热剧']
 
 const SUB_CATEGORIES = {
   '综艺': ['恋爱', '搞笑', '真人秀'],
-  '电影': ['悬疑', '恋爱', '喜剧'],
+  '电影': ['热门', '高分', '最新'],
   '热剧': ['韩剧', '日剧', '国产剧']
 }
 
-const REFRESH_INTERVAL = 6 * 60 * 60 * 1000
+const CACHE_KEY = 'tmdb_cache'
+const CACHE_EXPIRE = 30 * 60 * 1000
 
 Page({
   data: {
@@ -24,7 +24,6 @@ Page({
     page: 1,
     hasMore: false,
     refreshAt: null,
-    refreshing: false,
     subCategoryCounts: [0, 0, 0],
     showSearchBar: false,
     searchKeyword: '',
@@ -32,49 +31,39 @@ Page({
   },
 
   onLoad() {
-    this.checkAndRefresh()
-  },
-
-  async checkAndRefresh() {
-    const lastRefresh = wx.getStorageSync('lastRefreshTime') || 0
-    const now = Date.now()
-    
-    if (now - lastRefresh > REFRESH_INTERVAL) {
-      this.setData({ refreshing: true })
-      try {
-        await movieApi.batchRefreshAll()
-        wx.setStorageSync('lastRefreshTime', now)
-        console.log('榜单已自动刷新')
-      } catch (err) {
-        console.log('自动刷新失败:', err)
-      }
-      this.setData({ refreshing: false })
-    }
-    
-    this.loadSubCategoryCounts()
     this.loadData()
   },
 
   onPullDownRefresh() {
-    this.manualRefresh().then(() => {
+    this.clearCache()
+    this.loadData().then(() => {
       wx.stopPullDownRefresh()
     })
   },
 
-  async manualRefresh() {
-    this.setData({ list: [], loading: true, refreshing: true })
-    
+  clearCache() {
     try {
-      await movieApi.batchRefreshAll()
-      wx.setStorageSync('lastRefreshTime', Date.now())
-      wx.showToast({ title: '榜单已更新', icon: 'success' })
-    } catch (err) {
-      console.log('刷新失败:', err)
-    }
-    
-    this.setData({ refreshing: false })
-    this.loadSubCategoryCounts()
-    await this.loadData()
+      wx.removeStorageSync(CACHE_KEY)
+    } catch (e) {}
+  },
+
+  getCache(key) {
+    try {
+      const cache = wx.getStorageSync(CACHE_KEY) || {}
+      const item = cache[key]
+      if (item && Date.now() - item.time < CACHE_EXPIRE) {
+        return item.data
+      }
+    } catch (e) {}
+    return null
+  },
+
+  setCache(key, data) {
+    try {
+      const cache = wx.getStorageSync(CACHE_KEY) || {}
+      cache[key] = { data, time: Date.now() }
+      wx.setStorageSync(CACHE_KEY, cache)
+    } catch (e) {}
   },
 
   onTabChange(e) {
@@ -90,7 +79,6 @@ Page({
       loading: true,
       subCategoryCounts: [0, 0, 0]
     })
-    this.loadSubCategoryCounts()
     this.loadData()
   },
 
@@ -106,100 +94,140 @@ Page({
     this.loadData()
   },
 
-  async resetAndLoad() {
-    this.setData({ list: [], loading: true })
-    await this.loadData()
-  },
-
-  async loadSubCategoryCounts() {
-    const { currentTabName, subCategories } = this.data
-    const db = wx.cloud.database()
-    const counts = []
-    
-    for (const subCategory of subCategories) {
-      try {
-        const res = await db.collection('movies')
-          .where({
-            mainCategory: currentTabName,
-            subCategory,
-            year: db.command.gte(2020),
-            isReserve: false
-          })
-          .count()
-        console.log(`${currentTabName}-${subCategory}: ${res.total}`)
-        counts.push(res.total)
-      } catch (err) {
-        console.error('查询失败:', err)
-        counts.push(0)
-      }
-    }
-    
-    console.log('subCategoryCounts:', counts)
-    this.setData({ subCategoryCounts: counts })
-  },
-
   async loadData() {
     const { currentTabName, currentSubName } = this.data
     
     this.setData({ loading: true })
+    
+    const cacheKey = `${currentTabName}_${currentSubName}`
+    const cached = this.getCache(cacheKey)
+    
+    if (cached && cached.length > 0) {
+      this.setData({
+        list: cached,
+        hasMore: false,
+        loading: false,
+        refreshAt: '缓存数据'
+      })
+      return
+    }
 
     try {
-      const result = await movieApi.getSubCategoryList({
-        mainCategory: currentTabName,
-        subCategory: currentSubName,
-        pageSize: 30
-      })
-
-      const list = result.list || []
+      let list = []
+      
+      if (currentTabName === '综艺') {
+        list = await this.loadVarietyFromDouban(currentSubName)
+      } else if (currentTabName === '电影') {
+        const movies = await tmdb.getPopularMovies(1) || []
+        if (currentSubName === '热门') {
+          list = movies.slice(0, 30)
+        } else if (currentSubName === '高分') {
+          list = movies.filter(m => m.rating >= 7.5).slice(0, 30)
+        } else {
+          list = movies.filter(m => m.year >= 2023).slice(0, 30)
+        }
+        this.setData({ subCategoryCounts: [movies.length, movies.filter(m => m.rating >= 7.5).length, movies.filter(m => m.year >= 2023).length] })
+      } else if (currentTabName === '热剧') {
+        const tvList = await tmdb.getPopularTV(1) || []
+        const krList = tvList.filter(item => item.region === 'kr')
+        const jpList = tvList.filter(item => item.region === 'jp')
+        
+        if (currentSubName === '韩剧') {
+          list = krList.slice(0, 30)
+          this.setData({ subCategoryCounts: [krList.length, jpList.length, 0] })
+        } else if (currentSubName === '日剧') {
+          list = jpList.slice(0, 30)
+          this.setData({ subCategoryCounts: [krList.length, jpList.length, 0] })
+        } else {
+          const cnData = await this.loadCNDramaFromDouban()
+          list = cnData.list
+          this.setData({ subCategoryCounts: [krList.length, jpList.length, cnData.count] })
+        }
+      }
+      
+      if (list.length > 0) {
+        this.setCache(cacheKey, list)
+      }
       
       this.setData({
         list,
         hasMore: false,
         loading: false,
-        refreshAt: this.formatRefreshTime(result.refreshAt)
+        refreshAt: currentTabName === '综艺' || (currentTabName === '热剧' && currentSubName === '国产剧') ? '实时获取自豆瓣' : '实时获取自TMDB'
       })
       
-      this.loadPosters(list)
-
     } catch (err) {
-      if (err.errCode === -502005) {
-        console.log('数据库正在初始化...')
-        this.setData({ list: [], loading: false, hasMore: false })
-      } else {
-        console.error(err)
-        this.setData({ loading: false })
-      }
+      console.error('获取失败:', err)
+      this.setData({
+        list: [],
+        loading: false,
+        hasMore: false
+      })
     }
   },
 
-  async loadPosters(list) {
-    const promises = list.map(async (item, i) => {
-      if (!item.poster || !item.poster.includes('tmdb.org')) {
-        const poster = await tmdb.getPoster(item)
-        return { index: i, poster }
-      }
-      return null
-    })
-    
-    const results = await Promise.all(promises)
-    
-    const updates = results.filter(r => r && r.poster)
-    if (updates.length > 0) {
-      const currentList = this.data.list
-      updates.forEach(({ index, poster }) => {
-        if (currentList[index]) {
-          currentList[index].poster = poster
+  async loadVarietyFromDouban(subCategory) {
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'douban',
+        data: {
+          action: 'getVariety',
+          subCategory: subCategory,
+          count: 50
         }
       })
-      this.setData({ list: currentList })
+      
+      console.log('豆瓣综艺返回:', res.result)
+      
+      if (res.result?.code === 0 && res.result.data) {
+        const counts = res.result.counts || { '恋爱': 0, '搞笑': 0, '真人秀': 0 }
+        this.setData({ 
+          subCategoryCounts: [counts['恋爱'], counts['搞笑'], counts['真人秀']]
+        })
+        
+        return res.result.data.slice(0, 30)
+      }
+    } catch (err) {
+      console.error('豆瓣获取失败:', err)
     }
+    return []
+  },
+
+  async loadCNDramaFromDouban() {
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'douban',
+        data: {
+          action: 'getCNDrama',
+          count: 50
+        }
+      })
+      
+      console.log('豆瓣国产剧返回:', res.result)
+      
+      if (res.result?.code === 0 && res.result.data) {
+        return {
+          list: res.result.data.slice(0, 30),
+          count: res.result.data.length
+        }
+      }
+    } catch (err) {
+      console.error('豆瓣获取国产剧失败:', err)
+    }
+    return { list: [], count: 0 }
   },
 
   goToDetail(e) {
     const { id } = e.currentTarget.dataset
-    wx.navigateTo({
-      url: `/pages/detail/index?id=${id}`
-    })
+    const { list } = this.data
+    const item = list.find(i => i.tmdbId === id || i.doubanId === id || i._id === id)
+    
+    if (item) {
+      wx.setStorageSync('currentDetail', item)
+      wx.navigateTo({
+        url: `/pages/detail/index?id=${id}&from=tmdb`
+      })
+    }
   },
 
   goToAdmin() {
@@ -272,7 +300,7 @@ Page({
   onSearchConfirm() {
     const { searchKeyword } = this.data
     if (searchKeyword.trim()) {
-      this.searchMovies(searchKeyword.trim())
+      this.searchTMDB(searchKeyword.trim())
     }
   },
 
@@ -280,25 +308,20 @@ Page({
     this.setData({ searchKeyword: '' })
   },
 
-  async searchMovies(keyword) {
+  async searchTMDB(keyword) {
     this.setData({ loading: true, isSearching: true })
     
-    const db = wx.cloud.database()
-    
     try {
-      const res = await db.collection('movies')
-        .where({
-          title: db.RegExp({
-            regexp: keyword,
-            options: 'i'
-          })
-        })
-        .orderBy('rating', 'desc')
-        .limit(30)
-        .get()
+      const movies = await tmdb.searchPoster(keyword, 'movie')
+      const tv = await tmdb.searchPoster(keyword, 'tv')
+      
+      const list = [
+        ...(movies ? [{ ...movies, type: 'movie', mainCategory: '电影' }] : []),
+        ...(tv ? [{ ...tv, type: 'drama', mainCategory: '热剧' }] : [])
+      ]
       
       this.setData({
-        list: res.data,
+        list,
         loading: false,
         hasMore: false
       })
