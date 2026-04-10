@@ -1,25 +1,26 @@
 <view class="container">
   <view class="card">
     <text class="title">调试工具</text>
-    <text class="subtitle">数据已改为实时获取</text>
+    <text class="subtitle">数据源：TMDB API</text>
   </view>
 
   <view class="section">
     <text class="section-title">数据源说明</text>
-    <text class="hint">• 综艺/国产剧: 豆瓣API (云函数)</text>
-    <text class="hint">• 电影/韩剧/日剧: TMDB API</text>
-    <text class="hint">• 数据实时获取，无需导入</text>
+    <text class="hint">• 所有数据来自TMDB API</text>
+    <text class="hint">• 支持完整数据：类型/演员/导演/简介</text>
+    <text class="hint">• 数据质量高，更新及时</text>
   </view>
 
   <view class="section">
-    <text class="section-title">连接测试</text>
-    <button class="btn" bindtap="testTMDB" size="mini">测试TMDB</button>
-    <button class="btn" bindtap="testDouban" size="mini">测试豆瓣</button>
+    <text class="section-title">功能测试</text>
+    <button class="btn" bindtap="testTMDBVariety" size="mini">测试综艺</button>
+    <button class="btn" bindtap="testTMDBMovie" size="mini">测试电影</button>
+    <button class="btn" bindtap="testTMDBKDrama" size="mini">测试韩剧</button>
   </view>
 
   <view class="section">
     <text class="section-title">缓存管理</text>
-    <button class="btn-primary" bindtap="clearAllCache">清除缓存</button>
+    <button class="btn-primary" bindtap="clearAllCache">清除所有缓存</button>
     <text class="hint">清除后下拉刷新首页即可重新获取数据</text>
   </view>
 
