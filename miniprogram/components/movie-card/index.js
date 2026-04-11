@@ -2,7 +2,12 @@ Component({
   properties: {
     movie: {
       type: Object,
-      value: {}
+      value: {},
+      observer: function(newVal, oldVal) {
+        if (newVal && newVal.title) {
+          console.log('movie-card received:', newVal.title, 'hotScore:', newVal.hotScore, 'rating:', newVal.rating)
+        }
+      }
     },
     size: {
       type: String,
@@ -11,15 +16,34 @@ Component({
   },
 
   data: {
-    defaultPoster: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"%3E%3Crect fill="%23e8f0f0" width="100" height="140"/%3E%3Ctext x="50" y="70" text-anchor="middle" fill="%239aa8b8" font-size="12"%3E%E6%9A%82%E6%97%A0%E5%9B%BE%E7%89%87%3C/text%3E%3C/svg%3E'
+    defaultPoster: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"%3E%3Crect fill="%23e8f0f0" width="100" height="140"/%3E%3Ctext x="50" y="70" text-anchor="middle" fill="%239aa8b8" font-size="12"%3E%E6%9A%82%E6%97%A0%E5%9B%BE%E7%89%87%3C/text%3E%3C/svg%3E',
+    isDev: true
+  },
+
+  lifetimes: {
+    attached() {
+      this.checkEnv()
+    }
   },
 
   methods: {
+    checkEnv() {
+      try {
+        const accountInfo = wx.getAccountInfoSync()
+        const envVersion = accountInfo.miniProgram.envVersion
+        const isDev = envVersion === 'develop' || envVersion === 'trial'
+        this.setData({ isDev })
+        console.log('movie-card isDev:', isDev, 'envVersion:', envVersion)
+      } catch (e) {
+        this.setData({ isDev: true })
+      }
+    },
+
     onTap() {
       const { movie } = this.properties
-      if (movie && movie._id) {
+      if (movie && (movie._id || movie.doubanId || movie.id)) {
         wx.navigateTo({
-          url: `/pages/detail/index?id=${movie._id}`
+          url: `/pages/detail/index?id=${movie._id || movie.doubanId || movie.id}`
         })
       }
     },

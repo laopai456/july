@@ -1,4 +1,5 @@
 const config = {
+  apiBase: 'http://43.167.233.80:3000',
   pageSize: 20,
   defaultRegion: 'all',
   defaultType: 'all',

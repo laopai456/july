@@ -48,14 +48,15 @@ app.get('/api/variety', async (req, res) => {
     const subjects = localData.variety.map((item) => ({
       id: item.id,
       title: item.title,
-      cover: item.cover || '',
+      cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
       rate: item.rate || '0',
       year: item.year || '',
       genres: item.genres || [],
       summary: '',
       directors: item.directors || [],
       casts: item.casts || [],
-      subCategory: item.subCategory || '真人秀'
+      subCategory: item.subCategory || '真人秀',
+      hotScore: item.hotScore || 0
     }));
     
     return res.json({
@@ -143,6 +144,13 @@ app.get('/api/drama/:type', async (req, res) => {
       page_start: 0
     });
     
+    if (data && data.subjects) {
+      data.subjects = data.subjects.map(item => ({
+        ...item,
+        cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim()
+      }));
+    }
+    
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -165,6 +173,13 @@ app.get('/api/movie/:type', async (req, res) => {
       page_limit: 20,
       page_start: 0
     });
+    
+    if (data && data.subjects) {
+      data.subjects = data.subjects.map(item => ({
+        ...item,
+        cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim()
+      }));
+    }
     
     res.json(data);
   } catch (error) {

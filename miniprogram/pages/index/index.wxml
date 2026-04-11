@@ -76,15 +76,19 @@
           <view class="info">
             <view class="title-row">
               <text class="title">{{item.title}}</text>
-              <text class="rating">★ {{item.rating}}</text>
+              <view class="score-col">
+                <view class="hot-score" wx:if="{{item.hotScore > 0}}">
+                  <text class="hot-icon">🔥</text>
+                  <text class="hot-value">{{item.hotScore}}</text>
+                </view>
+                <text class="rating" wx:if="{{item.rating > 0}}">★ {{item.rating}}</text>
+              </view>
             </view>
             <view class="meta">
               <text>{{item.year}}</text>
-              <text wx:if="{{item.episodes}}">{{item.episodes}}集</text>
-              <text>{{item.region === 'cn' ? '中国' : item.region === 'kr' ? '韩国' : item.region === 'jp' ? '日本' : item.region === 'us' ? '欧美' : ''}}</text>
             </view>
-            <view class="tags">
-              <text class="tag" wx:for="{{item.genres}}" wx:for-item="genre" wx:key="*this">{{genre}}</text>
+            <view class="cast-row" wx:if="{{item.castDisplay}}">
+              <text class="cast-text">{{item.castDisplay}}</text>
             </view>
           </view>
         </view>

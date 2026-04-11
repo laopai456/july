@@ -1,15 +1,22 @@
 <view class="movie-card {{size === 'small' ? 'movie-card-small' : ''}}" bindtap="onTap">
   <image 
     class="movie-poster" 
-    src="{{movie.poster || defaultPoster}}" 
+    src="{{movie.poster || movie.cover || defaultPoster}}" 
     mode="aspectFill"
     lazy-load
     binderror="onImageError"
   />
   <view class="movie-info">
     <text class="movie-title text-ellipsis">{{movie.title}}</text>
-    <view class="movie-meta" wx:if="{{movie.rating}}">
-      <text class="movie-rating">★ {{movie.rating}}</text>
+    <view class="movie-meta">
+      <view class="hot-score" wx:if="{{movie.hotScore > 0}}">
+        <text class="hot-icon">🔥</text>
+        <text class="hot-value">{{movie.hotScore}}</text>
+      </view>
+      <view class="douban-rate" wx:if="{{isDev && movie.rating > 0}}">
+        <text class="rate-label">豆瓣</text>
+        <text class="rate-value">{{movie.rating}}</text>
+      </view>
       <text class="movie-year" wx:if="{{movie.year}}">{{movie.year}}</text>
     </view>
     <view class="movie-tags" wx:if="{{movie.genres && movie.genres.length > 0}}">

@@ -118,8 +118,13 @@ Page({
     const cached = this.getCache(cacheKey)
     
     if (cached && cached.length > 0) {
+      const cleanedList = cached.map(item => ({
+        ...item,
+        poster: (item.poster || '').replace(/[\s`'"''""]/g, '').trim(),
+        castDisplay: item.castDisplay || (item.cast && item.cast.length > 0 ? item.cast.slice(0, 3).join(' / ') : '')
+      }))
       this.setData({
-        list: cached,
+        list: cleanedList,
         hasMore: false,
         loading: false,
         refreshAt: '缓存数据'
@@ -262,16 +267,12 @@ Page({
     }
     
     const apiPath = tag === '综艺' ? '/api/variety' : `/api/drama/${tagTypeMap[tag]}`
+    const config = require('../../utils/config.js')
     
     return new Promise((resolve, reject) => {
-      wx.cloud.callContainer({
-        path: apiPath,
-        header: {
-          "X-WX-SERVICE": "tcbanyservice",
-          "X-AnyService-Name": "movieapi",
-          "content-type": "application/json"
-        },
-        method: "GET",
+      wx.request({
+        url: config.apiBase + apiPath,
+        method: 'GET',
         timeout: 15000,
         success: (res) => {
           if (res.statusCode === 200 && res.data) {
@@ -300,6 +301,8 @@ Page({
         
         const subCat = item.subCategory || this.getSubCategoryForVariety(item.title, item.genres || [])
         
+        const poster = (item.cover || '').replace(/[\s`'"''""]/g, '').trim()
+        
         allItems.push({
           doubanId: item.id,
           title: item.title,
@@ -310,21 +313,23 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: item.cover || '',
+          poster: poster,
           rating: parseFloat(item.rate) || 0,
+          hotScore: item.hotScore || 0,
           ratingSource: 'douban',
           description: item.summary || '',
-          cast: [],
-          director: '',
+          cast: item.casts || [],
+          castDisplay: (item.casts || []).slice(0, 3).join(' / '),
+          director: (item.directors || []).join(' / '),
           status: 'ongoing',
           viewCount: 0,
           rank: allItems.length + 1
         })
       }
       
-      const showItems = allItems.filter(i => i.subCategory === '真人秀').sort((a, b) => b.rating - a.rating)
-      const comedyItems = allItems.filter(i => i.subCategory === '喜剧').sort((a, b) => b.rating - a.rating)
-      const musicItems = allItems.filter(i => i.subCategory === '音综').sort((a, b) => b.rating - a.rating)
+      const showItems = allItems.filter(i => i.subCategory === '真人秀').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
+      const comedyItems = allItems.filter(i => i.subCategory === '喜剧').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
+      const musicItems = allItems.filter(i => i.subCategory === '音综').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
       
       const counts = {
         '真人秀': showItems.length,
@@ -372,7 +377,7 @@ Page({
         region: 'cn',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: item.cover || '',
+        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -436,7 +441,7 @@ Page({
         region: 'kr',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: item.cover || '',
+        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -475,7 +480,7 @@ Page({
         region: 'jp',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: item.cover || '',
+        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -514,7 +519,7 @@ Page({
         region: 'cn',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: item.cover || '',
+        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -535,6 +540,12 @@ Page({
       console.error('loadCNDramaFromDouban error:', err)
       return []
     }
+  },
+
+  onPosterError(e) {
+    const index = e.currentTarget.dataset.index
+    const item = this.data.list[index]
+    console.error('图片加载失败:', item?.title, 'URL:', item?.poster?.substring(0, 60))
   },
 
   goToDetail(e) {
@@ -591,7 +602,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: [],
-          poster: item.cover || '',
+          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
           description: '',
