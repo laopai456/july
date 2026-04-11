@@ -1,7 +1,7 @@
 const TABS = ['综艺', '电影', '热剧']
 
 const SUB_CATEGORIES = {
-  '综艺': ['恋爱', '搞笑', '真人秀'],
+  '综艺': ['真人秀', '喜剧', '音综'],
   '电影': ['热门', '高分', '最新'],
   '热剧': ['韩剧', '日剧', '国产剧']
 }
@@ -33,7 +33,7 @@ Page({
     currentTabName: '综艺',
     subCategories: SUB_CATEGORIES['综艺'],
     currentSub: 0,
-    currentSubName: '恋爱',
+    currentSubName: '真人秀',
     list: [],
     loading: true,
     page: 1,
@@ -192,11 +192,14 @@ Page({
   getSubCategoryForVariety(title, genres) {
     const allText = title + ' ' + (genres || []).join(' ')
     
-    for (const keyword of LOVE_KEYWORDS) {
-      if (allText.includes(keyword)) return '恋爱'
+    const musicKeywords = ['音乐', '歌唱', '歌手', '唱歌', '声音', '好声音', '我是歌手', '超级女声', '快乐男声', '创造营', '青春有你', '偶像练习生', '乘风', '披荆斩棘', '舞蹈', '跳舞', '舞者', '街舞', '舞蹈风暴', '选秀', '偶像', '练习生', '出道', '成团', '蒙面唱', '蒙面歌王', '天赐的声音', '声入人心', '我们的歌', '时光音乐会', '乐队的夏天', '说唱', '明日之子', '创造101', '以团之名', '音综', '乐队']
+    const comedyKeywords = ['喜剧', '搞笑', '脱口秀', '吐槽', '段子', '欢乐', '开心', '爆笑', '笑傲', '喜剧人', '喜剧大赛', '一年一度', '喜人', '欢乐喜剧']
+    
+    for (const keyword of musicKeywords) {
+      if (allText.includes(keyword)) return '音综'
     }
-    for (const keyword of FUNNY_KEYWORDS) {
-      if (allText.includes(keyword)) return '搞笑'
+    for (const keyword of comedyKeywords) {
+      if (allText.includes(keyword)) return '喜剧'
     }
     return '真人秀'
   },
@@ -293,10 +296,9 @@ Page({
       let allItems = []
       
       for (const item of result.subjects) {
-        if (this.isForeignVariety(item.title)) continue
         if (allItems.some(i => i.doubanId === item.id)) continue
         
-        const subCat = this.getSubCategoryForVariety(item.title, item.genres || [])
+        const subCat = item.subCategory || this.getSubCategoryForVariety(item.title, item.genres || [])
         
         allItems.push({
           doubanId: item.id,
@@ -320,25 +322,25 @@ Page({
         })
       }
       
-      const loveItems = allItems.filter(i => i.subCategory === '恋爱').sort((a, b) => b.rating - a.rating)
-      const funnyItems = allItems.filter(i => i.subCategory === '搞笑').sort((a, b) => b.rating - a.rating)
       const showItems = allItems.filter(i => i.subCategory === '真人秀').sort((a, b) => b.rating - a.rating)
+      const comedyItems = allItems.filter(i => i.subCategory === '喜剧').sort((a, b) => b.rating - a.rating)
+      const musicItems = allItems.filter(i => i.subCategory === '音综').sort((a, b) => b.rating - a.rating)
       
       const counts = {
-        '恋爱': loveItems.length,
-        '搞笑': funnyItems.length,
-        '真人秀': showItems.length
+        '真人秀': showItems.length,
+        '喜剧': comedyItems.length,
+        '音综': musicItems.length
       }
       
-      this.setData({ subCategoryCounts: [counts['恋爱'] || 0, counts['搞笑'] || 0, counts['真人秀'] || 0] })
+      this.setData({ subCategoryCounts: [counts['真人秀'] || 0, counts['喜剧'] || 0, counts['音综'] || 0] })
       
       let filteredItems = []
-      if (subCategory === '恋爱') {
-        filteredItems = loveItems
-      } else if (subCategory === '搞笑') {
-        filteredItems = funnyItems
-      } else if (subCategory === '真人秀') {
+      if (subCategory === '真人秀') {
         filteredItems = showItems
+      } else if (subCategory === '喜剧') {
+        filteredItems = comedyItems
+      } else if (subCategory === '音综') {
+        filteredItems = musicItems
       }
       
       return filteredItems.slice(0, 30)

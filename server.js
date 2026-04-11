@@ -4,8 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 
+app.use(express.json());
+
 const DOUBAN_API = 'https://movie.douban.com/j';
 const DATA_FILE = path.join(__dirname, 'data.json');
+const SYNC_SECRET = 'july2026sync';
 
 async function fetchWithRetry(url, params, retries = 3) {
   for (let i = 0; i < retries; i++) {
@@ -42,7 +45,7 @@ app.get('/api/variety', async (req, res) => {
   const localData = loadLocalData();
   
   if (localData && localData.variety && localData.variety.length > 0) {
-    const subjects = localData.variety.map((item, index) => ({
+    const subjects = localData.variety.map((item) => ({
       id: item.id,
       title: item.title,
       cover: item.cover || '',
@@ -51,12 +54,14 @@ app.get('/api/variety', async (req, res) => {
       genres: item.genres || [],
       summary: '',
       directors: item.directors || [],
-      casts: item.casts || []
+      casts: item.casts || [],
+      subCategory: item.subCategory || '真人秀'
     }));
     
     return res.json({
       subjects,
       total: subjects.length,
+      config: localData.config || { displayCount: 30, backupCount: 20 },
       source: 'local'
     });
   }
@@ -74,6 +79,51 @@ app.get('/api/variety', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+app.post('/api/variety/sync', (req, res) => {
+  try {
+    const { secret, variety, config } = req.body;
+    
+    if (secret !== SYNC_SECRET) {
+      return res.status(403).json({ error: '无权限' });
+    }
+    
+    if (!variety || !Array.isArray(variety)) {
+      return res.status(400).json({ error: '数据格式错误' });
+    }
+    
+    const dataToSave = {
+      variety: variety,
+      config: config || { displayCount: 30, backupCount: 20 },
+      updatedAt: new Date().toISOString(),
+      source: 'miniprogram_sync'
+    };
+    
+    fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
+    
+    console.log(`数据已更新: ${variety.length} 条综艺, ${new Date().toLocaleString()}`);
+    
+    res.json({ 
+      success: true, 
+      count: variety.length,
+      updatedAt: dataToSave.updatedAt
+    });
+  } catch (error) {
+    console.error('保存数据失败:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/variety/status', (req, res) => {
+  const localData = loadLocalData();
+  
+  res.json({
+    hasData: !!(localData && localData.variety && localData.variety.length > 0),
+    count: localData?.variety?.length || 0,
+    updatedAt: localData?.updatedAt || null,
+    source: localData?.source || 'unknown'
+  });
 });
 
 app.get('/api/drama/:type', async (req, res) => {
