@@ -155,16 +155,16 @@ async function main() {
     
     for (const tag of cat.tags) {
       console.log('  标签: ' + tag);
-      for (let start = 0; start < 20; start += RATE_LIMIT.batchSize) {
+      for (let start = 0; start < 40; start += RATE_LIMIT.batchSize) {
         const batchNum = Math.floor(start / RATE_LIMIT.batchSize) + 1;
-        process.stdout.write('\r    [批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 20) + ' 条...');
+        process.stdout.write('\r    [批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 40) + ' 条...');
         
         const list = await fetchList(tag, 'U', start, RATE_LIMIT.batchSize);
         for (const item of list) {
           if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push({ ...item, subCategory: cat.name }); }
         }
         
-        if (start + RATE_LIMIT.batchSize < 20) {
+        if (start + RATE_LIMIT.batchSize < 40) {
           process.stdout.write(' 等待中...');
           await sleep(RATE_LIMIT.batchPause);
         }
@@ -180,8 +180,7 @@ async function main() {
   
   console.log('比对结果:');
   console.log('  新增: ' + stats.newCount + ' 条');
-  console.log('  已存在: ' + stats.existingCount + ' 条');
-  console.log('  移除: ' + stats.removedCount + ' 条\n');
+  console.log('  已存在: ' + stats.existingCount + ' 条\n');
   
   const results = [];
   

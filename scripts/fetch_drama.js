@@ -163,8 +163,7 @@ async function main() {
   
   console.log('比对结果:');
   console.log('  新增: ' + stats.newCount + ' 条');
-  console.log('  已存在: ' + stats.existingCount + ' 条');
-  console.log('  移除: ' + stats.removedCount + ' 条\n');
+  console.log('  已存在: ' + stats.existingCount + ' 条\n');
   
   const results = [];
   

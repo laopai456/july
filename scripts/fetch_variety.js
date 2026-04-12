@@ -179,6 +179,23 @@ function isChineseVariety(title, detail, casts) {
   return true;
 }
 
+function isChineseVarietyByTitle(title) {
+  if (!title) return true;
+  
+  for (const keyword of FOREIGN_KEYWORDS) {
+    if (title.toLowerCase().includes(keyword.toLowerCase())) {
+      return false;
+    }
+  }
+  
+  const koreanPattern = /[\uAC00-\uD7AF]/;
+  if (koreanPattern.test(title)) {
+    return false;
+  }
+  
+  return true;
+}
+
 function isVarietyType(genres) {
   if (!genres || genres.length === 0) return true;
   for (const g of genres) {
@@ -258,8 +275,7 @@ async function main() {
   
   console.log('比对结果:');
   console.log('  新增: ' + stats.newCount + ' 条');
-  console.log('  已存在: ' + stats.existingCount + ' 条');
-  console.log('  移除: ' + stats.removedCount + ' 条\n');
+  console.log('  已存在: ' + stats.existingCount + ' 条\n');
   
   const results = [];
   let filtered = 0;
@@ -398,17 +414,36 @@ async function main() {
       if ((i + 1) % 8 === 0 && i + 1 < newItems.length) await sleep(RATE_LIMIT.batchPause);
     }
     
-    console.log('\n\n已存在数据: 直接使用，更新热力值...');
+    console.log('\n\n已存在数据: 检查过滤，更新热力值...');
+    
+    let matchedCount = 0;
+    let historyCount = 0;
+    let historyFiltered = 0;
     
     for (const item of existingItems) {
       if (item.doubanId) {
+        if (!isChineseVarietyByTitle(item.title)) {
+          historyFiltered++;
+          console.log('  [历史过滤] ' + item.title + ' (国外/韩综)');
+          continue;
+        }
+        
         const matchedItem = matchedItems.find(m => m.id === item.doubanId);
         if (matchedItem) {
           item.rate = matchedItem.rate || item.rate;
+          matchedCount++;
+        } else {
+          historyCount++;
         }
         item.hotScore = calculateHotScore(item.rate, item.year);
         results.push(item);
       }
+    }
+    
+    console.log('  匹配更新: ' + matchedCount + ' 条');
+    console.log('  历史保留: ' + historyCount + ' 条');
+    if (historyFiltered > 0) {
+      console.log('  历史过滤: ' + historyFiltered + ' 条');
     }
   }
   

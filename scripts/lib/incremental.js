@@ -64,33 +64,22 @@ function buildIndex(items, idField = 'doubanId') {
 function compareWithExisting(listData, existingMap, idField = 'id') {
   const newItems = [];
   const existingItems = [];
-  const existingIds = new Set();
   
   for (const item of listData) {
     const itemId = item[idField];
     if (existingMap.has(itemId)) {
       existingItems.push(item);
-      existingIds.add(itemId);
     } else {
       newItems.push(item);
-    }
-  }
-  
-  const removedIds = [];
-  for (const [id] of existingMap) {
-    if (!existingIds.has(id)) {
-      removedIds.push(id);
     }
   }
   
   return {
     newItems,
     existingItems,
-    removedIds,
     stats: {
       newCount: newItems.length,
-      existingCount: existingItems.length,
-      removedCount: removedIds.length
+      existingCount: existingItems.length
     }
   };
 }
