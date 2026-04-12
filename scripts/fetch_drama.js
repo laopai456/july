@@ -1,6 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { loadCategoryData, compareWithExisting, saveData, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
 
 const DOUBAN_API = 'https://movie.douban.com/j';
 
@@ -116,10 +117,20 @@ function calculateHotScore(rating, year) {
 }
 
 async function main() {
+  const args = parseArgs();
+  
+  if (args.help) {
+    printHelp('drama');
+    return;
+  }
+  
   console.log('========================================');
-  console.log('开始获取热剧数据');
+  console.log('开始' + (args.full ? '全量' : '增量') + '更新热剧数据');
   console.log('每分类: ' + DISPLAY_COUNT + '条显示 + ' + BACKUP_COUNT + '条备用');
   console.log('========================================\n');
+  
+  const { items: existingItems, indexMap, allData } = loadCategoryData('drama');
+  console.log('加载现有数据: ' + existingItems.length + ' 条');
   
   const tags = ['国产剧', '韩剧', '日剧'];
   const allItems = [];
@@ -148,32 +159,86 @@ async function main() {
   console.log('\n共获取 ' + allItems.length + ' 条热剧\n');
   if (allItems.length === 0) { console.log('未获取到数据'); return; }
   
-  console.log('获取详细信息...');
+  const { newItems, existingItems: matchedItems, stats } = compareWithExisting(allItems, indexMap);
+  
+  console.log('比对结果:');
+  console.log('  新增: ' + stats.newCount + ' 条');
+  console.log('  已存在: ' + stats.existingCount + ' 条');
+  console.log('  移除: ' + stats.removedCount + ' 条\n');
+  
   const results = [];
   
-  for (let i = 0; i < allItems.length; i++) {
-    const item = allItems[i];
-    process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
+  if (args.full || indexMap.size === 0) {
+    console.log('获取所有数据详细信息...');
     
-    const detail = await fetchDetailByTitle(item.title);
+    for (let i = 0; i < allItems.length; i++) {
+      const item = allItems[i];
+      process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
+      
+      const detail = await fetchDetailByTitle(item.title);
+      
+      const hotScore = calculateHotScore(item.rate || 0, detail ? detail.year : item.year);
+      
+      results.push({
+        id: item.id,
+        doubanId: item.id,
+        title: item.title,
+        rate: item.rate || '0',
+        cover: item.cover || '',
+        year: detail ? (detail.year || item.year || '') : (item.year || ''),
+        directors: item.directors || [],
+        casts: item.casts || [],
+        genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
+        doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
+        hotScore: hotScore,
+        subCategory: item.subCategory
+      });
+      
+      if ((i + 1) % 8 === 0 && i + 1 < allItems.length) await sleep(RATE_LIMIT.batchPause);
+    }
+  } else {
+    console.log('获取新数据详细信息...');
     
-    const hotScore = calculateHotScore(item.rate || 0, detail ? detail.year : item.year);
+    for (let i = 0; i < newItems.length; i++) {
+      const item = newItems[i];
+      process.stdout.write('\r处理新数据: ' + (i + 1) + '/' + newItems.length + ' (' + Math.round((i / newItems.length) * 100) || 0 + '%)...');
+      
+      const detail = await fetchDetailByTitle(item.title);
+      
+      const hotScore = calculateHotScore(item.rate || 0, detail ? detail.year : item.year);
+      
+      results.push({
+        id: item.id,
+        doubanId: item.id,
+        title: item.title,
+        rate: item.rate || '0',
+        cover: item.cover || '',
+        year: detail ? (detail.year || item.year || '') : (item.year || ''),
+        directors: item.directors || [],
+        casts: item.casts || [],
+        genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
+        doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
+        hotScore: hotScore,
+        subCategory: item.subCategory
+      });
+      
+      if ((i + 1) % 8 === 0 && i + 1 < newItems.length) await sleep(RATE_LIMIT.batchPause);
+    }
     
-    results.push({
-      id: item.id,
-      title: item.title,
-      rate: item.rate || '0',
-      cover: item.cover || '',
-      year: detail ? (detail.year || item.year || '') : (item.year || ''),
-      directors: item.directors || [],
-      casts: item.casts || [],
-      genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
-      doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
-      hotScore: hotScore,
-      subCategory: item.subCategory
-    });
+    console.log('\n\n更新已存在数据热力值...');
     
-    if ((i + 1) % 8 === 0 && i + 1 < allItems.length) await sleep(RATE_LIMIT.batchPause);
+    for (const item of existingItems) {
+      if (item.doubanId) {
+        const matchedItem = matchedItems.find(m => m.id === item.doubanId);
+        if (matchedItem) {
+          item.rate = matchedItem.rate || item.rate;
+          item.hotScore = calculateHotScore(item.rate, item.year);
+        } else {
+          item.hotScore = calculateHotScore(item.rate, item.year);
+        }
+        results.push(item);
+      }
+    }
   }
   
   const chineseItems = results.filter(i => i.subCategory === '国产剧').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
@@ -188,22 +253,7 @@ async function main() {
     ...japaneseItems.map((item, i) => ({ ...item, id: 'japanese_' + String(i+1).padStart(3,'0') }))
   ];
   
-  const outputPath = path.join(__dirname, '..', 'data.json');
-  
-  let existingData = {};
-  try {
-    if (fs.existsSync(outputPath)) {
-      existingData = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
-    }
-  } catch (e) {}
-  
-  const dataToSave = {
-    ...existingData,
-    drama: finalItems,
-    dramaUpdatedAt: new Date().toISOString()
-  };
-  
-  fs.writeFileSync(outputPath, JSON.stringify(dataToSave, null, 2));
+  const { itemCount, indexCount } = saveData('drama', finalItems, allData, 'dramaIndex');
   
   console.log('\n各分类前5部:');
   console.log('\n【国产剧】');
@@ -213,9 +263,16 @@ async function main() {
   console.log('\n【日剧】');
   japaneseItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
   
+  const savedRequests = indexMap.size > 0 && !args.full ? Math.round((stats.existingCount / allItems.length) * 100) : 0;
+  
   console.log('\n========================================');
   console.log('热剧数据已保存到 data.json');
+  console.log('保存数据: ' + itemCount + ' 条');
+  console.log('生成索引: ' + indexCount + ' 条');
   console.log('总请求次数: ' + requestCount);
+  if (savedRequests > 0) {
+    console.log('节省请求: 约 ' + savedRequests + '%');
+  }
   console.log('========================================');
 }
 

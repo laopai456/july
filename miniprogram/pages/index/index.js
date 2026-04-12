@@ -400,15 +400,11 @@ Page({
   },
   
   async fetchMovieFromServer(type) {
+    const config = require('../../utils/config.js')
     return new Promise((resolve, reject) => {
-      wx.cloud.callContainer({
-        path: `/api/movie/${type}`,
-        header: {
-          "X-WX-SERVICE": "tcbanyservice",
-          "X-AnyService-Name": "movieapi",
-          "content-type": "application/json"
-        },
-        method: "GET",
+      wx.request({
+        url: config.apiBase + '/api/movie/' + type,
+        method: 'GET',
         timeout: 15000,
         success: (res) => {
           if (res.statusCode === 200 && res.data) {
