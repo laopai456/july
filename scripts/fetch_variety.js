@@ -26,6 +26,7 @@ const VARIETY_GENRES = ['真人秀', '脱口秀', '综艺', '选秀', '音乐', 
 const FOREIGN_KEYWORDS = [
   '韩国', '日本', '美国', '英国', 'Korean', 'Japanese', 'American',
   'Running Man', '无限挑战', '新西游记', '我独自生活', '认识的哥哥',
+  '爬梯子', 'EXO', 'exo', 'Exo',
   'Happy Together', 'Radio Star', '音乐银行', '人气歌谣', 'M COUNTDOWN',
   '蒙面歌王', '我家的熊孩子', '同床异梦', '妻子的味道', '三时三餐',
   '尹食堂', '姜食堂', '两天一夜', '超人回来了', '人生酒馆', '黄金渔场',

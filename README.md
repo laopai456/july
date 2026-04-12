@@ -100,13 +100,44 @@ pm2 restart movie-api
 ```bash
 # 本地修改后推送到 GitHub
 git add .
-git commit -m "update scripts"
+git commit -m "v1.0.0.6.6"
 git push origin main
 
 # 服务器拉取更新
 cd /opt/movie-api
 git pull origin main
 pm2 restart movie-api
+```
+
+## 开发规范
+
+### Commit Message 命名规则
+
+版本号格式：`v1.0.0.6.6`
+
+```
+v[大版本].[功能版本].[修复版本].[迭代版本].[小更新]
+```
+
+示例：
+- `v1.0.0.6.5` - 原始版本
+- `v1.0.0.6.6` - 增量更新功能
+- `v1.0.0.6.7` - Bug修复
+- `v1.0.0.7.0` - 新功能迭代
+
+### 数据更新命令
+
+```bash
+# 增量更新（默认）
+node scripts/fetch_variety.js
+node scripts/fetch_movie.js
+node scripts/fetch_drama.js
+
+# 强制全量更新
+node scripts/fetch_variety.js --full
+
+# 查看帮助
+node scripts/fetch_variety.js --help
 ```
 
 ## 分类结构
