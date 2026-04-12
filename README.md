@@ -6,7 +6,7 @@
 
 - **新拟态设计**：柔和的渐变背景、软质凸起的光影效果、大圆角设计
 - **子分类榜单**：每个主分类下有3个子分类，精细化内容展示
-- **实时数据**：从豆瓣API实时获取电影/热剧数据
+- **服务端数据**：数据由服务端脚本定期抓取，存储在 data.json
 - **本地缓存**：30分钟缓存，下拉刷新清除缓存
 - **国产综艺**：综艺数据仅包含国产综艺，自动过滤韩综、美综等国外内容
 
@@ -14,9 +14,9 @@
 
 | 分类 | 子分类 | 数据源 | 说明 |
 |------|--------|--------|------|
-| 综艺 | 真人秀/喜剧/音综 | 本地数据 | 从豆瓣获取国产综艺后存储在服务器 |
-| 电影 | 热门/高分/最新 | 豆瓣API | 实时获取 |
-| 热剧 | 韩剧/日剧/国产剧 | 豆瓣API | 实时获取 |
+| 综艺 | 真人秀/喜剧/音综 | 豆瓣API | 服务端脚本抓取，过滤国外综艺 |
+| 电影 | 中国/日韩/欧美 | 豆瓣API | 服务端脚本抓取，按地区分类 |
+| 热剧 | 国产剧/韩剧/日剧 | 豆瓣API | 服务端脚本抓取 |
 
 ## 项目结构
 
@@ -36,15 +36,12 @@ july/
 │   └── utils/
 │       ├── api.js               # API 封装
 │       └── config.js            # 配置文件
-├── cloudfunctions/              # 云函数
-│   ├── douban/                  # 豆瓣数据获取服务
-│   ├── movieService/            # 电影服务
-│   ├── searchService/           # 搜索服务
-│   └── userService/             # 用户服务
-├── scripts/                     # 脚本
-│   └── fetch_variety.js         # 综艺数据获取脚本
+├── scripts/                     # 数据抓取脚本
+│   ├── fetch_variety.js         # 综艺数据抓取
+│   ├── fetch_movie.js           # 电影数据抓取
+│   └── fetch_drama.js           # 热剧数据抓取
 ├── server.js                    # 后端服务（部署到云服务器）
-├── data.json                    # 综艺数据文件
+├── data.json                    # 数据存储文件
 └── project.config.json
 ```
 
@@ -62,26 +59,14 @@ july/
 2. 导入项目目录
 3. 填写 AppID
 
-### 3. 开通云开发
-
-1. 点击工具栏「云开发」按钮
-2. 开通云开发环境
-3. 记录环境 ID
-4. 修改 `miniprogram/app.js` 中的环境 ID
-
-### 4. 部署云函数
-
-右键点击 `cloudfunctions` 下的各文件夹，选择「上传并部署：云端安装依赖」
-
-### 5. 部署后端服务
+### 3. 部署后端服务
 
 ```bash
 # 在云服务器上
-cd /opt/movie-api
+cd /opt
+git clone https://github.com/laopai456/july.git movie-api
+cd movie-api
 npm install express axios
-
-# 创建 server.js（见项目根目录）
-# 创建 data.json（综艺数据）
 
 # 启动服务
 node server.js
@@ -91,14 +76,36 @@ pm2 start server.js --name movie-api
 pm2 save
 ```
 
-### 6. 更新综艺数据
+### 4. 更新数据
 
 ```bash
-# 在服务器上运行（文件在项目根目录）
+# 在服务器上运行
 cd /opt/movie-api
-node fetch_variety.js
+
+# 更新综艺数据
+node scripts/fetch_variety.js
+
+# 更新电影数据
+node scripts/fetch_movie.js
+
+# 更新热剧数据
+node scripts/fetch_drama.js
 
 # 重启服务
+pm2 restart movie-api
+```
+
+### 5. 通过 Git 同步更新
+
+```bash
+# 本地修改后推送到 GitHub
+git add .
+git commit -m "update scripts"
+git push origin main
+
+# 服务器拉取更新
+cd /opt/movie-api
+git pull origin main
 pm2 restart movie-api
 ```
 
@@ -107,10 +114,20 @@ pm2 restart movie-api
 | 主分类 | 子分类 |
 |--------|--------|
 | 综艺 | 真人秀 / 喜剧 / 音综 |
-| 热剧 | 韩剧 / 日剧 / 国产剧 |
-| 电影 | 热门 / 高分 / 最新 |
+| 电影 | 中国 / 日韩 / 欧美 |
+| 热剧 | 国产剧 / 韩剧 / 日剧 |
 
-每个子分类展示 **30部** 作品
+每个子分类展示 **20条** 显示 + **30条** 备用
+
+## 电影分类规则
+
+电影按地区分类：
+
+| 子分类 | 包含地区 |
+|--------|----------|
+| 中国 | 中国大陆、台湾、香港 |
+| 日韩 | 日本、韩国、泰国、印度 |
+| 欧美 | 美国、英国、法国、德国、西班牙、意大利、俄罗斯、加拿大、澳大利亚 |
 
 ## 综艺分类规则
 
@@ -132,6 +149,7 @@ pm2 restart movie-api
 | 日本综艺 | 日本、Japanese... |
 | 欧美综艺 | 美国、Netflix、HBO、BBC... |
 | 韩文字符 | 标题包含韩文（Unicode范围 \uAC00-\uD7AF） |
+| 韩国姓氏 | 演员/嘉宾中40%以上为韩国姓氏 |
 | 非综艺类型 | 剧集、电影等非综艺类型 |
 
 ## 设计风格
@@ -146,10 +164,9 @@ pm2 restart movie-api
 ## 技术栈
 
 - 微信小程序原生框架
-- 微信云开发
-- 云函数（Node.js）
 - Express.js（后端服务）
 - 豆瓣API（数据源）
+- Node.js 数据抓取脚本
 
 ## 当前状态
 
@@ -159,6 +176,7 @@ pm2 restart movie-api
 | 综艺分类 | ✅ 已完成 |
 | 国产综艺过滤 | ✅ 已完成 |
 | 电影列表 | ✅ 已完成 |
+| 电影地区分类 | ✅ 已完成 |
 | 热剧列表 | ✅ 已完成 |
 | 详情页 | ⏳ 待完善 |
 | 搜索功能 | ⏳ 待完善 |
