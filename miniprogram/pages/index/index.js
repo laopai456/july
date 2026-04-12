@@ -2,7 +2,7 @@ const TABS = ['综艺', '电影', '热剧']
 
 const SUB_CATEGORIES = {
   '综艺': ['真人秀', '喜剧', '音综'],
-  '电影': ['热门', '高分', '最新'],
+  '电影': ['中国', '日韩', '欧美'],
   '热剧': ['韩剧', '日剧', '国产剧']
 }
 
@@ -358,12 +358,12 @@ Page({
   async loadMovie(subCategory) {
     try {
       const typeMap = {
-        '热门': 'hot',
-        '高分': 'highscore',
-        '最新': 'latest'
+        '中国': 'chinese',
+        '日韩': 'asia',
+        '欧美': 'western'
       }
       
-      const result = await this.fetchMovieFromServer(typeMap[subCategory] || 'hot')
+      const result = await this.fetchMovieFromServer(typeMap[subCategory] || 'chinese')
       
       if (!result || !result.subjects) return []
       
@@ -381,17 +381,16 @@ Page({
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
-        cast: [],
-        director: '',
+        cast: item.casts || [],
+        director: (item.directors || [])[0] || '',
+        hotScore: item.hotScore || 0,
         status: 'released',
         viewCount: 0,
         rank: index + 1
       }))
       
-      allItems.sort((a, b) => b.rating - a.rating)
+      allItems.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
       const filtered = allItems.slice(0, 30)
-      
-      this.setData({ subCategoryCounts: [filtered.length, 0, 0] })
       
       return filtered
     } catch (err) {
@@ -445,14 +444,15 @@ Page({
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
-        cast: [],
-        director: '',
+        cast: item.casts || [],
+        director: (item.directors || [])[0] || '',
+        hotScore: item.hotScore || 0,
         status: 'ongoing',
         viewCount: 0,
         rank: index + 1
       }))
       
-      allItems.sort((a, b) => b.rating - a.rating)
+      allItems.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
       const filtered = allItems.slice(0, 30)
       
       this.setData({ subCategoryCounts: [filtered.length, 0, 0] })
@@ -484,14 +484,15 @@ Page({
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
-        cast: [],
-        director: '',
+        cast: item.casts || [],
+        director: (item.directors || [])[0] || '',
+        hotScore: item.hotScore || 0,
         status: 'ongoing',
         viewCount: 0,
         rank: index + 1
       }))
       
-      allItems.sort((a, b) => b.rating - a.rating)
+      allItems.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
       const filtered = allItems.slice(0, 30)
       
       this.setData({ subCategoryCounts: [0, filtered.length, 0] })
@@ -523,14 +524,15 @@ Page({
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
-        cast: [],
-        director: '',
+        cast: item.casts || [],
+        director: (item.directors || [])[0] || '',
+        hotScore: item.hotScore || 0,
         status: 'ongoing',
         viewCount: 0,
         rank: index + 1
       }))
       
-      allItems.sort((a, b) => b.rating - a.rating)
+      allItems.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
       const filtered = allItems.slice(0, 30)
       
       this.setData({ subCategoryCounts: [0, 0, filtered.length] })

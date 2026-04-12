@@ -91,9 +91,9 @@ app.get('/api/movie/:type', async (req, res) => {
   const localData = loadLocalData();
   
   const typeMap = {
-    'hot': '热门',
-    'latest': '最新',
-    'highscore': '高分'
+    'chinese': '中国',
+    'asia': '日韩',
+    'western': '欧美'
   };
   
   if (localData && localData.movie && localData.movie.length > 0) {
@@ -109,15 +109,15 @@ app.get('/api/movie/:type', async (req, res) => {
   
   try {
     const tags = {
-      'hot': '热门',
-      'latest': '最新',
-      'highscore': '高分'
+      'chinese': '华语电影',
+      'asia': '日本电影',
+      'western': '欧美电影'
     };
     
     const data = await fetchWithRetry(`${DOUBAN_API}/search_subjects`, {
       type: 'movie',
       tag: tags[type],
-      sort: type === 'highscore' ? 'rank' : 'recommend',
+      sort: 'recommend',
       page_limit: 20,
       page_start: 0
     });

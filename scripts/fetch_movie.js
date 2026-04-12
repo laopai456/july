@@ -75,8 +75,8 @@ async function fetchWithRetry(url, params) {
   return null;
 }
 
-async function fetchList(tag, start, limit) {
-  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', { sort: 'U', range: '0,10', tags: tag, start, limit });
+async function fetchList(tag, sort, start, limit) {
+  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', { sort: sort || 'U', range: '0,10', tags: tag, start, limit });
   return data ? (data.data || []) : [];
 }
 
@@ -121,28 +121,35 @@ async function main() {
   console.log('每分类: ' + DISPLAY_COUNT + '条显示 + ' + BACKUP_COUNT + '条备用');
   console.log('========================================\n');
   
-  const tags = ['热门', '最新', '高分'];
+  const categories = [
+    { name: '中国', tags: ['电影,中国大陆', '电影,台湾', '电影,香港'] },
+    { name: '日韩', tags: ['电影,日本', '电影,韩国', '电影,泰国', '电影,印度'] },
+    { name: '欧美', tags: ['电影,美国', '电影,英国', '电影,法国', '电影,德国', '电影,西班牙', '电影,意大利', '电影,俄罗斯', '电影,加拿大', '电影,澳大利亚'] }
+  ];
   const allItems = [];
   const seenIds = new Set();
   
-  for (const tag of tags) {
-    console.log('\n【获取 ' + tag + ' 电影】');
+  for (const cat of categories) {
+    console.log('\n【获取 ' + cat.name + ' 电影】');
     
-    for (let start = 0; start < 40; start += RATE_LIMIT.batchSize) {
-      const batchNum = Math.floor(start / RATE_LIMIT.batchSize) + 1;
-      process.stdout.write('\r[批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 40) + ' 条...');
-      
-      const list = await fetchList('电影,' + tag, start, RATE_LIMIT.batchSize);
-      for (const item of list) {
-        if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push({ ...item, subCategory: tag }); }
+    for (const tag of cat.tags) {
+      console.log('  标签: ' + tag);
+      for (let start = 0; start < 20; start += RATE_LIMIT.batchSize) {
+        const batchNum = Math.floor(start / RATE_LIMIT.batchSize) + 1;
+        process.stdout.write('\r    [批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 20) + ' 条...');
+        
+        const list = await fetchList(tag, 'U', start, RATE_LIMIT.batchSize);
+        for (const item of list) {
+          if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push({ ...item, subCategory: cat.name }); }
+        }
+        
+        if (start + RATE_LIMIT.batchSize < 20) {
+          process.stdout.write(' 等待中...');
+          await sleep(RATE_LIMIT.batchPause);
+        }
       }
-      
-      if (start + RATE_LIMIT.batchSize < 40) {
-        process.stdout.write(' 等待中...');
-        await sleep(RATE_LIMIT.batchPause);
-      }
+      console.log(' 完成');
     }
-    console.log(' 完成');
   }
   
   console.log('\n共获取 ' + allItems.length + ' 条电影\n');
@@ -176,16 +183,16 @@ async function main() {
     if ((i + 1) % 8 === 0 && i + 1 < allItems.length) await sleep(RATE_LIMIT.batchPause);
   }
   
-  const hotItems = results.filter(i => i.subCategory === '热门').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
-  const latestItems = results.filter(i => i.subCategory === '最新').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
-  const highscoreItems = results.filter(i => i.subCategory === '高分').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
+  const chineseItems = results.filter(i => i.subCategory === '中国').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
+  const asiaItems = results.filter(i => i.subCategory === '日韩').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
+  const westernItems = results.filter(i => i.subCategory === '欧美').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
   
-  console.log('\n\n分类统计: 热门 ' + hotItems.length + ' / 最新 ' + latestItems.length + ' / 高分 ' + highscoreItems.length);
+  console.log('\n\n分类统计: 中国 ' + chineseItems.length + ' / 日韩 ' + asiaItems.length + ' / 欧美 ' + westernItems.length);
   
   const finalItems = [
-    ...hotItems.map((item, i) => ({ ...item, id: 'hot_' + String(i+1).padStart(3,'0') })),
-    ...latestItems.map((item, i) => ({ ...item, id: 'latest_' + String(i+1).padStart(3,'0') })),
-    ...highscoreItems.map((item, i) => ({ ...item, id: 'highscore_' + String(i+1).padStart(3,'0') }))
+    ...chineseItems.map((item, i) => ({ ...item, id: 'chinese_' + String(i+1).padStart(3,'0') })),
+    ...asiaItems.map((item, i) => ({ ...item, id: 'asia_' + String(i+1).padStart(3,'0') })),
+    ...westernItems.map((item, i) => ({ ...item, id: 'western_' + String(i+1).padStart(3,'0') }))
   ];
   
   const outputPath = path.join(__dirname, '..', 'data.json');
@@ -206,12 +213,12 @@ async function main() {
   fs.writeFileSync(outputPath, JSON.stringify(dataToSave, null, 2));
   
   console.log('\n各分类前5部:');
-  console.log('\n【热门】');
-  hotItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
-  console.log('\n【最新】');
-  latestItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
-  console.log('\n【高分】');
-  highscoreItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
+  console.log('\n【中国】');
+  chineseItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
+  console.log('\n【日韩】');
+  asiaItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
+  console.log('\n【欧美】');
+  westernItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
   
   console.log('\n========================================');
   console.log('电影数据已保存到 data.json');
