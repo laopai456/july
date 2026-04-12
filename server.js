@@ -41,23 +41,27 @@ function loadLocalData() {
   return null;
 }
 
+function formatItem(item) {
+  return {
+    id: item.id,
+    title: item.title,
+    cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+    rate: item.rate || '0',
+    year: item.year || '',
+    genres: item.genres || [],
+    summary: '',
+    directors: item.directors || [],
+    casts: item.casts || [],
+    subCategory: item.subCategory || '',
+    hotScore: item.hotScore || 0
+  };
+}
+
 app.get('/api/variety', async (req, res) => {
   const localData = loadLocalData();
   
   if (localData && localData.variety && localData.variety.length > 0) {
-    const subjects = localData.variety.map((item) => ({
-      id: item.id,
-      title: item.title,
-      cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
-      rate: item.rate || '0',
-      year: item.year || '',
-      genres: item.genres || [],
-      summary: '',
-      directors: item.directors || [],
-      casts: item.casts || [],
-      subCategory: item.subCategory || '真人秀',
-      hotScore: item.hotScore || 0
-    }));
+    const subjects = localData.variety.map(formatItem);
     
     return res.json({
       subjects,
@@ -75,6 +79,104 @@ app.get('/api/variety', async (req, res) => {
       page_limit: 30,
       page_start: 0
     });
+    
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/movie/:type', async (req, res) => {
+  const { type } = req.params;
+  const localData = loadLocalData();
+  
+  const typeMap = {
+    'hot': '热门',
+    'latest': '最新',
+    'highscore': '高分'
+  };
+  
+  if (localData && localData.movie && localData.movie.length > 0) {
+    const filtered = localData.movie.filter(item => item.subCategory === typeMap[type]);
+    const subjects = filtered.map(formatItem);
+    
+    return res.json({
+      subjects,
+      total: subjects.length,
+      source: 'local'
+    });
+  }
+  
+  try {
+    const tags = {
+      'hot': '热门',
+      'latest': '最新',
+      'highscore': '高分'
+    };
+    
+    const data = await fetchWithRetry(`${DOUBAN_API}/search_subjects`, {
+      type: 'movie',
+      tag: tags[type],
+      sort: type === 'highscore' ? 'rank' : 'recommend',
+      page_limit: 20,
+      page_start: 0
+    });
+    
+    if (data && data.subjects) {
+      data.subjects = data.subjects.map(item => ({
+        ...item,
+        cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim()
+      }));
+    }
+    
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/drama/:type', async (req, res) => {
+  const { type } = req.params;
+  const localData = loadLocalData();
+  
+  const typeMap = {
+    'chinese': '国产剧',
+    'korean': '韩剧',
+    'japanese': '日剧'
+  };
+  
+  if (localData && localData.drama && localData.drama.length > 0) {
+    const filtered = localData.drama.filter(item => item.subCategory === typeMap[type]);
+    const subjects = filtered.map(formatItem);
+    
+    return res.json({
+      subjects,
+      total: subjects.length,
+      source: 'local'
+    });
+  }
+  
+  try {
+    const tags = {
+      'chinese': '国产剧',
+      'korean': '韩剧',
+      'japanese': '日剧'
+    };
+    
+    const data = await fetchWithRetry(`${DOUBAN_API}/search_subjects`, {
+      type: 'tv',
+      tag: tags[type],
+      sort: 'rank',
+      page_limit: 20,
+      page_start: 0
+    });
+    
+    if (data && data.subjects) {
+      data.subjects = data.subjects.map(item => ({
+        ...item,
+        cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim()
+      }));
+    }
     
     res.json(data);
   } catch (error) {
@@ -125,66 +227,6 @@ app.get('/api/variety/status', (req, res) => {
     updatedAt: localData?.updatedAt || null,
     source: localData?.source || 'unknown'
   });
-});
-
-app.get('/api/drama/:type', async (req, res) => {
-  const { type } = req.params;
-  const tags = {
-    'korean': '韩剧',
-    'japanese': '日剧',
-    'chinese': '国产剧'
-  };
-  
-  try {
-    const data = await fetchWithRetry(`${DOUBAN_API}/search_subjects`, {
-      type: 'tv',
-      tag: tags[type],
-      sort: 'rank',
-      page_limit: 20,
-      page_start: 0
-    });
-    
-    if (data && data.subjects) {
-      data.subjects = data.subjects.map(item => ({
-        ...item,
-        cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim()
-      }));
-    }
-    
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/movie/:type', async (req, res) => {
-  const { type } = req.params;
-  const tags = {
-    'hot': '热门',
-    'highscore': '高分',
-    'latest': '最新'
-  };
-  
-  try {
-    const data = await fetchWithRetry(`${DOUBAN_API}/search_subjects`, {
-      type: 'movie',
-      tag: tags[type],
-      sort: type === 'highscore' ? 'rank' : 'recommend',
-      page_limit: 20,
-      page_start: 0
-    });
-    
-    if (data && data.subjects) {
-      data.subjects = data.subjects.map(item => ({
-        ...item,
-        cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim()
-      }));
-    }
-    
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
 app.listen(3000, () => {

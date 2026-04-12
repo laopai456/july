@@ -36,11 +36,15 @@ const FOREIGN_KEYWORDS = [
   'You Quiz', '文明特急', '爱豆房', 'idol Room', '一周的偶像', 'After School Club',
   '单身即地狱', '地狱', '李瑞镇', '达拉达拉', '体能之巅', 'Physical',
   '换乘恋爱', 'heart signal', 'Heart Signal', '黑话律师', 'Big Mouth',
-  '异能', 'Moving', '鱿鱼游戏', 'Squid Game', '黑暗荣耀', 'Glory'
+  '异能', 'Moving', '鱿鱼游戏', 'Squid Game', '黑暗荣耀', 'Glory',
+  '小镇魔发师', '怪奇谜案', '天机试炼场', '天下烘焙', '给我钱',
+  '朴宝剑', '李相二', '郭东延', '郑智薰', '李龙真', '朴成奎', '李惠利',
+  '全炫茂', '申东熙', '姜智荣', '朴娜莱', '朴河宣', '李多熙', '金美贤',
+  '禹智皓', '申效涉', '李星和', '权爀禹', '朴宰范'
 ];
 
-const DISPLAY_COUNT = 10;
-const BACKUP_COUNT = 0;
+const DISPLAY_COUNT = 20;
+const BACKUP_COUNT = 30;
 const TOTAL_PER_CATEGORY = DISPLAY_COUNT + BACKUP_COUNT;
 
 const RATE_LIMIT = {
@@ -96,7 +100,7 @@ async function fetchWithRetry(url, params) {
       await waitForRateLimit();
       const response = await axios.get(url, { params, headers: getHeaders(), timeout: RATE_LIMIT.requestTimeout });
       if (response.data && response.data.msg === '检测到有异常请求') {
-        await sleep(20000);
+        await sleep(10000);
         continue;
       }
       return response.data;
@@ -115,7 +119,6 @@ async function fetchList(start, limit) {
 
 async function fetchDetailByTitle(title) {
   const data = await fetchWithRetry(DOUBAN_API + '/subject_suggest', { q: title });
-  console.log('  [调试] 搜索 "' + title + '" 返回:', data ? (Array.isArray(data) ? data.length + '条' : JSON.stringify(data).substring(0, 100)) : 'null');
   return (data && data.length > 0) ? data[0] : null;
 }
 
@@ -158,7 +161,7 @@ function isChineseVariety(title, detail, casts) {
   }
   
   if (casts && casts.length > 0) {
-    const koreanSurnames = ['金', '李', '朴', '崔', '郑', '姜', '赵', '尹', '张', '林', '吴', '韩', '申', '权', '全', '禹'];
+    const koreanSurnames = ['金', '李', '朴', '崔', '郑', '姜', '赵', '尹', '张', '林', '吴', '韩', '申', '权', '全', '禹', '徐', '黄', '宋', '柳', '洪', '安', '文', '孙', '高', '白', '沈', '周', '车', '成', '任', '田', '郭', '许', '罗', '南', '边', '严', '元', '蔡', '丁', '闵', '陈', '池', '裴', '潘', '薛', '马', '廉', '俞', '卢', '河', '邵', '石', '桂', '邱', '秦', '杜', '蒋', '钟', '魏', '杨', '温', '于', '叶', '范', '苏', '葛', '吕', '邢', '史', '刘', '王'];
     let koreanCount = 0;
     for (const cast of casts) {
       const name = cast.split(' ')[0];
@@ -166,7 +169,7 @@ function isChineseVariety(title, detail, casts) {
         koreanCount++;
       }
     }
-    if (koreanCount >= casts.length * 0.5) {
+    if (koreanCount >= casts.length * 0.4) {
       return false;
     }
   }
@@ -212,53 +215,25 @@ function calculateHotScore(rating, year) {
   return hotScore;
 }
 
-async function fetchCollectCount(id) {
-  try {
-    const url = 'https://movie.douban.com/subject/' + id + '/';
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Cookie': COOKIE
-      },
-      timeout: 10000
-    });
-    
-    const html = response.data;
-    const match = html.match(/(\d+)人评价/);
-    if (match) {
-      return parseInt(match[1]);
-    }
-    
-    const ratingMatch = html.match(/property="v:votes">(\d+)</);
-    if (ratingMatch) {
-      return parseInt(ratingMatch[1]);
-    }
-    
-    return 0;
-  } catch (e) {
-    return 0;
-  }
-}
-
 async function main() {
   console.log('========================================');
-  console.log('开始获取综艺数据（测试模式 - 仅国产）');
-  console.log('每分类: ' + DISPLAY_COUNT + '条 (测试)');
+  console.log('开始获取综艺数据');
+  console.log('每分类: ' + DISPLAY_COUNT + '条显示 + ' + BACKUP_COUNT + '条备用');
   console.log('========================================\n');
   
   const allItems = [];
   const seenIds = new Set();
   
-  for (let start = 0; start < 60; start += RATE_LIMIT.batchSize) {
+  for (let start = 0; start < 100; start += RATE_LIMIT.batchSize) {
     const batchNum = Math.floor(start / RATE_LIMIT.batchSize) + 1;
-    process.stdout.write('\r[批次 ' + batchNum + '/3] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 60) + ' 条...');
+    process.stdout.write('\r[批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 100) + ' 条...');
     
     const list = await fetchList(start, RATE_LIMIT.batchSize);
     for (const item of list) {
       if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push(item); }
     }
     
-    if (start + RATE_LIMIT.batchSize < 60) {
+    if (start + RATE_LIMIT.batchSize < 100) {
       process.stdout.write(' 等待中...');
       await sleep(RATE_LIMIT.batchPause);
     }
@@ -327,7 +302,22 @@ async function main() {
   ];
   
   const outputPath = path.join(__dirname, '..', 'data.json');
-  fs.writeFileSync(outputPath, JSON.stringify({ variety: finalItems, config: { displayCount: DISPLAY_COUNT, backupCount: BACKUP_COUNT } }, null, 2));
+  
+  let existingData = {};
+  try {
+    if (fs.existsSync(outputPath)) {
+      existingData = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+    }
+  } catch (e) {}
+  
+  const dataToSave = {
+    ...existingData,
+    variety: finalItems,
+    config: { displayCount: DISPLAY_COUNT, backupCount: BACKUP_COUNT },
+    varietyUpdatedAt: new Date().toISOString()
+  };
+  
+  fs.writeFileSync(outputPath, JSON.stringify(dataToSave, null, 2));
   
   console.log('\n各分类前5部:');
   console.log('\n【真人秀】');
@@ -338,8 +328,13 @@ async function main() {
   musicItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
   
   console.log('\n========================================');
-  console.log('完成！总请求次数: ' + requestCount);
+  console.log('综艺数据已保存到 data.json');
+  console.log('总请求次数: ' + requestCount);
   console.log('========================================');
 }
 
-main().catch(e => console.error('错误:', e.message));
+module.exports = { main };
+
+if (require.main === module) {
+  main().catch(e => console.error('错误:', e.message));
+}
