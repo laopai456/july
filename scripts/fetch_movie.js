@@ -82,7 +82,17 @@ async function fetchList(tag, sort, start, limit) {
 
 async function fetchDetailByTitle(title) {
   const data = await fetchWithRetry(DOUBAN_API + '/subject_suggest', { q: title });
-  return (data && data.length > 0) ? data[0] : null;
+  if (!data || data.length === 0) return null;
+  for (const item of data) {
+    if (item.type === 'movie') return item;
+  }
+  return null;
+}
+
+function extractYear(text) {
+  if (!text) return '';
+  const match = text.match(/\((\d{4})\)/);
+  return match ? match[1] : '';
 }
 
 function calculateHotScore(rating, year) {
@@ -164,14 +174,25 @@ async function main() {
     
     const detail = await fetchDetailByTitle(item.title);
     
-    const hotScore = calculateHotScore(item.rate || 0, detail ? detail.year : item.year);
+    let year = '';
+    if (detail && detail.year) {
+      year = detail.year;
+    } else if (item.year) {
+      year = item.year;
+    } else if (detail && detail.sub_title) {
+      year = extractYear(detail.sub_title);
+    } else if (detail && detail.title) {
+      year = extractYear(detail.title);
+    }
+    
+    const hotScore = calculateHotScore(item.rate || 0, year);
     
     results.push({
       id: item.id,
       title: item.title,
       rate: item.rate || '0',
       cover: item.cover || '',
-      year: detail ? (detail.year || item.year || '') : (item.year || ''),
+      year: year,
       directors: item.directors || [],
       casts: item.casts || [],
       genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
