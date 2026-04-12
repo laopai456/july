@@ -7,44 +7,6 @@ const DOUBAN_API = 'https://movie.douban.com/j';
 
 const COOKIE = 'bid=rmXci4zuhOM; ll="108296"; _vwo_uuid_v2=D59C352040A1639E04E09902C371DD105|9678fa318ad695dac8c843b5c1c9a040; ct=y; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1775882738%2C%22https%3A%2F%2Fwww.bing.com%2F%22%5D; _pk_id.100001.8cb4=2c2064abfd652ae3.1775882738.; _pk_ses.100001.8cb4=1; __utma=30149280.179540387.1769946188.1775475731.1775882738.6; __utmc=30149280; __utmz=30149280.1775882738.6.6.utmcsr=bing|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); dbcl2="294605645:jC7dIJCo830"; ck=0r2i; ap_v=0,6.0; push_noty_num=0; push_doumail_num=0; __utmt=1; __utmv=30149280.29460; frodotk_db="99fc964026b41c93cdf5c2c0741c55b9"; __utmb=30149280.8.10.1775882738';
 
-const COMEDY_PATTERNS = [
-  '喜剧', '搞笑', '脱口秀', '吐槽', '段子', '欢乐', '开心', '爆笑',
-  '笑傲', '喜剧人', '喜剧大赛', '一年一度', '喜人', '欢乐喜剧'
-];
-
-const MUSIC_PATTERNS = [
-  '音乐', '歌唱', '歌手', '唱歌', '声音', '好声音', '我是歌手',
-  '超级女声', '快乐男声', '创造营', '青春有你', '偶像练习生',
-  '乘风', '披荆斩棘', '舞蹈', '跳舞', '舞者', '街舞', '舞蹈风暴',
-  '选秀', '偶像', '练习生', '出道', '成团', '蒙面唱', '蒙面歌王',
-  '天赐的声音', '声入人心', '我们的歌', '时光音乐会', '乐队的夏天',
-  '说唱', '明日之子', '创造101', '以团之名', '音综', '乐队'
-];
-
-const VARIETY_GENRES = ['真人秀', '脱口秀', '综艺', '选秀', '音乐', '游戏', '竞技', '搞笑', '喜剧', '访谈', '生活', '旅行', '美食', '情感', '恋爱'];
-
-const FOREIGN_KEYWORDS = [
-  '韩国', '日本', '美国', '英国', 'Korean', 'Japanese', 'American',
-  'Running Man', '无限挑战', '新西游记', '我独自生活', '认识的哥哥',
-  '爬梯子', 'EXO', 'exo', 'Exo',
-  'Happy Together', 'Radio Star', '音乐银行', '人气歌谣', 'M COUNTDOWN',
-  '蒙面歌王', '我家的熊孩子', '同床异梦', '妻子的味道', '三时三餐',
-  '尹食堂', '姜食堂', '两天一夜', '超人回来了', '人生酒馆', '黄金渔场',
-  '白钟元', '林中小屋', '暑假', '露营', '地球娱乐室', '海妖的呼唤',
-  'The Zone', '犯罪现场', '女高推理', '魔鬼的计谋', '四个愿望',
-  'Hacks', 'Netflix', 'HBO', 'BBC',
-  '请回答', '豆豆笑笑', '搞笑演唱会', 'Gag Concert', '寻笑人',
-  'SNL Korea', '全知干预视角', '玩什么好呢', '闲着干嘛呢', '刘QUIZ',
-  'You Quiz', '文明特急', '爱豆房', 'idol Room', '一周的偶像', 'After School Club',
-  '单身即地狱', '地狱', '李瑞镇', '达拉达拉', '体能之巅', 'Physical',
-  '换乘恋爱', 'heart signal', 'Heart Signal', '黑话律师', 'Big Mouth',
-  '异能', 'Moving', '鱿鱼游戏', 'Squid Game', '黑暗荣耀', 'Glory',
-  '小镇魔发师', '怪奇谜案', '天机试炼场', '天下烘焙', '给我钱',
-  '朴宝剑', '李相二', '郭东延', '郑智薰', '李龙真', '朴成奎', '李惠利',
-  '全炫茂', '申东熙', '姜智荣', '朴娜莱', '朴河宣', '李多熙', '金美贤',
-  '禹智皓', '申效涉', '李星和', '权爀禹', '朴宰范'
-];
-
 const DISPLAY_COUNT = 20;
 const BACKUP_COUNT = 30;
 const TOTAL_PER_CATEGORY = DISPLAY_COUNT + BACKUP_COUNT;
@@ -124,86 +86,6 @@ async function fetchDetailByTitle(title) {
   return (data && data.length > 0) ? data[0] : null;
 }
 
-function normalizeText(text) {
-  return (text || '').replace(/[！？。，、；：""''【】《》（）\s\-\_\.\!\?\,\;\:\"\'\[\]\(\)]/g, '').replace(/第[一二三四五六七八九十\d]+季/g, '').replace(/\d+/g, '').toLowerCase();
-}
-
-function matchPattern(text, patterns) {
-  const normalized = normalizeText(text);
-  for (const p of patterns) { if (normalized.includes(normalizeText(p))) return true; }
-  return false;
-}
-
-function getSubCategory(title, genres) {
-  const allText = title + ' ' + (genres || []).join(' ');
-  if (matchPattern(allText, MUSIC_PATTERNS)) return '音综';
-  if (matchPattern(allText, COMEDY_PATTERNS)) return '喜剧';
-  return '真人秀';
-}
-
-function isChineseVariety(title, detail, casts) {
-  const combinedText = title + ' ' + (detail ? (detail.sub_title || '') : '');
-  
-  for (const keyword of FOREIGN_KEYWORDS) {
-    if (combinedText.toLowerCase().includes(keyword.toLowerCase())) {
-      return false;
-    }
-  }
-  
-  if (detail && detail.sub_title) {
-    const subTitle = detail.sub_title;
-    if (/^[A-Za-z]+$/.test(subTitle) && subTitle.length >= 4) {
-      return false;
-    }
-  }
-  
-  const koreanPattern = /[\uAC00-\uD7AF]/;
-  if (koreanPattern.test(title)) {
-    return false;
-  }
-  
-  if (casts && casts.length > 0) {
-    const koreanSurnames = ['金', '李', '朴', '崔', '郑', '姜', '赵', '尹', '张', '林', '吴', '韩', '申', '权', '全', '禹', '徐', '黄', '宋', '柳', '洪', '安', '文', '孙', '高', '白', '沈', '周', '车', '成', '任', '田', '郭', '许', '罗', '南', '边', '严', '元', '蔡', '丁', '闵', '陈', '池', '裴', '潘', '薛', '马', '廉', '俞', '卢', '河', '邵', '石', '桂', '邱', '秦', '杜', '蒋', '钟', '魏', '杨', '温', '于', '叶', '范', '苏', '葛', '吕', '邢', '史', '刘', '王'];
-    let koreanCount = 0;
-    for (const cast of casts) {
-      const name = cast.split(' ')[0];
-      if (koreanSurnames.includes(name) || koreanPattern.test(cast)) {
-        koreanCount++;
-      }
-    }
-    if (koreanCount >= casts.length * 0.4) {
-      return false;
-    }
-  }
-  
-  return true;
-}
-
-function isChineseVarietyByTitle(title) {
-  if (!title) return true;
-  
-  for (const keyword of FOREIGN_KEYWORDS) {
-    if (title.toLowerCase().includes(keyword.toLowerCase())) {
-      return false;
-    }
-  }
-  
-  const koreanPattern = /[\uAC00-\uD7AF]/;
-  if (koreanPattern.test(title)) {
-    return false;
-  }
-  
-  return true;
-}
-
-function isVarietyType(genres) {
-  if (!genres || genres.length === 0) return true;
-  for (const g of genres) {
-    if (VARIETY_GENRES.includes(g)) return true;
-  }
-  return false;
-}
-
 function calculateHotScore(rating, year) {
   const currentYear = new Date().getFullYear();
   const itemYear = parseInt(year) || currentYear;
@@ -232,6 +114,30 @@ function calculateHotScore(rating, year) {
   const hotScore = Math.max(10, baseScore + timeBonus + rateBonus);
   
   return hotScore;
+}
+
+function getSubCategory(title, genres) {
+  const allText = title + ' ' + (genres || []).join(' ');
+  
+  const musicPatterns = ['音乐', '歌唱', '歌手', '唱歌', '声音', '好声音', '我是歌手',
+    '超级女声', '快乐男声', '创造营', '青春有你', '偶像练习生',
+    '乘风', '披荆斩棘', '舞蹈', '跳舞', '舞者', '街舞', '舞蹈风暴',
+    '选秀', '偶像', '练习生', '出道', '成团', '蒙面唱', '蒙面歌王',
+    '天赐的声音', '声入人心', '我们的歌', '时光音乐会', '乐队的夏天',
+    '说唱', '明日之子', '创造101', '以团之名', '音综', '乐队'];
+  
+  const comedyPatterns = ['喜剧', '搞笑', '脱口秀', '吐槽', '段子', '欢乐', '开心', '爆笑',
+    '笑傲', '喜剧人', '喜剧大赛', '一年一度', '喜人', '欢乐喜剧'];
+  
+  const normalized = allText.toLowerCase();
+  
+  for (const p of musicPatterns) {
+    if (normalized.includes(p.toLowerCase())) return '音综';
+  }
+  for (const p of comedyPatterns) {
+    if (normalized.includes(p.toLowerCase())) return '喜剧';
+  }
+  return '真人秀';
 }
 
 async function main() {
@@ -278,7 +184,6 @@ async function main() {
   console.log('  已存在: ' + stats.existingCount + ' 条\n');
   
   const results = [];
-  let filtered = 0;
   
   if (args.full) {
     console.log('强制全量更新...');
@@ -288,25 +193,8 @@ async function main() {
       process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
       
       const detail = await fetchDetailByTitle(item.title);
-      
-      if (!detail) {
-        console.log('\n  [警告] 未获取详情: ' + item.title + '，使用原始数据');
-      }
-      
-      if (!isChineseVariety(item.title, detail, item.casts)) {
-        filtered++;
-        console.log('\n  [过滤] ' + item.title + ' (国外/韩综)');
-        continue;
-      }
-      
-      const itemGenres = detail ? (detail.genres || item.genres || []) : (item.genres || []);
-      if (!isVarietyType(itemGenres)) {
-        filtered++;
-        console.log('\n  [过滤] ' + item.title + ' (非综艺类型: ' + itemGenres.join(',') + ')');
-        continue;
-      }
-      
       const hotScore = calculateHotScore(item.rate || 0, detail ? detail.year : item.year);
+      const subCategory = getSubCategory(item.title, detail ? detail.genres : item.genres);
       
       results.push({
         id: item.id,
@@ -317,9 +205,10 @@ async function main() {
         year: detail ? (detail.year || item.year || '') : (item.year || ''),
         directors: item.directors || [],
         casts: item.casts || [],
-        genres: itemGenres,
+        genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
         doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
-        hotScore: hotScore
+        hotScore: hotScore,
+        subCategory: subCategory
       });
       
       if ((i + 1) % 8 === 0 && i + 1 < allItems.length) await sleep(RATE_LIMIT.batchPause);
@@ -332,25 +221,8 @@ async function main() {
       process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
       
       const detail = await fetchDetailByTitle(item.title);
-      
-      if (!detail) {
-        console.log('\n  [警告] 未获取详情: ' + item.title + '，使用原始数据');
-      }
-      
-      if (!isChineseVariety(item.title, detail, item.casts)) {
-        filtered++;
-        console.log('\n  [过滤] ' + item.title + ' (国外/韩综)');
-        continue;
-      }
-      
-      const itemGenres = detail ? (detail.genres || item.genres || []) : (item.genres || []);
-      if (!isVarietyType(itemGenres)) {
-        filtered++;
-        console.log('\n  [过滤] ' + item.title + ' (非综艺类型: ' + itemGenres.join(',') + ')');
-        continue;
-      }
-      
       const hotScore = calculateHotScore(item.rate || 0, detail ? detail.year : item.year);
+      const subCategory = getSubCategory(item.title, detail ? detail.genres : item.genres);
       
       results.push({
         id: item.id,
@@ -361,9 +233,10 @@ async function main() {
         year: detail ? (detail.year || item.year || '') : (item.year || ''),
         directors: item.directors || [],
         casts: item.casts || [],
-        genres: itemGenres,
+        genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
         doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
-        hotScore: hotScore
+        hotScore: hotScore,
+        subCategory: subCategory
       });
       
       if ((i + 1) % 8 === 0 && i + 1 < allItems.length) await sleep(RATE_LIMIT.batchPause);
@@ -377,25 +250,8 @@ async function main() {
       process.stdout.write('\r处理新数据: ' + (i + 1) + '/' + newItems.length + ' (' + Math.round((i / newItems.length) * 100) + '%)...');
       
       const detail = await fetchDetailByTitle(item.title);
-      
-      if (!detail) {
-        console.log('\n  [警告] 未获取详情: ' + item.title + '，使用原始数据');
-      }
-      
-      if (!isChineseVariety(item.title, detail, item.casts)) {
-        filtered++;
-        console.log('\n  [过滤] ' + item.title + ' (国外/韩综)');
-        continue;
-      }
-      
-      const itemGenres = detail ? (detail.genres || item.genres || []) : (item.genres || []);
-      if (!isVarietyType(itemGenres)) {
-        filtered++;
-        console.log('\n  [过滤] ' + item.title + ' (非综艺类型: ' + itemGenres.join(',') + ')');
-        continue;
-      }
-      
       const hotScore = calculateHotScore(item.rate || 0, detail ? detail.year : item.year);
+      const subCategory = getSubCategory(item.title, detail ? detail.genres : item.genres);
       
       results.push({
         id: item.id,
@@ -406,28 +262,22 @@ async function main() {
         year: detail ? (detail.year || item.year || '') : (item.year || ''),
         directors: item.directors || [],
         casts: item.casts || [],
-        genres: itemGenres,
+        genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
         doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
-        hotScore: hotScore
+        hotScore: hotScore,
+        subCategory: subCategory
       });
       
       if ((i + 1) % 8 === 0 && i + 1 < newItems.length) await sleep(RATE_LIMIT.batchPause);
     }
     
-    console.log('\n\n已存在数据: 检查过滤，更新热力值...');
+    console.log('\n\n已存在数据: 更新热力值...');
     
     let matchedCount = 0;
     let historyCount = 0;
-    let historyFiltered = 0;
     
     for (const item of existingItems) {
       if (item.doubanId) {
-        if (!isChineseVarietyByTitle(item.title)) {
-          historyFiltered++;
-          console.log('  [历史过滤] ' + item.title + ' (国外/韩综)');
-          continue;
-        }
-        
         const matchedItem = matchedItems.find(m => m.id === item.doubanId);
         if (matchedItem) {
           item.rate = matchedItem.rate || item.rate;
@@ -442,23 +292,20 @@ async function main() {
     
     console.log('  匹配更新: ' + matchedCount + ' 条');
     console.log('  历史保留: ' + historyCount + ' 条');
-    if (historyFiltered > 0) {
-      console.log('  历史过滤: ' + historyFiltered + ' 条');
-    }
   }
   
-  console.log('\n\n统计: 过滤 ' + filtered + ' 部国外, 成功 ' + results.length + ' 部\n');
+  console.log('\n\n统计: 成功 ' + results.length + ' 条\n');
   
-  const showItems = results.filter(i => getSubCategory(i.title, i.genres) === '真人秀').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
-  const comedyItems = results.filter(i => getSubCategory(i.title, i.genres) === '喜剧').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
-  const musicItems = results.filter(i => getSubCategory(i.title, i.genres) === '音综').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
+  const showItems = results.filter(i => i.subCategory === '真人秀').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
+  const comedyItems = results.filter(i => i.subCategory === '喜剧').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
+  const musicItems = results.filter(i => i.subCategory === '音综').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
   
   console.log('分类统计: 真人秀 ' + showItems.length + ' / 喜剧 ' + comedyItems.length + ' / 音综 ' + musicItems.length);
   
   const finalItems = [
-    ...showItems.map((item, i) => ({ ...item, id: 'show_' + String(i+1).padStart(3,'0'), subCategory: '真人秀' })),
-    ...comedyItems.map((item, i) => ({ ...item, id: 'comedy_' + String(i+1).padStart(3,'0'), subCategory: '喜剧' })),
-    ...musicItems.map((item, i) => ({ ...item, id: 'music_' + String(i+1).padStart(3,'0'), subCategory: '音综' }))
+    ...showItems.map((item, i) => ({ ...item, id: 'show_' + String(i+1).padStart(3,'0') })),
+    ...comedyItems.map((item, i) => ({ ...item, id: 'comedy_' + String(i+1).padStart(3,'0') })),
+    ...musicItems.map((item, i) => ({ ...item, id: 'music_' + String(i+1).padStart(3,'0') }))
   ];
   
   const { itemCount, indexCount } = saveData('variety', finalItems, allData, 'varietyIndex');

@@ -57,11 +57,51 @@ function formatItem(item) {
   };
 }
 
+const FOREIGN_KEYWORDS = [
+  '韩国', '日本', '美国', '英国', 'Korean', 'Japanese', 'American',
+  'Running Man', '无限挑战', '新西游记', '我独自生活', '认识的哥哥',
+  '爬梯子', 'EXO', 'exo', 'Exo',
+  'Happy Together', 'Radio Star', '音乐银行', '人气歌谣', 'M COUNTDOWN',
+  '蒙面歌王', '我家的熊孩子', '同床异梦', '妻子的味道', '三时三餐',
+  '尹食堂', '姜食堂', '两天一夜', '超人回来了', '人生酒馆', '黄金渔场',
+  '白钟元', '林中小屋', '暑假', '露营', '地球娱乐室', '海妖的呼唤',
+  'The Zone', '犯罪现场', '女高推理', '魔鬼的计谋', '四个愿望',
+  'Hacks', 'Netflix', 'HBO', 'BBC',
+  '请回答', '豆豆笑笑', '搞笑演唱会', 'Gag Concert', '寻笑人',
+  'SNL Korea', '全知干预视角', '玩什么好呢', '闲着干嘛呢', '刘QUIZ',
+  'You Quiz', '文明特急', '爱豆房', 'idol Room', '一周的偶像', 'After School Club',
+  '单身即地狱', '地狱', '李瑞镇', '达拉达拉', '体能之巅', 'Physical',
+  '换乘恋爱', 'heart signal', 'Heart Signal', '黑话律师', 'Big Mouth',
+  '异能', 'Moving', '鱿鱼游戏', 'Squid Game', '黑暗荣耀', 'Glory',
+  '小镇魔发师', '怪奇谜案', '天机试炼场', '天下烘焙', '给我钱',
+  '朴宝剑', '李相二', '郭东延', '郑智薰', '李龙真', '朴成奎', '李惠利',
+  '全炫茂', '申东熙', '姜智荣', '朴娜莱', '朴河宣', '李多熙', '金美贤',
+  '禹智皓', '申效涉', '李星和', '权爀禹', '朴宰范'
+];
+
+function isChineseVariety(title) {
+  if (!title) return true;
+  
+  for (const keyword of FOREIGN_KEYWORDS) {
+    if (title.toLowerCase().includes(keyword.toLowerCase())) {
+      return false;
+    }
+  }
+  
+  const koreanPattern = /[\uAC00-\uD7AF]/;
+  if (koreanPattern.test(title)) {
+    return false;
+  }
+  
+  return true;
+}
+
 app.get('/api/variety', async (req, res) => {
   const localData = loadLocalData();
   
   if (localData && localData.variety && localData.variety.length > 0) {
-    const subjects = localData.variety.map(formatItem);
+    const filtered = localData.variety.filter(item => isChineseVariety(item.title));
+    const subjects = filtered.map(formatItem);
     
     return res.json({
       subjects,
