@@ -77,7 +77,7 @@ async function fetchWithRetry(url, params) {
 }
 
 async function fetchList(start, limit) {
-  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', { sort: 'U', range: '0,10', tags: '综艺', start, limit });
+  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', { tags: '综艺', start, limit });
   return data ? (data.data || []) : [];
 }
 
