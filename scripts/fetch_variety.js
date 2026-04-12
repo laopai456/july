@@ -264,8 +264,52 @@ async function main() {
   const results = [];
   let filtered = 0;
   
-  if (args.full || indexMap.size === 0) {
-    console.log('获取所有数据详细信息并过滤国外综艺...');
+  if (args.full) {
+    console.log('强制全量更新...');
+    
+    for (let i = 0; i < allItems.length; i++) {
+      const item = allItems[i];
+      process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
+      
+      const detail = await fetchDetailByTitle(item.title);
+      
+      if (!detail) {
+        console.log('\n  [警告] 未获取详情: ' + item.title + '，使用原始数据');
+      }
+      
+      if (!isChineseVariety(item.title, detail, item.casts)) {
+        filtered++;
+        console.log('\n  [过滤] ' + item.title + ' (国外/韩综)');
+        continue;
+      }
+      
+      const itemGenres = detail ? (detail.genres || item.genres || []) : (item.genres || []);
+      if (!isVarietyType(itemGenres)) {
+        filtered++;
+        console.log('\n  [过滤] ' + item.title + ' (非综艺类型: ' + itemGenres.join(',') + ')');
+        continue;
+      }
+      
+      const hotScore = calculateHotScore(item.rate || 0, detail ? detail.year : item.year);
+      
+      results.push({
+        id: item.id,
+        doubanId: item.id,
+        title: item.title,
+        rate: item.rate || '0',
+        cover: item.cover || '',
+        year: detail ? (detail.year || item.year || '') : (item.year || ''),
+        directors: item.directors || [],
+        casts: item.casts || [],
+        genres: itemGenres,
+        doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
+        hotScore: hotScore
+      });
+      
+      if ((i + 1) % 8 === 0 && i + 1 < allItems.length) await sleep(RATE_LIMIT.batchPause);
+    }
+  } else if (stats.existingCount === 0) {
+    console.log('首次运行，全量获取...');
     
     for (let i = 0; i < allItems.length; i++) {
       const item = allItems[i];
@@ -309,11 +353,12 @@ async function main() {
       if ((i + 1) % 8 === 0 && i + 1 < allItems.length) await sleep(RATE_LIMIT.batchPause);
     }
   } else {
-    console.log('获取新数据详细信息...');
+    console.log('增量更新: 只获取新增数据详情...');
+    console.log('新增: ' + stats.newCount + ' 条, 已存在: ' + stats.existingCount + ' 条 (跳过详情获取)\n');
     
     for (let i = 0; i < newItems.length; i++) {
       const item = newItems[i];
-      process.stdout.write('\r处理新数据: ' + (i + 1) + '/' + newItems.length + ' (' + Math.round((i / newItems.length) * 100) || 0 + '%)...');
+      process.stdout.write('\r处理新数据: ' + (i + 1) + '/' + newItems.length + ' (' + Math.round((i / newItems.length) * 100) + '%)...');
       
       const detail = await fetchDetailByTitle(item.title);
       
@@ -353,17 +398,15 @@ async function main() {
       if ((i + 1) % 8 === 0 && i + 1 < newItems.length) await sleep(RATE_LIMIT.batchPause);
     }
     
-    console.log('\n\n更新已存在数据热力值...');
+    console.log('\n\n已存在数据: 直接使用，更新热力值...');
     
     for (const item of existingItems) {
       if (item.doubanId) {
         const matchedItem = matchedItems.find(m => m.id === item.doubanId);
         if (matchedItem) {
           item.rate = matchedItem.rate || item.rate;
-          item.hotScore = calculateHotScore(item.rate, item.year);
-        } else {
-          item.hotScore = calculateHotScore(item.rate, item.year);
         }
+        item.hotScore = calculateHotScore(item.rate, item.year);
         results.push(item);
       }
     }
