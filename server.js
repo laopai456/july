@@ -67,6 +67,7 @@ const FOREIGN_KEYWORDS = [
   '白钟元', '林中小屋', '暑假', '露营', '地球娱乐室', '海妖的呼唤',
   'The Zone', '犯罪现场', '女高推理', '魔鬼的计谋', '四个愿望',
   'Hacks', 'Netflix', 'HBO', 'BBC',
+  '绝望写手',
   '请回答', '豆豆笑笑', '搞笑演唱会', 'Gag Concert', '寻笑人',
   'SNL Korea', '全知干预视角', '玩什么好呢', '闲着干嘛呢', '刘QUIZ',
   'You Quiz', '文明特急', '爱豆房', 'idol Room', '一周的偶像', 'After School Club',
