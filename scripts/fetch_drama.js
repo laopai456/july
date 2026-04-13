@@ -109,25 +109,25 @@ function calculateHotScore(rating, year) {
   
   let timeBonus;
   if (yearDiff === 0) {
-    timeBonus = 100;
+    timeBonus = 150;
   } else if (yearDiff === 1) {
-    timeBonus = 70;
+    timeBonus = 100;
   } else if (yearDiff === 2) {
-    timeBonus = 40;
+    timeBonus = 60;
   } else if (yearDiff === 3) {
-    timeBonus = 20;
+    timeBonus = 30;
   } else if (yearDiff === 4) {
-    timeBonus = 0;
+    timeBonus = 10;
   } else if (yearDiff <= 6) {
-    timeBonus = -10;
+    timeBonus = -5;
   } else {
-    timeBonus = -20;
+    timeBonus = -15;
   }
   
   const rate = parseFloat(rating) || 0;
   let rateBonus = 0;
   if (rate > 0) {
-    rateBonus = Math.round((rate - 5) * 3);
+    rateBonus = Math.round((rate - 6) * 2);
   }
   
   const hotScore = Math.max(10, timeBonus + rateBonus);
