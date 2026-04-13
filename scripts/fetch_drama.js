@@ -81,9 +81,25 @@ async function fetchList(tag, start, limit) {
   return data ? (data.data || []) : [];
 }
 
-async function fetchDetailByTitle(title) {
+async function fetchDetailByTitle(title, doubanId) {
   const data = await fetchWithRetry(DOUBAN_API + '/subject_suggest', { q: title });
-  return (data && data.length > 0) ? data[0] : null;
+  if (!data || data.length === 0) return null;
+  if (doubanId) {
+    const matched = data.find(item => item.id === doubanId);
+    if (matched) return matched;
+  }
+  return data[0];
+}
+
+function extractYear(text) {
+  if (!text) return '';
+  let match = text.match(/\((\d{4})\)/);
+  if (match) return match[1];
+  match = text.match(/(\d{4})年/);
+  if (match) return match[1];
+  match = text.match(/\b(19\d{2}|20\d{2})\b/);
+  if (match) return match[1];
+  return '';
 }
 
 function calculateHotScore(rating, year) {
@@ -174,9 +190,23 @@ async function main() {
       const item = allItems[i];
       process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
       
-      const detail = await fetchDetailByTitle(item.title);
+      const detail = await fetchDetailByTitle(item.title, item.id);
       
-      const hotScore = calculateHotScore(item.rate || 0, detail ? detail.year : item.year);
+      let year = '';
+      if (detail && detail.year) {
+        year = detail.year;
+      }
+      if (!year && item.year) {
+        year = item.year;
+      }
+      if (!year && detail && detail.sub_title) {
+        year = extractYear(detail.sub_title);
+      }
+      if (!year && detail && detail.title) {
+        year = extractYear(detail.title);
+      }
+      
+      const hotScore = calculateHotScore(item.rate || 0, year);
       
       results.push({
         id: item.id,
@@ -184,7 +214,7 @@ async function main() {
         title: item.title,
         rate: item.rate || '0',
         cover: item.cover || '',
-        year: detail ? (detail.year || item.year || '') : (item.year || ''),
+        year: year,
         directors: item.directors || [],
         casts: item.casts || [],
         genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
@@ -202,9 +232,23 @@ async function main() {
       const item = allItems[i];
       process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
       
-      const detail = await fetchDetailByTitle(item.title);
+      const detail = await fetchDetailByTitle(item.title, item.id);
       
-      const hotScore = calculateHotScore(item.rate || 0, detail ? detail.year : item.year);
+      let year = '';
+      if (detail && detail.year) {
+        year = detail.year;
+      }
+      if (!year && item.year) {
+        year = item.year;
+      }
+      if (!year && detail && detail.sub_title) {
+        year = extractYear(detail.sub_title);
+      }
+      if (!year && detail && detail.title) {
+        year = extractYear(detail.title);
+      }
+      
+      const hotScore = calculateHotScore(item.rate || 0, year);
       
       results.push({
         id: item.id,
@@ -212,7 +256,7 @@ async function main() {
         title: item.title,
         rate: item.rate || '0',
         cover: item.cover || '',
-        year: detail ? (detail.year || item.year || '') : (item.year || ''),
+        year: year,
         directors: item.directors || [],
         casts: item.casts || [],
         genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
@@ -231,9 +275,23 @@ async function main() {
       const item = newItems[i];
       process.stdout.write('\r处理新数据: ' + (i + 1) + '/' + newItems.length + ' (' + Math.round((i / newItems.length) * 100) + '%)...');
       
-      const detail = await fetchDetailByTitle(item.title);
+      const detail = await fetchDetailByTitle(item.title, item.id);
       
-      const hotScore = calculateHotScore(item.rate || 0, detail ? detail.year : item.year);
+      let year = '';
+      if (detail && detail.year) {
+        year = detail.year;
+      }
+      if (!year && item.year) {
+        year = item.year;
+      }
+      if (!year && detail && detail.sub_title) {
+        year = extractYear(detail.sub_title);
+      }
+      if (!year && detail && detail.title) {
+        year = extractYear(detail.title);
+      }
+      
+      const hotScore = calculateHotScore(item.rate || 0, year);
       
       results.push({
         id: item.id,
@@ -241,7 +299,7 @@ async function main() {
         title: item.title,
         rate: item.rate || '0',
         cover: item.cover || '',
-        year: detail ? (detail.year || item.year || '') : (item.year || ''),
+        year: year,
         directors: item.directors || [],
         casts: item.casts || [],
         genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),

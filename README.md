@@ -18,6 +18,17 @@
 | 电影 | 中国/日韩/欧美 | 豆瓣API | 服务端脚本抓取，按地区分类 |
 | 热剧 | 国产剧/韩剧/日剧 | 豆瓣API | 服务端脚本抓取 |
 
+### 豆瓣API调用说明
+
+数据抓取需要组合调用两个API：
+
+| API | 端点 | 返回字段 | 用途 |
+|-----|------|----------|------|
+| 列表API | `/j/new_search_subjects` | id, title, rate, cover, directors, casts | 获取基础列表信息（**无年份**） |
+| 详情API | `/j/subject_suggest` | id, title, year, type, genres | 获取年份和类型信息 |
+
+**注意**：列表API不返回年份字段，必须通过详情API搜索标题获取年份。
+
 ## 项目结构
 
 ```

@@ -81,9 +81,13 @@ async function fetchList(tag, sort, start, limit) {
   return data ? (data.data || []) : [];
 }
 
-async function fetchDetailByTitle(title) {
+async function fetchDetailByTitle(title, doubanId) {
   const data = await fetchWithRetry(DOUBAN_API + '/subject_suggest', { q: title });
   if (!data || data.length === 0) return null;
+  if (doubanId) {
+    const matched = data.find(item => item.id === doubanId);
+    if (matched) return matched;
+  }
   for (const item of data) {
     if (item.type === 'movie') return item;
   }
@@ -92,8 +96,13 @@ async function fetchDetailByTitle(title) {
 
 function extractYear(text) {
   if (!text) return '';
-  const match = text.match(/\((\d{4})\)/);
-  return match ? match[1] : '';
+  let match = text.match(/\((\d{4})\)/);
+  if (match) return match[1];
+  match = text.match(/(\d{4})年/);
+  if (match) return match[1];
+  match = text.match(/\b(19\d{2}|20\d{2})\b/);
+  if (match) return match[1];
+  return '';
 }
 
 function calculateHotScore(rating, year) {
@@ -191,16 +200,19 @@ async function main() {
       const item = allItems[i];
       process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
       
-      const detail = await fetchDetailByTitle(item.title);
+      const detail = await fetchDetailByTitle(item.title, item.id);
       
       let year = '';
       if (detail && detail.year) {
         year = detail.year;
-      } else if (item.year) {
+      }
+      if (!year && item.year) {
         year = item.year;
-      } else if (detail && detail.sub_title) {
+      }
+      if (!year && detail && detail.sub_title) {
         year = extractYear(detail.sub_title);
-      } else if (detail && detail.title) {
+      }
+      if (!year && detail && detail.title) {
         year = extractYear(detail.title);
       }
       
@@ -230,16 +242,19 @@ async function main() {
       const item = allItems[i];
       process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
       
-      const detail = await fetchDetailByTitle(item.title);
+      const detail = await fetchDetailByTitle(item.title, item.id);
       
       let year = '';
       if (detail && detail.year) {
         year = detail.year;
-      } else if (item.year) {
+      }
+      if (!year && item.year) {
         year = item.year;
-      } else if (detail && detail.sub_title) {
+      }
+      if (!year && detail && detail.sub_title) {
         year = extractYear(detail.sub_title);
-      } else if (detail && detail.title) {
+      }
+      if (!year && detail && detail.title) {
         year = extractYear(detail.title);
       }
       
@@ -270,16 +285,19 @@ async function main() {
       const item = newItems[i];
       process.stdout.write('\r处理新数据: ' + (i + 1) + '/' + newItems.length + ' (' + Math.round((i / newItems.length) * 100) + '%)...');
       
-      const detail = await fetchDetailByTitle(item.title);
+      const detail = await fetchDetailByTitle(item.title, item.id);
       
       let year = '';
       if (detail && detail.year) {
         year = detail.year;
-      } else if (item.year) {
+      }
+      if (!year && item.year) {
         year = item.year;
-      } else if (detail && detail.sub_title) {
+      }
+      if (!year && detail && detail.sub_title) {
         year = extractYear(detail.sub_title);
-      } else if (detail && detail.title) {
+      }
+      if (!year && detail && detail.title) {
         year = extractYear(detail.title);
       }
       
