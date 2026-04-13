@@ -178,7 +178,7 @@ async function main() {
   const allItems = [];
   const seenIds = new Set();
   
-  const tags = ['综艺', '音乐', '脱口秀'];
+  const tags = ['综艺', '综艺,音乐', '综艺,脱口秀'];
   for (const tag of tags) {
     console.log('\n[获取' + tag + '类型]');
     for (let start = 0; start < 60; start += RATE_LIMIT.batchSize) {
