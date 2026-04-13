@@ -77,7 +77,7 @@ async function fetchWithRetry(url, params) {
 }
 
 async function fetchList(tag, start, limit) {
-  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', { tags: tag, start, limit });
+  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', { sort: 'T', tags: tag, start, limit });
   return data ? (data.data || []) : [];
 }
 
