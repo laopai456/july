@@ -76,8 +76,8 @@ async function fetchWithRetry(url, params) {
   return null;
 }
 
-async function fetchList(start, limit) {
-  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', { tags: '综艺', start, limit });
+async function fetchList(start, limit, tag = '综艺') {
+  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', { tags: tag, start, limit });
   if (data && data.msg) {
     console.log('\n  [API消息] ' + data.msg);
   }
@@ -178,22 +178,26 @@ async function main() {
   const allItems = [];
   const seenIds = new Set();
   
-  for (let start = 0; start < 100; start += RATE_LIMIT.batchSize) {
-    const batchNum = Math.floor(start / RATE_LIMIT.batchSize) + 1;
-    process.stdout.write('\r[批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 100) + ' 条...');
-    
-    const list = await fetchList(start, RATE_LIMIT.batchSize);
-    if (start === 0 && list.length > 0) {
-      console.log('\n  [调试] 第一条数据:', JSON.stringify(list[0], null, 2));
+  const tags = ['综艺', '音乐', '脱口秀'];
+  for (const tag of tags) {
+    console.log('\n[获取' + tag + '类型]');
+    for (let start = 0; start < 60; start += RATE_LIMIT.batchSize) {
+      const batchNum = Math.floor(start / RATE_LIMIT.batchSize) + 1;
+      process.stdout.write('\r[批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 60) + ' 条...');
+      
+      const list = await fetchList(start, RATE_LIMIT.batchSize, tag);
+      if (start === 0 && list.length > 0) {
+        console.log('\n  [调试] 第一条数据:', JSON.stringify(list[0], null, 2));
+      }
+      for (const item of list) {
+        if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push(item); }
+      }
+      
+      if (start + RATE_LIMIT.batchSize < 60) {
+        await sleep(RATE_LIMIT.batchPause);
+      }
     }
-    for (const item of list) {
-      if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push(item); }
-    }
-    
-    if (start + RATE_LIMIT.batchSize < 100) {
-      process.stdout.write(' 等待中...');
-      await sleep(RATE_LIMIT.batchPause);
-    }
+    console.log('\n[' + tag + '] 完成');
   }
   
   console.log('\n\n共获取 ' + allItems.length + ' 条综艺\n');
