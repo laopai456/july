@@ -173,6 +173,9 @@ async function main() {
     process.stdout.write('\r[批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 100) + ' 条...');
     
     const list = await fetchList(start, RATE_LIMIT.batchSize);
+    if (start === 0 && list.length > 0) {
+      console.log('\n  [调试] 第一条数据:', JSON.stringify(list[0], null, 2));
+    }
     for (const item of list) {
       if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push(item); }
     }
