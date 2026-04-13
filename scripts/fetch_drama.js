@@ -76,8 +76,10 @@ async function fetchWithRetry(url, params) {
   return null;
 }
 
-async function fetchList(tag, start, limit) {
-  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', { sort: 'T', tags: tag, start, limit });
+async function fetchList(tag, start, limit, yearRange = '') {
+  const params = { tags: tag, start, limit };
+  if (yearRange) params.year_range = yearRange;
+  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', params);
   return data ? (data.data || []) : [];
 }
 
@@ -136,6 +138,8 @@ async function main() {
   const tags = ['国产剧', '韩剧', '日剧'];
   const allItems = [];
   const seenIds = new Set();
+  const currentYear = new Date().getFullYear();
+  const yearRange = currentYear + ',' + currentYear;
   
   for (const tag of tags) {
     console.log('\n【获取 ' + tag + '】');
@@ -155,6 +159,13 @@ async function main() {
       }
     }
     console.log(' 完成');
+    
+    const listNew = await fetchList(tag, 0, 20, yearRange);
+    let newCount = 0;
+    for (const item of listNew) {
+      if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push({ ...item, subCategory: tag }); newCount++; }
+    }
+    if (newCount > 0) console.log('  当年新作补充: ' + newCount + ' 条');
   }
   
   console.log('\n共获取 ' + allItems.length + ' 条热剧\n');

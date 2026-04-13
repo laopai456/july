@@ -76,8 +76,10 @@ async function fetchWithRetry(url, params) {
   return null;
 }
 
-async function fetchList(start, limit, tag = '综艺') {
-  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', { sort: 'T', tags: tag, start, limit });
+async function fetchList(start, limit, tag = '综艺', yearRange = '') {
+  const params = { tags: tag, start, limit };
+  if (yearRange) params.year_range = yearRange;
+  const data = await fetchWithRetry(DOUBAN_API + '/new_search_subjects', params);
   if (data && data.msg) {
     console.log('\n  [API消息] ' + data.msg);
   }
@@ -228,22 +230,51 @@ async function main() {
   const seenIds = new Set();
   
   const tags = ['综艺', '综艺,音乐', '综艺,脱口秀'];
+  const currentYear = new Date().getFullYear();
+  const yearRange = currentYear + ',' + currentYear;
+  
   for (const tag of tags) {
-    console.log('\n[获取' + tag + '类型]');
-    for (let start = 0; start < 60; start += RATE_LIMIT.batchSize) {
+    console.log('\n[获取' + tag + '类型 - 热门]');
+    for (let start = 0; start < 40; start += RATE_LIMIT.batchSize) {
       const batchNum = Math.floor(start / RATE_LIMIT.batchSize) + 1;
-      process.stdout.write('\r[批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 60) + ' 条...');
+      process.stdout.write('\r[批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 40) + ' 条...');
       
       const list = await fetchList(start, RATE_LIMIT.batchSize, tag);
       for (const item of list) {
         if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push(item); }
       }
       
-      if (start + RATE_LIMIT.batchSize < 60) {
+      if (start + RATE_LIMIT.batchSize < 40) {
         await sleep(RATE_LIMIT.batchPause);
       }
     }
     console.log('\n[' + tag + '] 完成');
+    
+    console.log('[获取' + tag + '类型 - 当年新作]');
+    for (let start = 0; start < 20; start += RATE_LIMIT.batchSize) {
+      const list = await fetchList(start, RATE_LIMIT.batchSize, tag, yearRange);
+      for (const item of list) {
+        if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push(item); }
+      }
+    }
+    console.log('[' + tag + ' 当年] 完成');
+  }
+  
+  const supplementPath = path.join(__dirname, 'supplement.json');
+  if (fs.existsSync(supplementPath)) {
+    const supplement = JSON.parse(fs.readFileSync(supplementPath, 'utf8'));
+    const titles = (supplement.variety || []);
+    if (titles.length > 0) {
+      console.log('\n[补充搜索: ' + titles.length + ' 个节目]');
+      for (const title of titles) {
+        const detail = await fetchDetailByTitle(title);
+        if (detail && detail.id && !seenIds.has(detail.id)) {
+          seenIds.add(detail.id);
+          allItems.push({ id: detail.id, title: detail.title || title, rate: '0', cover: detail.img || '', year: detail.year || '', directors: [], casts: [], genres: detail.type ? [detail.type] : [] });
+          console.log('  补充: ' + (detail.title || title) + ' (' + (detail.year || '未知') + ')');
+        }
+      }
+    }
   }
   
   console.log('\n\n共获取列表: ' + allItems.length + ' 条');
