@@ -20,7 +20,7 @@ npm install --production --silent 2>/dev/null || true
 
 echo ""
 echo "[3/4] 更新数据..."
-node scripts/fetch_all.js
+node scripts/fetch_all.js "$@"
 
 echo ""
 echo "[4/4] 重启服务..."
