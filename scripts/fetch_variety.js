@@ -179,6 +179,53 @@ function getSubCategory(title, types) {
   return '真人秀';
 }
 
+const FOREIGN_KEYWORDS = [
+  '韩国', '日本', '美国', '英国', 'Korean', 'Japanese', 'American',
+  'Running Man', '无限挑战', '新西游记', '我独自生活', '认识的哥哥',
+  '爬梯子', 'EXO', 'exo', 'Exo',
+  'Happy Together', 'Radio Star', '音乐银行', '人气歌谣', 'M COUNTDOWN',
+  '蒙面歌王', '我家的熊孩子', '同床异梦', '妻子的味道', '三时三餐',
+  '尹食堂', '姜食堂', '两天一夜', '超人回来了', '人生酒馆', '黄金渔场',
+  '白钟元', '林中小屋', '暑假', '露营', '地球娱乐室', '海妖的呼唤',
+  'The Zone', '犯罪现场', '女高推理', '魔鬼的计谋', '四个愿望',
+  'Hacks', 'Netflix', 'HBO', 'BBC',
+  '绝望写手',
+  '请回答', '豆豆笑笑', '搞笑演唱会', 'Gag Concert', '寻笑人',
+  'SNL Korea', '全知干预视角', '玩什么好呢', '闲着干嘛呢', '刘QUIZ',
+  'You Quiz', '文明特急', '爱豆房', 'idol Room', '一周的偶像', 'After School Club',
+  '单身即地狱', '地狱', '李瑞镇', '达拉达拉', '体能之巅', 'Physical',
+  '换乘恋爱', 'heart signal', 'Heart Signal', '黑话律师', 'Big Mouth',
+  '异能', 'Moving', '鱿鱼游戏', 'Squid Game', '黑暗荣耀', 'Glory',
+  '小镇魔发师', '怪奇谜案', '天机试炼场', '天下烘焙', '给我钱',
+  '朴宝剑', '李相二', '郭东延', '郑智薰', '李龙真', '朴成奎', '李惠利',
+  '全炫茂', '申东熙', '姜智荣', '朴娜莱', '朴河宣', '李多熙', '金美贤',
+  '禹智皓', '申效涉', '李星和', '权爀禹', '朴宰范',
+  'Biong Biong', '黑白厨师', '思想验证区域', '三傻游肯尼亚', '豆豆饭饭', '恋爱女子宿舍',
+  '超时空辉夜姬', '泰勒·汤姆林森',
+  '麻浦帅小伙', 'Rap: Public', '新人歌手曹政奭', '超级乐队',
+  '基和皮尔', 'Key & Peele',
+  '康熙来了', '锵锵三人行', '锵锵行天下', '天天向上', '快乐大本营', '非正式会谈',
+  '十三邀', '圆桌派', '第一人称复数',
+  '虽然没准备什么菜'
+];
+
+function isChineseVariety(title) {
+  if (!title) return true;
+  
+  for (const keyword of FOREIGN_KEYWORDS) {
+    if (title.toLowerCase().includes(keyword.toLowerCase())) {
+      return false;
+    }
+  }
+  
+  const koreanPattern = /[\uAC00-\uD7AF]/;
+  if (koreanPattern.test(title)) {
+    return false;
+  }
+  
+  return true;
+}
+
 async function main() {
   const args = parseArgs();
   
@@ -220,10 +267,16 @@ async function main() {
     console.log('\n[' + tag + '] 完成');
   }
   
-  console.log('\n\n共获取 ' + allItems.length + ' 条综艺\n');
-  if (allItems.length === 0) { console.log('未获取到数据'); return; }
+  console.log('\n\n共获取 ' + allItems.length + ' 条综艺');
   
-  const { newItems, existingItems: matchedItems, stats } = compareWithExisting(allItems, indexMap);
+  const beforeFilter = allItems.length;
+  const filteredItems = allItems.filter(item => isChineseVariety(item.title));
+  const filtered = beforeFilter - filteredItems.length;
+  console.log('过滤国外综艺: ' + filtered + ' 条, 剩余 ' + filteredItems.length + ' 条\n');
+  
+  if (filteredItems.length === 0) { console.log('未获取到数据'); return; }
+  
+  const { newItems, existingItems: matchedItems, stats } = compareWithExisting(filteredItems, indexMap);
   
   console.log('比对结果:');
   console.log('  新增: ' + stats.newCount + ' 条');
@@ -402,7 +455,35 @@ async function main() {
     ...musicItems.map((item, i) => ({ ...item, id: 'music_' + String(i+1).padStart(3,'0') }))
   ];
   
-  const { itemCount, indexCount } = saveData('variety', finalItems, allData, 'varietyIndex');
+  const allIndex = {};
+  const now = new Date().toISOString().split('T')[0];
+  for (const item of results) {
+    if (item.doubanId) {
+      allIndex['douban_' + item.doubanId] = {
+        title: item.title,
+        rate: item.rate,
+        year: item.year,
+        cover: item.cover,
+        directors: item.directors || [],
+        casts: item.casts || [],
+        genres: item.genres || [],
+        subCategory: item.subCategory || '',
+        lastUpdate: now
+      };
+    }
+  }
+  
+  const dataToSave = {
+    ...allData,
+    variety: finalItems,
+    varietyIndex: allIndex,
+    varietyUpdatedAt: new Date().toISOString()
+  };
+  
+  fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
+  
+  const itemCount = finalItems.length;
+  const indexCount = Object.keys(allIndex).length;
   
   console.log('\n各分类前5部:');
   console.log('\n【真人秀】');

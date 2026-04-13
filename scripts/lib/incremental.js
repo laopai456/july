@@ -53,7 +53,36 @@ function buildIndex(items, idField = 'doubanId') {
         title: item.title,
         rate: item.rate,
         year: item.year,
+        cover: item.cover,
+        directors: item.directors || [],
+        casts: item.casts || [],
+        genres: item.genres || [],
+        subCategory: item.subCategory || '',
         lastUpdate: now
+      };
+    }
+  }
+  
+  return index;
+}
+
+function buildIndexFromList(listData, idField = 'id') {
+  const index = {};
+  const now = new Date().toISOString().split('T')[0];
+  
+  for (const item of listData) {
+    const id = item[idField];
+    if (id) {
+      index['douban_' + id] = {
+        title: item.title,
+        rate: item.rate,
+        year: item.year,
+        cover: item.cover,
+        directors: item.directors || [],
+        casts: item.casts || [],
+        subCategory: item.subCategory || '',
+        lastUpdate: now,
+        hasDetail: false
       };
     }
   }
@@ -146,6 +175,7 @@ module.exports = {
   loadExistingData,
   loadCategoryData,
   buildIndex,
+  buildIndexFromList,
   compareWithExisting,
   mergeData,
   saveData,
