@@ -94,6 +94,19 @@ async function fetchDetailByTitle(title, doubanId) {
   return data[0];
 }
 
+async function fetchSubjectAbstract(subjectId) {
+  const data = await fetchWithRetry(DOUBAN_API + '/subject_abstract', { subject_id: subjectId });
+  if (data && data.subject) {
+    return {
+      types: data.subject.types || [],
+      region: data.subject.region || '',
+      directors: data.subject.directors || [],
+      actors: data.subject.actors || []
+    };
+  }
+  return null;
+}
+
 function calculateHotScore(rating, year) {
   const currentYear = new Date().getFullYear();
   const itemYear = parseInt(year) || currentYear;
@@ -135,8 +148,12 @@ function extractYear(text) {
   return '';
 }
 
-function getSubCategory(title, genres) {
-  const allText = title + ' ' + (genres || []).join(' ');
+function getSubCategory(title, types) {
+  if (types && types.length > 0) {
+    const typeStr = types.join(' ');
+    if (typeStr.includes('音乐')) return '音综';
+    if (typeStr.includes('喜剧') || typeStr.includes('脱口秀')) return '喜剧';
+  }
   
   const musicPatterns = ['音乐', '歌唱', '歌手', '唱歌', '声音', '好声音', '我是歌手',
     '超级女声', '快乐男声', '创造营', '青春有你', '偶像练习生',
@@ -146,9 +163,9 @@ function getSubCategory(title, genres) {
     '说唱', '明日之子', '创造101', '以团之名', '音综', '乐队'];
   
   const comedyPatterns = ['喜剧', '搞笑', '脱口秀', '吐槽', '段子', '欢乐', '开心', '爆笑',
-    '笑傲', '喜剧人', '喜剧大赛', '一年一度', '喜人', '欢乐喜剧'];
+    '笑傲', '喜剧人', '喜剧大赛', '一年一度', '喜人', '欢乐喜剧', '主咖', '喜友秀', '今夜'];
   
-  const normalized = allText.toLowerCase();
+  const normalized = title.toLowerCase();
   
   for (const p of musicPatterns) {
     if (normalized.includes(p.toLowerCase())) return '音综';
@@ -219,6 +236,7 @@ async function main() {
       process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
       
       const detail = await fetchDetailByTitle(item.title, item.id);
+      const abstract = await fetchSubjectAbstract(item.id);
       
       let year = '';
       if (detail && detail.year) {
@@ -235,7 +253,7 @@ async function main() {
       }
       
       const hotScore = calculateHotScore(item.rate || 0, year);
-      const subCategory = getSubCategory(item.title, detail ? detail.genres : item.genres);
+      const subCategory = getSubCategory(item.title, abstract ? abstract.types : null);
       
       results.push({
         id: item.id,
@@ -244,9 +262,9 @@ async function main() {
         rate: item.rate || '0',
         cover: item.cover || '',
         year: year,
-        directors: item.directors || [],
-        casts: item.casts || [],
-        genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
+        directors: abstract ? abstract.directors : (item.directors || []),
+        casts: abstract ? abstract.actors : (item.casts || []),
+        genres: abstract ? abstract.types : [],
         doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
         hotScore: hotScore,
         subCategory: subCategory
@@ -262,6 +280,7 @@ async function main() {
       process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
       
       const detail = await fetchDetailByTitle(item.title, item.id);
+      const abstract = await fetchSubjectAbstract(item.id);
       
       let year = '';
       if (detail && detail.year) {
@@ -278,7 +297,7 @@ async function main() {
       }
       
       const hotScore = calculateHotScore(item.rate || 0, year);
-      const subCategory = getSubCategory(item.title, detail ? detail.genres : item.genres);
+      const subCategory = getSubCategory(item.title, abstract ? abstract.types : null);
       
       results.push({
         id: item.id,
@@ -287,9 +306,9 @@ async function main() {
         rate: item.rate || '0',
         cover: item.cover || '',
         year: year,
-        directors: item.directors || [],
-        casts: item.casts || [],
-        genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
+        directors: abstract ? abstract.directors : (item.directors || []),
+        casts: abstract ? abstract.actors : (item.casts || []),
+        genres: abstract ? abstract.types : [],
         doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
         hotScore: hotScore,
         subCategory: subCategory
@@ -306,6 +325,7 @@ async function main() {
       process.stdout.write('\r处理新数据: ' + (i + 1) + '/' + newItems.length + ' (' + Math.round((i / newItems.length) * 100) + '%)...');
       
       const detail = await fetchDetailByTitle(item.title, item.id);
+      const abstract = await fetchSubjectAbstract(item.id);
       
       let year = '';
       if (detail && detail.year) {
@@ -322,7 +342,7 @@ async function main() {
       }
       
       const hotScore = calculateHotScore(item.rate || 0, year);
-      const subCategory = getSubCategory(item.title, detail ? detail.genres : item.genres);
+      const subCategory = getSubCategory(item.title, abstract ? abstract.types : null);
       
       results.push({
         id: item.id,
@@ -331,9 +351,9 @@ async function main() {
         rate: item.rate || '0',
         cover: item.cover || '',
         year: year,
-        directors: item.directors || [],
-        casts: item.casts || [],
-        genres: detail ? (detail.genres || item.genres || []) : (item.genres || []),
+        directors: abstract ? abstract.directors : (item.directors || []),
+        casts: abstract ? abstract.actors : (item.casts || []),
+        genres: abstract ? abstract.types : [],
         doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
         hotScore: hotScore,
         subCategory: subCategory
