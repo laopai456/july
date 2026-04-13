@@ -1,0 +1,10 @@
+{
+  "name": "dataService",
+  "version": "1.0.0",
+  "description": "数据服务云函数 - 从服务器API获取数据",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "axios": "^1.6.0"
+  }
+}
