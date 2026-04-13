@@ -110,27 +110,30 @@ function calculateHotScore(rating, year) {
   const itemYear = parseInt(year) || currentYear;
   const yearDiff = currentYear - itemYear;
   
-  let baseScore = 100;
-  
   let timeBonus;
   if (yearDiff === 0) {
-    timeBonus = 50;
+    timeBonus = 100;
   } else if (yearDiff === 1) {
-    timeBonus = 30;
+    timeBonus = 70;
   } else if (yearDiff === 2) {
-    timeBonus = 10;
+    timeBonus = 40;
   } else if (yearDiff === 3) {
-    timeBonus = 0;
+    timeBonus = 20;
   } else if (yearDiff === 4) {
+    timeBonus = 0;
+  } else if (yearDiff <= 6) {
     timeBonus = -10;
   } else {
     timeBonus = -20;
   }
   
   const rate = parseFloat(rating) || 0;
-  const rateBonus = rate > 0 ? Math.round(rate * 2) : 0;
+  let rateBonus = 0;
+  if (rate > 0) {
+    rateBonus = Math.round((rate - 5) * 3);
+  }
   
-  const hotScore = Math.max(10, baseScore + timeBonus + rateBonus);
+  const hotScore = Math.max(10, timeBonus + rateBonus);
   
   return hotScore;
 }
