@@ -105,32 +105,14 @@ function extractYear(text) {
 function calculateHotScore(rating, year) {
   const currentYear = new Date().getFullYear();
   const itemYear = parseInt(year) || currentYear;
-  const yearDiff = currentYear - itemYear;
+  const yearDiff = Math.max(0, currentYear - itemYear);
   
-  let timeBonus;
-  if (yearDiff === 0) {
-    timeBonus = 150;
-  } else if (yearDiff === 1) {
-    timeBonus = 100;
-  } else if (yearDiff === 2) {
-    timeBonus = 60;
-  } else if (yearDiff === 3) {
-    timeBonus = 30;
-  } else if (yearDiff === 4) {
-    timeBonus = 10;
-  } else if (yearDiff <= 6) {
-    timeBonus = -5;
-  } else {
-    timeBonus = -15;
-  }
+  const timeScore = Math.max(0, 200 - yearDiff * 40);
   
   const rate = parseFloat(rating) || 0;
-  let rateBonus = 0;
-  if (rate > 0) {
-    rateBonus = Math.round((rate - 6) * 2);
-  }
+  const rateBonus = rate > 0 ? Math.min(15, Math.round(rate * 1.5)) : 0;
   
-  return Math.max(10, timeBonus + rateBonus);
+  return timeScore + rateBonus;
 }
 
 async function main() {

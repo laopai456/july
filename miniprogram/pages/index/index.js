@@ -144,17 +144,51 @@ Page({
       this.setData({
         list: [],
         loading: false,
-        hasMore: false
+        hasMore: false,
+        refreshAt: '加载失败: ' + (err.message || '未知错误')
       })
     }
   },
 
   async callDataService(action, params) {
-    const res = await wx.cloud.callFunction({
-      name: 'dataService',
-      data: { action, ...params }
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'dataService',
+        data: { action, ...params }
+      })
+      return res.result
+    } catch (cloudErr) {
+      console.warn('云函数失败，尝试直连:', cloudErr.message)
+      return await this.fetchDirect(action, params)
+    }
+  },
+
+  async fetchDirect(action, params) {
+    const config = require('../../utils/config.js')
+    let url = ''
+    if (action === 'getVariety') {
+      url = config.apiBase + '/api/variety'
+    } else if (action === 'getMovie') {
+      url = config.apiBase + '/api/movie/' + (params.type || 'chinese')
+    } else if (action === 'getDrama') {
+      url = config.apiBase + '/api/drama/' + (params.type || 'korean')
+    }
+    
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url,
+        method: 'GET',
+        timeout: 15000,
+        success: (res) => {
+          if (res.statusCode === 200 && res.data) {
+            resolve(res.data)
+          } else {
+            reject(new Error('HTTP ' + res.statusCode))
+          }
+        },
+        fail: (err) => reject(err)
+      })
     })
-    return res.result
   },
 
   getSubCategoryForVariety(title, genres) {
