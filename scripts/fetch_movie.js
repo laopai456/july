@@ -155,9 +155,9 @@ async function main() {
   
   // ========== 第2步: 抓取列表 ==========
   const categories = [
-    { name: '中国', tags: ['电影,中国大陆', '电影,台湾', '电影,香港'] },
-    { name: '日韩', tags: ['电影,日本', '电影,韩国', '电影,泰国', '电影,印度'] },
-    { name: '欧美', tags: ['电影,美国', '电影,英国', '电影,法国', '电影,德国', '电影,西班牙', '电影,意大利', '电影,俄罗斯', '电影,加拿大', '电影,澳大利亚'] }
+    { name: '中国', tags: [{ tag: '电影,中国大陆', count: 40 }, { tag: '电影,台湾', count: 20 }, { tag: '电影,香港', count: 20 }] },
+    { name: '日韩', tags: [{ tag: '电影,日本', count: 40 }, { tag: '电影,韩国', count: 40 }, { tag: '电影,泰国', count: 20 }, { tag: '电影,印度', count: 20 }] },
+    { name: '欧美', tags: [{ tag: '电影,美国', count: 40 }, { tag: '电影,英国', count: 20 }, { tag: '电影,法国', count: 20 }, { tag: '电影,德国', count: 20 }, { tag: '电影,西班牙', count: 20 }, { tag: '电影,意大利', count: 20 }, { tag: '电影,俄罗斯', count: 20 }, { tag: '电影,加拿大', count: 20 }, { tag: '电影,澳大利亚', count: 20 }] }
   ];
   const allItems = [];
   const seenIds = new Set();
@@ -165,18 +165,18 @@ async function main() {
   for (const cat of categories) {
     console.log('\n【获取 ' + cat.name + ' 电影】');
     
-    for (const tag of cat.tags) {
-      console.log('  标签: ' + tag);
-      for (let start = 0; start < 40; start += RATE_LIMIT.batchSize) {
+    for (const { tag, count } of cat.tags) {
+      console.log('  标签: ' + tag + ' (最多' + count + '条)');
+      for (let start = 0; start < count; start += RATE_LIMIT.batchSize) {
         const batchNum = Math.floor(start / RATE_LIMIT.batchSize) + 1;
-        process.stdout.write('\r    [批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 40) + ' 条...');
+        process.stdout.write('\r    [批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, count) + ' 条...');
         
         const list = await fetchList(tag, start, RATE_LIMIT.batchSize);
         for (const item of list) {
           if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push({ ...item, subCategory: cat.name }); }
         }
         
-        if (start + RATE_LIMIT.batchSize < 40) {
+        if (start + RATE_LIMIT.batchSize < count) {
           process.stdout.write(' 等待中...');
           await sleep(RATE_LIMIT.batchPause);
         }
