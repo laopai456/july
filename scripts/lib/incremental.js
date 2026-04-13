@@ -26,7 +26,12 @@ function loadCategoryData(category) {
   const index = data[indexKey] || null;
   
   const indexMap = new Map();
-  if (items.length > 0) {
+  if (index) {
+    for (const [key, item] of Object.entries(index)) {
+      const doubanId = key.replace('douban_', '');
+      indexMap.set(doubanId, item);
+    }
+  } else if (items.length > 0) {
     for (const item of items) {
       if (item.doubanId) {
         indexMap.set(item.doubanId, item);

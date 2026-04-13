@@ -1,7 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const { loadCategoryData, compareWithExisting, saveData, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
+const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
 
 const DOUBAN_API = 'https://movie.douban.com/j';
 
@@ -135,9 +135,7 @@ function calculateHotScore(rating, year) {
     rateBonus = Math.round((rate - 6) * 2);
   }
   
-  const hotScore = Math.max(10, timeBonus + rateBonus);
-  
-  return hotScore;
+  return Math.max(10, timeBonus + rateBonus);
 }
 
 function extractYear(text) {
@@ -239,9 +237,11 @@ async function main() {
   console.log('每分类: ' + DISPLAY_COUNT + '条显示 + ' + BACKUP_COUNT + '条备用');
   console.log('========================================\n');
   
-  const { items: existingItems, indexMap, allData } = loadCategoryData('variety');
-  console.log('加载现有数据: ' + existingItems.length + ' 条');
+  // ========== 第1步: 加载现有索引 ==========
+  const { indexMap, allData } = loadCategoryData('variety');
+  console.log('现有索引: ' + indexMap.size + ' 条');
   
+  // ========== 第2步: 抓取列表 ==========
   const allItems = [];
   const seenIds = new Set();
   
@@ -253,9 +253,6 @@ async function main() {
       process.stdout.write('\r[批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, 60) + ' 条...');
       
       const list = await fetchList(start, RATE_LIMIT.batchSize, tag);
-      if (start === 0 && list.length > 0) {
-        console.log('\n  [调试] 第一条数据:', JSON.stringify(list[0], null, 2));
-      }
       for (const item of list) {
         if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push(item); }
       }
@@ -267,199 +264,73 @@ async function main() {
     console.log('\n[' + tag + '] 完成');
   }
   
-  console.log('\n\n共获取 ' + allItems.length + ' 条综艺');
+  console.log('\n\n共获取列表: ' + allItems.length + ' 条');
   
-  const beforeFilter = allItems.length;
-  const filteredItems = allItems.filter(item => isChineseVariety(item.title));
-  const filtered = beforeFilter - filteredItems.length;
-  console.log('过滤国外综艺: ' + filtered + ' 条, 剩余 ' + filteredItems.length + ' 条\n');
+  if (allItems.length === 0) { console.log('未获取到数据'); return; }
   
-  if (filteredItems.length === 0) { console.log('未获取到数据'); return; }
-  
-  const { newItems, existingItems: matchedItems, stats } = compareWithExisting(filteredItems, indexMap);
-  
-  console.log('比对结果:');
-  console.log('  新增: ' + stats.newCount + ' 条');
-  console.log('  已存在: ' + stats.existingCount + ' 条\n');
-  
-  const results = [];
+  // ========== 第3步: 比对索引，区分新增/已存在 ==========
+  let itemsToFetch;
   
   if (args.full) {
-    console.log('强制全量更新...');
-    
-    for (let i = 0; i < allItems.length; i++) {
-      const item = allItems[i];
-      process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
-      
-      const detail = await fetchDetailByTitle(item.title, item.id);
-      const abstract = await fetchSubjectAbstract(item.id);
-      
-      let year = '';
-      if (detail && detail.year) {
-        year = detail.year;
-      }
-      if (!year && item.year) {
-        year = item.year;
-      }
-      if (!year && detail && detail.sub_title) {
-        year = extractYear(detail.sub_title);
-      }
-      if (!year && detail && detail.title) {
-        year = extractYear(detail.title);
-      }
-      
-      const hotScore = calculateHotScore(item.rate || 0, year);
-      const subCategory = getSubCategory(item.title, abstract ? abstract.types : null);
-      
-      results.push({
-        id: item.id,
-        doubanId: item.id,
-        title: item.title,
-        rate: item.rate || '0',
-        cover: item.cover || '',
-        year: year,
-        directors: abstract ? abstract.directors : (item.directors || []),
-        casts: abstract ? abstract.actors : (item.casts || []),
-        genres: abstract ? abstract.types : [],
-        doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
-        hotScore: hotScore,
-        subCategory: subCategory
-      });
-      
-      if ((i + 1) % 8 === 0 && i + 1 < allItems.length) await sleep(RATE_LIMIT.batchPause);
-    }
-  } else if (stats.existingCount === 0) {
-    console.log('首次运行，全量获取...');
-    
-    for (let i = 0; i < allItems.length; i++) {
-      const item = allItems[i];
-      process.stdout.write('\r处理进度: ' + (i + 1) + '/' + allItems.length + ' (' + Math.round((i / allItems.length) * 100) + '%)...');
-      
-      const detail = await fetchDetailByTitle(item.title, item.id);
-      const abstract = await fetchSubjectAbstract(item.id);
-      
-      let year = '';
-      if (detail && detail.year) {
-        year = detail.year;
-      }
-      if (!year && item.year) {
-        year = item.year;
-      }
-      if (!year && detail && detail.sub_title) {
-        year = extractYear(detail.sub_title);
-      }
-      if (!year && detail && detail.title) {
-        year = extractYear(detail.title);
-      }
-      
-      const hotScore = calculateHotScore(item.rate || 0, year);
-      const subCategory = getSubCategory(item.title, abstract ? abstract.types : null);
-      
-      results.push({
-        id: item.id,
-        doubanId: item.id,
-        title: item.title,
-        rate: item.rate || '0',
-        cover: item.cover || '',
-        year: year,
-        directors: abstract ? abstract.directors : (item.directors || []),
-        casts: abstract ? abstract.actors : (item.casts || []),
-        genres: abstract ? abstract.types : [],
-        doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
-        hotScore: hotScore,
-        subCategory: subCategory
-      });
-      
-      if ((i + 1) % 8 === 0 && i + 1 < allItems.length) await sleep(RATE_LIMIT.batchPause);
-    }
+    itemsToFetch = allItems;
+    console.log('强制全量: 需要获取详情 ' + itemsToFetch.length + ' 条\n');
   } else {
-    console.log('增量更新: 只获取新增数据详情...');
-    console.log('新增: ' + stats.newCount + ' 条, 已存在: ' + stats.existingCount + ' 条 (跳过详情获取)\n');
-    
-    for (let i = 0; i < newItems.length; i++) {
-      const item = newItems[i];
-      process.stdout.write('\r处理新数据: ' + (i + 1) + '/' + newItems.length + ' (' + Math.round((i / newItems.length) * 100) + '%)...');
-      
-      const detail = await fetchDetailByTitle(item.title, item.id);
-      const abstract = await fetchSubjectAbstract(item.id);
-      
-      let year = '';
-      if (detail && detail.year) {
-        year = detail.year;
-      }
-      if (!year && item.year) {
-        year = item.year;
-      }
-      if (!year && detail && detail.sub_title) {
-        year = extractYear(detail.sub_title);
-      }
-      if (!year && detail && detail.title) {
-        year = extractYear(detail.title);
-      }
-      
-      const hotScore = calculateHotScore(item.rate || 0, year);
-      const subCategory = getSubCategory(item.title, abstract ? abstract.types : null);
-      
-      results.push({
-        id: item.id,
-        doubanId: item.id,
-        title: item.title,
-        rate: item.rate || '0',
-        cover: item.cover || '',
-        year: year,
-        directors: abstract ? abstract.directors : (item.directors || []),
-        casts: abstract ? abstract.actors : (item.casts || []),
-        genres: abstract ? abstract.types : [],
-        doubanUrl: 'https://movie.douban.com/subject/' + item.id + '/',
-        hotScore: hotScore,
-        subCategory: subCategory
-      });
-      
-      if ((i + 1) % 8 === 0 && i + 1 < newItems.length) await sleep(RATE_LIMIT.batchPause);
-    }
-    
-    console.log('\n\n已存在数据: 更新热力值...');
-    
-    let matchedCount = 0;
-    let historyCount = 0;
-    
-    for (const item of existingItems) {
-      if (item.doubanId) {
-        const matchedItem = matchedItems.find(m => m.id === item.doubanId);
-        if (matchedItem) {
-          item.rate = matchedItem.rate || item.rate;
-          matchedCount++;
-        } else {
-          historyCount++;
-        }
-        item.hotScore = calculateHotScore(item.rate, item.year);
-        results.push(item);
-      }
-    }
-    
-    console.log('  匹配更新: ' + matchedCount + ' 条');
-    console.log('  历史保留: ' + historyCount + ' 条');
+    const { newItems, existingItems: matchedItems, stats } = compareWithExisting(allItems, indexMap);
+    console.log('比对结果:');
+    console.log('  新增: ' + stats.newCount + ' 条');
+    console.log('  已存在: ' + stats.existingCount + ' 条 (跳过详情获取)\n');
+    itemsToFetch = newItems;
   }
   
-  console.log('\n\n统计: 成功 ' + results.length + ' 条\n');
+  // ========== 第4步: 抓取新增详情 ==========
+  const newResults = [];
   
-  const showItems = results.filter(i => i.subCategory === '真人秀').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
-  const comedyItems = results.filter(i => i.subCategory === '喜剧').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
-  const musicItems = results.filter(i => i.subCategory === '音综').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
+  for (let i = 0; i < itemsToFetch.length; i++) {
+    const item = itemsToFetch[i];
+    process.stdout.write('\r获取详情: ' + (i + 1) + '/' + itemsToFetch.length + ' (' + Math.round((i / itemsToFetch.length) * 100) + '%)...');
+    
+    const detail = await fetchDetailByTitle(item.title, item.id);
+    const abstract = await fetchSubjectAbstract(item.id);
+    
+    let year = '';
+    if (detail && detail.year) {
+      year = detail.year;
+    }
+    if (!year && item.year) {
+      year = item.year;
+    }
+    if (!year && detail && detail.sub_title) {
+      year = extractYear(detail.sub_title);
+    }
+    if (!year && detail && detail.title) {
+      year = extractYear(detail.title);
+    }
+    
+    const subCategory = getSubCategory(item.title, abstract ? abstract.types : null);
+    
+    newResults.push({
+      doubanId: item.id,
+      title: item.title,
+      rate: item.rate || '0',
+      cover: item.cover || '',
+      year: year,
+      directors: abstract ? abstract.directors : (item.directors || []),
+      casts: abstract ? abstract.actors : (item.casts || []),
+      genres: abstract ? abstract.types : [],
+      subCategory: subCategory
+    });
+    
+    if ((i + 1) % 8 === 0 && i + 1 < itemsToFetch.length) await sleep(RATE_LIMIT.batchPause);
+  }
   
-  console.log('分类统计: 真人秀 ' + showItems.length + ' / 喜剧 ' + comedyItems.length + ' / 音综 ' + musicItems.length);
+  console.log('\n详情获取完成: ' + newResults.length + ' 条');
   
-  const finalItems = [
-    ...showItems.map((item, i) => ({ ...item, id: 'show_' + String(i+1).padStart(3,'0') })),
-    ...comedyItems.map((item, i) => ({ ...item, id: 'comedy_' + String(i+1).padStart(3,'0') })),
-    ...musicItems.map((item, i) => ({ ...item, id: 'music_' + String(i+1).padStart(3,'0') }))
-  ];
-  
-  const allIndex = {};
+  // ========== 第5步: 合并数据，更新索引 ==========
   const now = new Date().toISOString().split('T')[0];
-  for (const item of results) {
+  
+  for (const item of newResults) {
     if (item.doubanId) {
-      allIndex['douban_' + item.doubanId] = {
+      indexMap.set(item.doubanId, {
         title: item.title,
         rate: item.rate,
         year: item.year,
@@ -469,8 +340,45 @@ async function main() {
         genres: item.genres || [],
         subCategory: item.subCategory || '',
         lastUpdate: now
-      };
+      });
     }
+  }
+  
+  console.log('索引更新后: ' + indexMap.size + ' 条');
+  
+  // ========== 第6步: 从索引构建完整列表，计算热力分，过滤 ==========
+  const allResults = [];
+  for (const [doubanId, item] of indexMap) {
+    const hotScore = calculateHotScore(item.rate, item.year);
+    allResults.push({
+      ...item,
+      doubanId: doubanId,
+      hotScore: hotScore
+    });
+  }
+  
+  console.log('索引总量: ' + allResults.length + ' 条');
+  
+  const chineseItems = allResults.filter(item => isChineseVariety(item.title));
+  console.log('过滤国外综艺: ' + (allResults.length - chineseItems.length) + ' 条, 剩余 ' + chineseItems.length + ' 条');
+  
+  // ========== 第7步: 分类排序截取 ==========
+  const showItems = chineseItems.filter(i => i.subCategory === '真人秀').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
+  const comedyItems = chineseItems.filter(i => i.subCategory === '喜剧').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
+  const musicItems = chineseItems.filter(i => i.subCategory === '音综').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
+  
+  console.log('分类统计: 真人秀 ' + showItems.length + ' / 喜剧 ' + comedyItems.length + ' / 音综 ' + musicItems.length);
+  
+  const finalItems = [
+    ...showItems.map((item, i) => ({ ...item, id: 'show_' + String(i + 1).padStart(3, '0') })),
+    ...comedyItems.map((item, i) => ({ ...item, id: 'comedy_' + String(i + 1).padStart(3, '0') })),
+    ...musicItems.map((item, i) => ({ ...item, id: 'music_' + String(i + 1).padStart(3, '0') }))
+  ];
+  
+  // ========== 第8步: 保存 ==========
+  const allIndex = {};
+  for (const [doubanId, item] of indexMap) {
+    allIndex['douban_' + doubanId] = item;
   }
   
   const dataToSave = {
@@ -482,9 +390,7 @@ async function main() {
   
   fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
   
-  const itemCount = finalItems.length;
-  const indexCount = Object.keys(allIndex).length;
-  
+  // ========== 输出统计 ==========
   console.log('\n各分类前5部:');
   console.log('\n【真人秀】');
   showItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
@@ -493,12 +399,14 @@ async function main() {
   console.log('\n【音综】');
   musicItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
   
-  const savedRequests = indexMap.size > 0 && !args.full ? Math.round((stats.existingCount / allItems.length) * 100) : 0;
+  const savedRequests = !args.full && allItems.length > 0
+    ? Math.round(((allItems.length - itemsToFetch.length) / allItems.length) * 100)
+    : 0;
   
   console.log('\n========================================');
   console.log('综艺数据已保存到 data.json');
-  console.log('保存数据: ' + itemCount + ' 条');
-  console.log('生成索引: ' + indexCount + ' 条');
+  console.log('展示数据: ' + finalItems.length + ' 条');
+  console.log('完整索引: ' + Object.keys(allIndex).length + ' 条');
   console.log('总请求次数: ' + requestCount);
   if (savedRequests > 0) {
     console.log('节省请求: 约 ' + savedRequests + '%');
