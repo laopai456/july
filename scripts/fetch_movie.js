@@ -41,6 +41,20 @@ const MOVIE_CATEGORIES = [
   }
 ];
 
+const NON_MOVIE_PATTERNS = [
+  '开幕式', '闭幕式', '春晚', '春节联欢晚会', '元宵晚会', '中秋晚会', '跨年晚会',
+  '演唱会', '音乐会', '话剧', '歌剧', '舞剧', '音乐剧',
+  '奥运会', '冬奥会', '世界杯', '亚运会', '全运会', '锦标赛', '决赛',
+  '颁奖典礼', '颁奖礼', '金鸡奖', '金马奖', '金像奖', '奥斯卡',
+  '发布会', '首映礼', '红毯', '脱口秀', '相声', '小品', '元宵喜乐会',
+  '直播', '晚会', '盛典', ' Gala'
+];
+
+function isRealMovie(title) {
+  const lower = title.toLowerCase();
+  return !NON_MOVIE_PATTERNS.some(p => lower.includes(p.toLowerCase()));
+}
+
 async function main() {
   const args = parseArgs();
 
@@ -122,9 +136,14 @@ async function main() {
 
   console.log('索引更新后: ' + indexMap.size + ' 条');
 
-  // ========== 第6步: 从索引构建完整列表，计算热力分 ==========
+  // ========== 第6步: 从索引构建完整列表，计算热力分，过滤非电影 ==========
   const allResults = [];
+  let filteredCount = 0;
   for (const [doubanId, item] of indexMap) {
+    if (!isRealMovie(item.title)) {
+      filteredCount++;
+      continue;
+    }
     const hotScore = calculateHotScore(item.rate, item.year);
     allResults.push({
       ...item,
@@ -133,6 +152,9 @@ async function main() {
     });
   }
 
+  if (filteredCount > 0) {
+    console.log('过滤非电影内容: ' + filteredCount + ' 条');
+  }
   console.log('索引总量: ' + allResults.length + ' 条');
 
   // ========== 第7步: 分类排序截取 ==========
