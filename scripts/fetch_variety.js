@@ -69,16 +69,13 @@ async function main() {
 
   console.log('\n详情获取完成: ' + newResults.length + ' 条');
 
-  // ========== 第5步: 补充分类（综艺专用） ==========
-  for (const item of newResults) {
-    const abstract = await fetchSubjectAbstract(item.doubanId);
-    if (abstract) {
-      item.directors = abstract.directors;
-      item.casts = abstract.actors;
-      item.genres = abstract.types;
-    }
+  // ========== 第5步: 分类（综艺专用，已在详情中获取abstract） ==========
+  for (let i = 0; i < newResults.length; i++) {
+    const item = newResults[i];
     item.subCategory = getSubCategory(item.title, item.genres);
+    if ((i + 1) % 20 === 0) process.stdout.write('\r分类处理: ' + (i + 1) + '/' + newResults.length + '...');
   }
+  console.log('\n分类处理完成');
 
   // ========== 第6步: 合并数据，更新索引 ==========
   const now = new Date().toISOString().split('T')[0];
