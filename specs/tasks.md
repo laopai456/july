@@ -3,70 +3,71 @@
 ## 阶段一：基础设施
 
 ### Task 1.1: 创建公共模块
-- [ ] 创建 `scripts/lib/incremental.js`
-- [ ] 实现 `loadExistingData()` 函数
-- [ ] 实现 `buildIndex(items)` 函数
-- [ ] 实现 `compareWithExisting(listData, existingIndex)` 函数
-- [ ] 实现 `mergeData(newItems, existingItems)` 函数
-- [ ] 实现 `saveData(data, indexPath)` 函数
+- [x] 创建 `scripts/lib/incremental.js`
+- [x] 实现 `loadExistingData()` 函数
+- [x] 实现 `buildIndex(items)` 函数
+- [x] 实现 `compareWithExisting(listData, existingIndex)` 函数
+- [x] 实现 `mergeData(newItems, existingItems)` 函数
+- [x] 实现 `saveData(data, indexPath)` 函数
 
 ### Task 1.2: 添加命令行参数解析
-- [ ] 添加 `--full` 参数支持
-- [ ] 添加 `--hot-only` 参数支持
-- [ ] 添加帮助信息输出
+- [x] 添加 `--full` 参数支持
+- [x] 添加 `--hot-only` 参数支持
+- [x] 添加帮助信息输出
 
 ---
 
 ## 阶段二：修改抓取脚本
 
 ### Task 2.1: 修改综艺脚本
-- [ ] 重构 `fetch_variety.js` 使用公共模块
-- [ ] 添加增量更新逻辑
-- [ ] 添加索引生成逻辑
-- [ ] 添加详细的更新日志输出
-- [ ] 保持原有过滤逻辑不变
+- [x] 重构 `fetch_variety.js` 使用公共模块
+- [x] 添加增量更新逻辑
+- [x] 添加索引生成逻辑
+- [x] 添加详细的更新日志输出
+- [x] 保持原有过滤逻辑不变
+- [x] 第7步从索引构建列表时对所有条目重新计算 subCategory
 
 ### Task 2.2: 修改电影脚本
-- [ ] 重构 `fetch_movie.js` 使用公共模块
-- [ ] 添加增量更新逻辑
-- [ ] 添加索引生成逻辑
-- [ ] 添加详细的更新日志输出
+- [x] 重构 `fetch_movie.js` 使用公共模块
+- [x] 添加增量更新逻辑
+- [x] 添加索引生成逻辑
+- [x] 添加详细的更新日志输出
 
 ### Task 2.3: 修改热剧脚本
-- [ ] 重构 `fetch_drama.js` 使用公共模块
-- [ ] 添加增量更新逻辑
-- [ ] 添加索引生成逻辑
-- [ ] 添加详细的更新日志输出
+- [x] 重构 `fetch_drama.js` 使用公共模块
+- [x] 添加增量更新逻辑
+- [x] 添加索引生成逻辑
+- [x] 添加详细的更新日志输出
 
 ---
 
 ## 阶段三：测试验证
 
 ### Task 3.1: 功能测试
-- [ ] 测试首次运行（无索引情况）
-- [ ] 测试增量更新（有新数据）
-- [ ] 测试增量更新（无新数据）
-- [ ] 测试强制全量更新（--full 参数）
+- [x] 测试首次运行（无索引情况）
+- [x] 测试增量更新（有新数据）
+- [x] 测试增量更新（无新数据）
+- [x] 测试强制全量更新（--full 参数）
 - [ ] 测试热力值更新（--hot-only 参数）
 
 ### Task 3.2: 兼容性测试
-- [ ] 验证现有数据格式兼容
-- [ ] 验证 server.js 读取数据正常
-- [ ] 验证小程序端显示正常
+- [x] 验证现有数据格式兼容
+- [x] 验证 server.js 读取数据正常
+- [x] 验证小程序端显示正常
 
 ### Task 3.3: 性能对比
-- [ ] 记录优化前请求次数
-- [ ] 记录优化后请求次数
-- [ ] 计算节省比例
+- [x] 记录优化前请求次数
+- [x] 记录优化后请求次数
+- [x] 计算节省比例
 
 ---
 
 ## 阶段四：文档更新
 
 ### Task 4.1: 更新 README
-- [ ] 添加增量更新说明
-- [ ] 更新命令行使用说明
-- [ ] 添加参数说明
+- [x] 添加增量更新说明
+- [x] 更新命令行使用说明
+- [x] 添加参数说明
 
 ---
 
