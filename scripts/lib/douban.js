@@ -133,32 +133,24 @@ async function fetchSubjectAbstract(subjectId) {
 }
 
 async function fetchSubjectSummary(subjectId) {
-  try {
-    await waitForRateLimit();
-    const url = 'https://movie.douban.com/subject/' + subjectId + '/';
-    const response = await axios.get(url, {
-      headers: { ...getHeaders(), 'Accept': 'text/html' },
-      timeout: RATE_LIMIT.requestTimeout
-    });
-    const html = typeof response.data === 'string' ? response.data : '';
-    if (!fetchSubjectSummary._logged) {
-      fetchSubjectSummary._logged = true;
-      console.log('\n[DEBUG] HTML length: ' + html.length);
-      console.log('[DEBUG] HTML start: ' + html.substring(0, 300));
-      const hasSummary = html.includes('v:summary');
-      console.log('[DEBUG] contains v:summary: ' + hasSummary);
-      const hasAllHidden = html.includes('all-hidden');
-      console.log('[DEBUG] contains all-hidden: ' + html.includes('all-hidden'));
-    }
-    let match = html.match(/<span\s+property="v:summary"[^>]*>([\s\S]*?)<\/span>/);
-    if (match) return match[1].replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").trim();
-    match = html.match(/property="v:summary"\s+content="([^"]*)"/);
-    if (match) return match[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").trim();
-    return '';
-  } catch (e) {
-    console.log('\n[DEBUG] fetchSubjectSummary error: ' + e.message);
-    return '';
+  const endpoints = [
+    { url: 'https://m.douban.com/rexxar/api/v2/tv/' + subjectId, referer: 'https://m.douban.com/tv/' + subjectId },
+    { url: 'https://m.douban.com/rexxar/api/v2/movie/' + subjectId, referer: 'https://m.douban.com/movie/' + subjectId }
+  ];
+  const mobileUA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1';
+  for (const { url, referer } of endpoints) {
+    try {
+      await waitForRateLimit();
+      const response = await axios.get(url, {
+        headers: { 'User-Agent': mobileUA, 'Referer': referer },
+        timeout: RATE_LIMIT.requestTimeout
+      });
+      if (response.data && response.data.summary) {
+        return response.data.summary;
+      }
+    } catch (e) {}
   }
+  return '';
 }
 
 function extractYear(text) {
