@@ -34,8 +34,14 @@ async function main() {
   const allItems = [];
   const seenIds = new Set();
 
-  for (const { tag, yearCount, hotCount } of VARIETY_TAGS) {
-    const items = await fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag });
+  const varietyResults = await Promise.all(
+    VARIETY_TAGS.map(({ tag, yearCount, hotCount }) =>
+      fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag })
+        .then(items => ({ items }))
+    )
+  );
+
+  for (const { items } of varietyResults) {
     for (const item of items) {
       if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push(item); }
     }

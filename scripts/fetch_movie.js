@@ -72,15 +72,21 @@ async function main() {
   const { indexMap, allData } = loadCategoryData('movie');
   console.log('现有索引: ' + indexMap.size + ' 条');
 
-  // ========== 第2步: 抓取列表（当年优先 → 往年补齐） ==========
+  // ========== 第2步: 抓取列表（当年优先 → 往年补齐，并行） ==========
   const allItems = [];
   const seenIds = new Set();
 
   for (const cat of MOVIE_CATEGORIES) {
     console.log('\n【获取 ' + cat.name + ' 电影】');
 
-    for (const { tag, yearCount, hotCount } of cat.tags) {
-      const items = await fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag });
+    const results = await Promise.all(
+      cat.tags.map(({ tag, yearCount, hotCount }) =>
+        fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag })
+          .then(items => ({ tag, items }))
+      )
+    );
+
+    for (const { tag, items } of results) {
       let count = 0;
       for (const item of items) {
         if (!seenIds.has(item.id)) {

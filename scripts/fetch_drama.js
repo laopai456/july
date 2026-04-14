@@ -34,9 +34,15 @@ async function main() {
   const allItems = [];
   const seenIds = new Set();
 
-  for (const { tag, yearCount, hotCount } of DRAMA_TAGS) {
+  const results = await Promise.all(
+    DRAMA_TAGS.map(({ tag, yearCount, hotCount }) =>
+      fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag })
+        .then(items => ({ tag, items }))
+    )
+  );
+
+  for (const { tag, items } of results) {
     console.log('\n【获取 ' + tag + '】');
-    const items = await fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag });
     for (const item of items) {
       if (!seenIds.has(item.id)) {
         seenIds.add(item.id);
