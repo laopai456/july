@@ -140,6 +140,9 @@ function calculateHotScore(rating, year) {
 }
 
 const FOREIGN_KEYWORDS = [
+  '泰版', '泰剧', '泰国版',
+  '男人们的恋爱', '我的咖啡男友', '少年星球', '再次出发',
+  '背叛者', '秘密朋友俱乐部', '野兽游戏',
   '韩国', '日本', '美国', '英国', 'Korean', 'Japanese', 'American',
   'Running Man', '无限挑战', '新西游记', '我独自生活', '认识的哥哥',
   '爬梯子', 'EXO', 'exo', 'Exo',
@@ -169,8 +172,17 @@ const FOREIGN_KEYWORDS = [
   '虽然没准备什么菜'
 ];
 
-function isChineseVariety(title) {
+const NON_VARIETY_TYPES = ['纪录片', '电影', '电视剧', '动画'];
+
+function isChineseVariety(title, genres) {
   if (!title) return true;
+
+  if (genres && genres.length > 0) {
+    const typeStr = genres.join(' ');
+    for (const t of NON_VARIETY_TYPES) {
+      if (typeStr.includes(t)) return false;
+    }
+  }
 
   for (const keyword of FOREIGN_KEYWORDS) {
     if (title.toLowerCase().includes(keyword.toLowerCase())) {
@@ -183,14 +195,29 @@ function isChineseVariety(title) {
     return false;
   }
 
+  const thaiPattern = /[\u0E00-\u0E7F]/;
+  if (thaiPattern.test(title)) {
+    return false;
+  }
+
   return true;
 }
+
+const CULTURE_PATTERNS = ['朗读者', '局部', '博物', '国家宝藏', '见字如面',
+  '典籍里的中国', '经典咏流传', '故事里的中国', '诗意', '读书', '开讲啦',
+  '我在', '关于', '十三邀', '圆桌派', '锵锵', '第一人称', '谈话'];
 
 function getSubCategory(title, types) {
   if (types && types.length > 0) {
     const typeStr = types.join(' ');
     if (typeStr.includes('音乐')) return '音综';
     if (typeStr.includes('喜剧') || typeStr.includes('脱口秀')) return '喜剧';
+  }
+
+  const normalized = title.toLowerCase();
+
+  for (const p of CULTURE_PATTERNS) {
+    if (normalized.includes(p.toLowerCase())) return '真人秀';
   }
 
   const musicPatterns = ['音乐', '歌唱', '歌手', '唱歌', '声音', '好声音', '我是歌手',
@@ -202,8 +229,6 @@ function getSubCategory(title, types) {
 
   const comedyPatterns = ['喜剧', '搞笑', '脱口秀', '吐槽', '段子', '欢乐', '开心', '爆笑',
     '笑傲', '喜剧人', '喜剧大赛', '一年一度', '喜人', '欢乐喜剧', '主咖', '喜友秀', '今夜'];
-
-  const normalized = title.toLowerCase();
 
   for (const p of musicPatterns) {
     if (normalized.includes(p.toLowerCase())) return '音综';

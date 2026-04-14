@@ -111,7 +111,7 @@ async function main() {
 
   console.log('索引总量: ' + allResults.length + ' 条');
 
-  const chineseItems = allResults.filter(item => isChineseVariety(item.title));
+  const chineseItems = allResults.filter(item => isChineseVariety(item.title, item.genres));
   console.log('过滤国外综艺: ' + (allResults.length - chineseItems.length) + ' 条, 剩余 ' + chineseItems.length + ' 条');
 
   // ========== 第8步: 分类排序截取 ==========
