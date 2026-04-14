@@ -102,6 +102,8 @@ async function main() {
   const allResults = [];
   for (const [doubanId, item] of indexMap) {
     const hotScore = calculateHotScore(item.rate, item.year);
+    const subCategory = getSubCategory(item.title, item.genres);
+    item.subCategory = subCategory;
     allResults.push({
       ...item,
       doubanId: doubanId,
