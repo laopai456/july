@@ -133,11 +133,22 @@ async function fetchSubjectAbstract(subjectId) {
 }
 
 async function fetchSubjectSummary(subjectId) {
-  const url = 'https://movie.douban.com/j/subject_detail/' + subjectId;
-  const data = await fetchWithRetry(url, {});
-  if (data && data.summary) return data.summary;
-  if (data && data.subject && data.subject.summary) return data.subject.summary;
-  return '';
+  try {
+    await waitForRateLimit();
+    const url = 'https://movie.douban.com/subject/' + subjectId + '/';
+    const response = await axios.get(url, {
+      headers: { ...getHeaders(), 'Accept': 'text/html' },
+      timeout: RATE_LIMIT.requestTimeout
+    });
+    const html = typeof response.data === 'string' ? response.data : '';
+    let match = html.match(/<span\s+property="v:summary"[^>]*>([\s\S]*?)<\/span>/);
+    if (match) return match[1].replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").trim();
+    match = html.match(/property="v:summary"\s+content="([^"]*)"/);
+    if (match) return match[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").trim();
+    return '';
+  } catch (e) {
+    return '';
+  }
 }
 
 function extractYear(text) {
