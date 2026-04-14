@@ -3,6 +3,7 @@ const {
   fetchWithCurrentYearPriority,
   fetchDetailsBatch,
   calculateHotScore,
+  parallelLimit,
   getRequestCount, TOTAL_PER_CATEGORY, RATE_LIMIT, sleep
 } = require('./lib/douban');
 const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
@@ -34,11 +35,12 @@ async function main() {
   const allItems = [];
   const seenIds = new Set();
 
-  const results = await Promise.all(
+  const results = await parallelLimit(
     DRAMA_TAGS.map(({ tag, yearCount, hotCount }) =>
-      fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag })
+      () => fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag })
         .then(items => ({ tag, items }))
-    )
+    ),
+    RATE_LIMIT.maxConcurrent
   );
 
   for (const { tag, items } of results) {

@@ -10,7 +10,8 @@ const RATE_LIMIT = {
   requestTimeout: 30000,
   maxRetries: 5,
   batchSize: 20,
-  batchPause: 10000
+  batchPause: 10000,
+  maxConcurrent: 3
 };
 
 const DISPLAY_COUNT = 20;
@@ -26,6 +27,22 @@ function randomDelay(min, max) {
 
 function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
+}
+
+async function parallelLimit(tasks, limit) {
+  const results = [];
+  let index = 0;
+
+  async function worker() {
+    while (index < tasks.length) {
+      const i = index++;
+      results[i] = await tasks[i]();
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
 }
 
 const USER_AGENTS = [
@@ -412,6 +429,7 @@ module.exports = {
   TOTAL_PER_CATEGORY,
   sleep,
   randomDelay,
+  parallelLimit,
   getHeaders,
   waitForRateLimit,
   fetchWithRetry,

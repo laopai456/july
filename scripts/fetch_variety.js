@@ -2,7 +2,7 @@ const fs = require('fs');
 const {
   fetchWithCurrentYearPriority, fetchSubjectAbstract,
   fetchDetailsBatch, searchSupplementItems,
-  calculateHotScore, isChineseVariety, getSubCategory,
+  calculateHotScore, isChineseVariety, getSubCategory, parallelLimit,
   getRequestCount, TOTAL_PER_CATEGORY, RATE_LIMIT, sleep
 } = require('./lib/douban');
 const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
@@ -34,11 +34,12 @@ async function main() {
   const allItems = [];
   const seenIds = new Set();
 
-  const varietyResults = await Promise.all(
+  const varietyResults = await parallelLimit(
     VARIETY_TAGS.map(({ tag, yearCount, hotCount }) =>
-      fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag })
+      () => fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag })
         .then(items => ({ items }))
-    )
+    ),
+    RATE_LIMIT.maxConcurrent
   );
 
   for (const { items } of varietyResults) {
