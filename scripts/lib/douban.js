@@ -121,12 +121,15 @@ async function fetchDetailByTitle(title, doubanId, preferType = null) {
 async function fetchSubjectAbstract(subjectId) {
   const data = await fetchWithRetry(DOUBAN_API + '/subject_abstract', { subject_id: subjectId });
   if (data && data.subject) {
+    if (Object.keys(data.subject).length < 10) {
+      console.log('\n[DEBUG subject_abstract] keys: ' + Object.keys(data.subject).join(', '));
+    }
     return {
       types: data.subject.types || [],
       region: data.subject.region || '',
       directors: data.subject.directors || [],
       actors: data.subject.actors || [],
-      abstract: data.subject.abstract || ''
+      abstract: data.subject.abstract || data.subject.desc || data.subject.summary || ''
     };
   }
   return null;

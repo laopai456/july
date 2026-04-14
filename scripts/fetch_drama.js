@@ -71,7 +71,7 @@ async function main() {
   }
 
   // ========== 第4步: 抓取新增详情 ==========
-  const newResults = await fetchDetailsBatch(itemsToFetch);
+  const newResults = await fetchDetailsBatch(itemsToFetch, { useAbstract: true });
 
   console.log('\n详情获取完成: ' + newResults.length + ' 条');
 
@@ -89,6 +89,7 @@ async function main() {
         casts: item.casts || [],
         genres: item.genres || [],
         subCategory: item.subCategory || '',
+        abstract: item.abstract || '',
         lastUpdate: now
       });
     }
