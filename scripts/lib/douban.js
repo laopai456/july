@@ -121,22 +121,23 @@ async function fetchDetailByTitle(title, doubanId, preferType = null) {
 async function fetchSubjectAbstract(subjectId) {
   const data = await fetchWithRetry(DOUBAN_API + '/subject_abstract', { subject_id: subjectId });
   if (data && data.subject) {
-    if (!fetchSubjectAbstract._logged) {
-      fetchSubjectAbstract._logged = true;
-      console.log('\n[DEBUG] subject_abstract first result keys: ' + Object.keys(data.subject).join(', '));
-      console.log('[DEBUG] abstract="' + (data.subject.abstract || '') + '"');
-      console.log('[DEBUG] desc="' + (data.subject.desc || '') + '"');
-      console.log('[DEBUG] summary="' + (data.subject.summary || '') + '"');
-    }
     return {
       types: data.subject.types || [],
       region: data.subject.region || '',
       directors: data.subject.directors || [],
       actors: data.subject.actors || [],
-      abstract: data.subject.abstract || data.subject.desc || data.subject.summary || ''
+      abstract: ''
     };
   }
   return null;
+}
+
+async function fetchSubjectSummary(subjectId) {
+  const url = 'https://movie.douban.com/j/subject_detail/' + subjectId;
+  const data = await fetchWithRetry(url, {});
+  if (data && data.summary) return data.summary;
+  if (data && data.subject && data.subject.summary) return data.subject.summary;
+  return '';
 }
 
 function extractYear(text) {
@@ -338,8 +339,14 @@ async function fetchDetailForItem(item, options = {}) {
 
   const detail = await fetchDetailByTitle(item.title, item.id, preferType);
   let abstract = null;
+  let summary = '';
   if (useAbstract) {
     abstract = await fetchSubjectAbstract(item.id);
+    summary = await fetchSubjectSummary(item.id);
+    if (!fetchDetailForItem._loggedSummary) {
+      fetchDetailForItem._loggedSummary = true;
+      console.log('\n[DEBUG] summary for "' + item.title + '": "' + (summary || '(empty)') + '"');
+    }
   }
 
   let year = '';
@@ -358,7 +365,7 @@ async function fetchDetailForItem(item, options = {}) {
     casts: abstract ? abstract.actors : (item.casts || []),
     genres: abstract ? abstract.types : (detail ? (detail.genres || item.genres || []) : (item.genres || [])),
     subCategory: item.subCategory || '',
-    abstract: abstract ? abstract.abstract : ''
+    abstract: summary || (abstract ? abstract.abstract : '')
   };
 
   return result;
@@ -447,6 +454,7 @@ module.exports = {
   fetchList,
   fetchDetailByTitle,
   fetchSubjectAbstract,
+  fetchSubjectSummary,
   extractYear,
   calculateHotScore,
   FOREIGN_KEYWORDS,
