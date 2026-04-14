@@ -121,8 +121,12 @@ async function fetchDetailByTitle(title, doubanId, preferType = null) {
 async function fetchSubjectAbstract(subjectId) {
   const data = await fetchWithRetry(DOUBAN_API + '/subject_abstract', { subject_id: subjectId });
   if (data && data.subject) {
-    if (Object.keys(data.subject).length < 10) {
-      console.log('\n[DEBUG subject_abstract] keys: ' + Object.keys(data.subject).join(', '));
+    if (!fetchSubjectAbstract._logged) {
+      fetchSubjectAbstract._logged = true;
+      console.log('\n[DEBUG] subject_abstract first result keys: ' + Object.keys(data.subject).join(', '));
+      console.log('[DEBUG] abstract="' + (data.subject.abstract || '') + '"');
+      console.log('[DEBUG] desc="' + (data.subject.desc || '') + '"');
+      console.log('[DEBUG] summary="' + (data.subject.summary || '') + '"');
     }
     return {
       types: data.subject.types || [],
