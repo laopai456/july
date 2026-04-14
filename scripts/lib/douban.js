@@ -174,8 +174,14 @@ const FOREIGN_KEYWORDS = [
 
 const NON_VARIETY_TYPES = ['纪录片', '电影', '电视剧', '动画'];
 
+const NON_VARIETY_TITLES = ['不讨好的勇气'];
+
 function isChineseVariety(title, genres) {
   if (!title) return true;
+
+  for (const t of NON_VARIETY_TITLES) {
+    if (title.includes(t)) return false;
+  }
 
   if (genres && genres.length > 0) {
     const typeStr = genres.join(' ');
