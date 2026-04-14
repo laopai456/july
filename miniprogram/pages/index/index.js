@@ -27,7 +27,9 @@ Page({
     subCategoryCounts: [0, 0, 0],
     showSearchBar: false,
     searchKeyword: '',
-    isSearching: false
+    isSearching: false,
+    showDetailCard: false,
+    detailItem: null
   },
 
   onLoad() {
@@ -387,6 +389,26 @@ Page({
     const item = this.data.list[index]
     console.error('图片加载失败:', item?.title, 'URL:', item?.poster?.substring(0, 60))
   },
+
+  showDetail(e) {
+    const index = e.currentTarget.dataset.index
+    const item = this.data.list[index]
+    if (!item) return
+
+    this.setData({
+      showDetailCard: true,
+      detailItem: item
+    })
+  },
+
+  hideDetail() {
+    this.setData({
+      showDetailCard: false,
+      detailItem: null
+    })
+  },
+
+  preventBubble() {},
 
   goToDetail(e) {
     const { id } = e.currentTarget.dataset
