@@ -91,6 +91,7 @@ async function main() {
         casts: item.casts || [],
         genres: item.genres || [],
         subCategory: item.subCategory || '',
+        abstract: item.abstract || '',
         lastUpdate: now
       });
     }

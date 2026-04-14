@@ -50,7 +50,7 @@ function formatItem(item) {
     rate: item.rate || '0',
     year: item.year || '',
     genres: item.genres || [],
-    summary: '',
+    summary: item.abstract || '',
     directors: item.directors || [],
     casts: item.casts || [],
     subCategory: item.subCategory || '',

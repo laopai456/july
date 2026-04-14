@@ -104,7 +104,8 @@ async function fetchSubjectAbstract(subjectId) {
       types: data.subject.types || [],
       region: data.subject.region || '',
       directors: data.subject.directors || [],
-      actors: data.subject.actors || []
+      actors: data.subject.actors || [],
+      abstract: data.subject.abstract || ''
     };
   }
   return null;
@@ -328,7 +329,8 @@ async function fetchDetailForItem(item, options = {}) {
     directors: abstract ? abstract.directors : (item.directors || []),
     casts: abstract ? abstract.actors : (item.casts || []),
     genres: abstract ? abstract.types : (detail ? (detail.genres || item.genres || []) : (item.genres || [])),
-    subCategory: item.subCategory || ''
+    subCategory: item.subCategory || '',
+    abstract: abstract ? abstract.abstract : ''
   };
 
   return result;
