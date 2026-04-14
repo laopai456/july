@@ -11,7 +11,8 @@ const RATE_LIMIT = {
   maxRetries: 5,
   batchSize: 20,
   batchPause: 10000,
-  maxConcurrent: 3
+  maxConcurrent: 2,
+  banCooldown: 60000
 };
 
 const DISPLAY_COUNT = 20;
@@ -33,14 +34,15 @@ async function parallelLimit(tasks, limit) {
   const results = [];
   let index = 0;
 
-  async function worker() {
+  async function worker(workerId) {
     while (index < tasks.length) {
       const i = index++;
+      if (i > 0) await sleep(randomDelay(1000, 2000));
       results[i] = await tasks[i]();
     }
   }
 
-  const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => worker());
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, (_, i) => worker(i));
   await Promise.all(workers);
   return results;
 }
@@ -78,7 +80,9 @@ async function fetchWithRetry(url, params) {
       await waitForRateLimit();
       const response = await axios.get(url, { params, headers: getHeaders(), timeout: RATE_LIMIT.requestTimeout });
       if (response.data && response.data.msg === '检测到有异常请求') {
-        await sleep(10000);
+        const banWait = RATE_LIMIT.banCooldown * Math.min(attempt, 3);
+        console.log('\n[限流] 被豆瓣限流，等待 ' + (banWait / 1000) + ' 秒后重试...');
+        await sleep(banWait);
         continue;
       }
       return response.data;
