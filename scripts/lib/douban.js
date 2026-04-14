@@ -360,8 +360,10 @@ async function fetchDetailForItem(item, options = {}) {
 
   const detail = await fetchDetailByTitle(item.title, item.id, preferType);
   let abstract = null;
+  let summary = '';
   if (useAbstract) {
     abstract = await fetchSubjectAbstract(item.id);
+    summary = await fetchSubjectSummary(item.id);
   }
 
   let year = '';
@@ -380,7 +382,7 @@ async function fetchDetailForItem(item, options = {}) {
     casts: abstract ? abstract.actors : (item.casts || []),
     genres: abstract ? abstract.types : (detail ? (detail.genres || item.genres || []) : (item.genres || [])),
     subCategory: item.subCategory || '',
-    abstract: abstract ? abstract.abstract : ''
+    abstract: summary || (abstract ? abstract.abstract : '')
   };
 
   return result;
