@@ -203,21 +203,29 @@ function isChineseVariety(title, genres) {
   return true;
 }
 
-const CULTURE_PATTERNS = ['朗读者', '局部', '博物', '国家宝藏', '见字如面',
+const CULTURE_PATTERNS = ['朗读者', '局部', '博物奇妙夜', '博物', '国家宝藏', '见字如面',
   '典籍里的中国', '经典咏流传', '故事里的中国', '诗意', '读书', '开讲啦',
-  '我在', '关于', '十三邀', '圆桌派', '锵锵', '第一人称', '谈话'];
+  '十三邀', '圆桌派', '锵锵', '第一人称复数', '谈话', '见字如面',
+  '拜托了冰箱', '中餐厅', '向往的生活', '朋友请听好', '声临其境',
+  '奇遇人生', '毛雪汪', '幻乐之城'];
+
+const NON_COMEDY_TITLES = ['奇葩说', '奇葩大会', '今晚80后', '今晚80后脱口秀'];
 
 function getSubCategory(title, types) {
-  if (types && types.length > 0) {
-    const typeStr = types.join(' ');
-    if (typeStr.includes('音乐')) return '音综';
-    if (typeStr.includes('喜剧') || typeStr.includes('脱口秀')) return '喜剧';
-  }
-
   const normalized = title.toLowerCase();
 
   for (const p of CULTURE_PATTERNS) {
     if (normalized.includes(p.toLowerCase())) return '真人秀';
+  }
+
+  for (const p of NON_COMEDY_TITLES) {
+    if (normalized.includes(p.toLowerCase())) return '真人秀';
+  }
+
+  if (types && types.length > 0) {
+    const typeStr = types.join(' ');
+    if (typeStr.includes('音乐')) return '音综';
+    if (typeStr.includes('喜剧') || typeStr.includes('脱口秀')) return '喜剧';
   }
 
   const musicPatterns = ['音乐', '歌唱', '歌手', '唱歌', '声音', '好声音', '我是歌手',
