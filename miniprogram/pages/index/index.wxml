@@ -126,44 +126,8 @@
 </view>
 
 <view class="card-mask" wx:if="{{showDetailCard}}" bindtap="hideDetail" catchtouchmove="true">
-  <scroll-view class="detail-card" scroll-y catchtap="preventBubble">
-    <view class="card-header">
-      <image wx:if="{{detailItem.poster}}" class="card-poster" src="{{detailItem.poster}}" mode="aspectFill" />
-      <view wx:else class="card-poster-placeholder">
-        <text>{{detailItem.title[0]}}</text>
-      </view>
-      <view class="card-info">
-        <text class="card-title">{{detailItem.title}}</text>
-        <view class="card-meta-row">
-          <text class="card-rating" wx:if="{{detailItem.rating > 0}}">★ {{detailItem.rating}}</text>
-          <text class="card-meta-item" wx:if="{{detailItem.year}}">{{detailItem.year}}</text>
-          <text class="card-meta-item" wx:if="{{detailItem.subCategory}}">{{detailItem.subCategory}}</text>
-        </view>
-        <view class="card-tags" wx:if="{{detailItem.genres && detailItem.genres.length > 0}}">
-          <text class="card-tag" wx:for="{{detailItem.genres}}" wx:key="*this" wx:if="{{index < 4}}">{{item}}</text>
-        </view>
-      </view>
-    </view>
-
-    <view class="card-section" wx:if="{{detailItem.cast && detailItem.cast.length > 0}}">
-      <text class="card-section-title">演职人员</text>
-      <view class="card-cast-list">
-        <text class="card-cast-item" wx:for="{{detailItem.cast}}" wx:key="*this" wx:if="{{index < 6}}">{{item}}</text>
-      </view>
-    </view>
-
-    <view class="card-section" wx:if="{{detailItem.director}}">
-      <text class="card-section-title">导演</text>
-      <text class="card-director">{{detailItem.director}}</text>
-    </view>
-
-    <view class="card-section" wx:if="{{detailItem.description}}">
-      <text class="card-section-title">内容简介</text>
-      <text class="card-desc">{{detailItem.description}}</text>
-    </view>
-
-    <view class="card-close-hint">
-      <text>点击空白处关闭</text>
-    </view>
-  </scroll-view>
+  <view class="detail-card" catchtap="preventBubble">
+    <text class="card-title">{{detailItem.title}}</text>
+    <text class="card-desc">{{detailItem.description || '暂无简介'}}</text>
+  </view>
 </view>
