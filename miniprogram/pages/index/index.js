@@ -14,7 +14,11 @@ const DOUBAN_API = 'https://movie.douban.com/j'
 function optimizePosterUrl(url) {
   if (!url) return ''
   url = url.replace(/[\s`'"''""]/g, '').trim()
-  if (url.includes('doubanio.com') || url.includes('douban.com') || url.includes('img3.doubanio.com')) {
+  if (url.includes('images.weserv.nl')) {
+    if (!url.includes('w=') && !url.includes('q=')) {
+      url = url + '&w=200&q=80'
+    }
+  } else if (url.includes('doubanio.com')) {
     if (!url.includes('imageView2')) {
       url = url + (url.includes('?') ? '&' : '?') + 'imageView2/2/w/200/q/80'
     }
