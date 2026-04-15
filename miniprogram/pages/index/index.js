@@ -11,17 +11,11 @@ const CACHE_EXPIRE = 30 * 60 * 1000
 
 const DOUBAN_API = 'https://movie.douban.com/j'
 
-function optimizePosterUrl(url) {
+function proxyPoster(url) {
   if (!url) return ''
   url = url.replace(/[\s`'"''""]/g, '').trim()
-  if (url.includes('images.weserv.nl')) {
-    if (!url.includes('w=') && !url.includes('q=')) {
-      url = url + '&w=200&q=80'
-    }
-  } else if (url.includes('doubanio.com')) {
-    if (!url.includes('imageView2')) {
-      url = url + (url.includes('?') ? '&' : '?') + 'imageView2/2/w/200/q/80'
-    }
+  if (url.match(/img\d*\.doubanio\.com/)) {
+    return 'https://images.weserv.nl/?url=' + url.replace(/https?:\/\//, '')
   }
   return url
 }
@@ -233,7 +227,7 @@ Page({
     if (cached && cached.length > 0) {
       const cleanedList = cached.map(item => ({
         ...item,
-        poster: optimizePosterUrl(item.poster),
+        poster: proxyPoster(item.poster),
         castDisplay: item.castDisplay || (item.cast && item.cast.length > 0 ? item.cast.slice(0, 3).join(' / ') : '')
       }))
       this.setData({
@@ -356,7 +350,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: optimizePosterUrl(item.cover),
+          poster: proxyPoster(item.cover),
           rating: parseFloat(item.rate) || 0,
           hotScore: item.hotScore || 0,
           ratingSource: 'douban',
@@ -416,7 +410,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: optimizePosterUrl(item.cover),
+          poster: proxyPoster(item.cover),
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
           description: item.summary || '',
@@ -464,7 +458,7 @@ Page({
           region: regionMap[sub] || 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: optimizePosterUrl(item.cover),
+          poster: proxyPoster(item.cover),
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
           description: item.summary || '',
@@ -506,7 +500,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: optimizePosterUrl(item.cover),
+          poster: proxyPoster(item.cover),
           rating: parseFloat(item.rate) || 0,
           hotScore: item.hotScore || 0,
           ratingSource: 'douban',
@@ -570,7 +564,7 @@ Page({
         region: 'cn',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: optimizePosterUrl(item.cover),
+        poster: proxyPoster(item.cover),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -614,7 +608,7 @@ Page({
         region: regionMap[subCategory] || 'cn',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: optimizePosterUrl(item.cover),
+        poster: proxyPoster(item.cover),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -740,7 +734,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: [],
-          poster: optimizePosterUrl(item.cover),
+          poster: proxyPoster(item.cover),
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
           description: '',
