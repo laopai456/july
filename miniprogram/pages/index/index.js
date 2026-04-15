@@ -11,15 +11,6 @@ const CACHE_EXPIRE = 30 * 60 * 1000
 
 const DOUBAN_API = 'https://movie.douban.com/j'
 
-function proxyPoster(url) {
-  if (!url) return ''
-  url = url.replace(/[\s`'"''""]/g, '').trim()
-  if (url.match(/img\d*\.doubanio\.com/)) {
-    return 'https://images.weserv.nl/?url=' + url.replace(/https?:\/\//, '')
-  }
-  return url
-}
-
 Page({
   data: {
     tabs: TABS,
@@ -85,19 +76,17 @@ Page({
     const { currentTabName, currentSubName } = this.data
     this.setData({ loading: true })
 
-    const cached = this._tabDataCache[currentTabName]
-    if (cached) {
+    if (this._tabDataCache[currentTabName]) {
       this.applyTabData(currentTabName, currentSubName)
-      return
+    } else {
+      const diskCache = this.getCache(currentTabName)
+      if (diskCache) {
+        this._tabDataCache[currentTabName] = diskCache
+        this.applyTabData(currentTabName, currentSubName)
+      } else {
+        this.loadTabFromNetwork(currentTabName)
+      }
     }
-
-    const diskCache = this.getCache(currentTabName)
-    if (diskCache) {
-      this._tabDataCache[currentTabName] = diskCache
-      this.applyTabData(currentTabName, currentSubName)
-    }
-
-    this.loadTabFromNetwork(currentTabName)
 
     const preloadTabs = TABS.filter(t => t !== currentTabName)
     for (const tab of preloadTabs) {
@@ -135,9 +124,12 @@ Page({
     const data = this._tabDataCache[tabName]
     if (!data) return
 
+    const list = (data.items[subName] || []).slice(0, 30)
+    const subs = SUB_CATEGORIES[tabName]
+
+    let counts
     if (tabName === '综艺') {
-      const counts = data.counts
-      const list = (data.items[subName] || []).slice(0, 30)
+      counts = data.counts
       this.setData({
         list,
         subCategoryCounts: [counts['真人秀'] || 0, counts['喜剧'] || 0, counts['音综'] || 0],
@@ -145,19 +137,7 @@ Page({
         loading: false,
         refreshAt: '云存储数据'
       })
-    } else if (tabName === '电影') {
-      const list = (data.items[subName] || []).slice(0, 30)
-      const subs = SUB_CATEGORIES['电影']
-      this.setData({
-        list,
-        subCategoryCounts: subs.map(s => (data.items[s] || []).length),
-        hasMore: false,
-        loading: false,
-        refreshAt: '云存储数据'
-      })
-    } else if (tabName === '热剧') {
-      const list = (data.items[subName] || []).slice(0, 30)
-      const subs = SUB_CATEGORIES['热剧']
+    } else {
       this.setData({
         list,
         subCategoryCounts: subs.map(s => (data.items[s] || []).length),
@@ -207,8 +187,7 @@ Page({
       loading: true
     })
 
-    const cached = this._tabDataCache[this.data.currentTabName]
-    if (cached) {
+    if (this._tabDataCache[this.data.currentTabName]) {
       this.applyTabData(this.data.currentTabName, subName)
       return
     }
@@ -227,7 +206,7 @@ Page({
     if (cached && cached.length > 0) {
       const cleanedList = cached.map(item => ({
         ...item,
-        poster: proxyPoster(item.poster),
+        poster: (item.poster || '').replace(/[\s`'"''""]/g, '').trim(),
         castDisplay: item.castDisplay || (item.cast && item.cast.length > 0 ? item.cast.slice(0, 3).join(' / ') : '')
       }))
       this.setData({
@@ -331,7 +310,6 @@ Page({
   async fetchVarietyAll() {
     try {
       const result = await this.callDataService('getVariety', {})
-
       if (!result || !result.subjects) return null
 
       const allItems = []
@@ -350,7 +328,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: proxyPoster(item.cover),
+          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
           rating: parseFloat(item.rate) || 0,
           hotScore: item.hotScore || 0,
           ratingSource: 'douban',
@@ -410,7 +388,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: proxyPoster(item.cover),
+          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
           description: item.summary || '',
@@ -458,7 +436,7 @@ Page({
           region: regionMap[sub] || 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: proxyPoster(item.cover),
+          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
           description: item.summary || '',
@@ -500,7 +478,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: proxyPoster(item.cover),
+          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
           rating: parseFloat(item.rate) || 0,
           hotScore: item.hotScore || 0,
           ratingSource: 'douban',
@@ -564,7 +542,7 @@ Page({
         region: 'cn',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: proxyPoster(item.cover),
+        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -608,7 +586,7 @@ Page({
         region: regionMap[subCategory] || 'cn',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: proxyPoster(item.cover),
+        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -734,7 +712,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: [],
-          poster: proxyPoster(item.cover),
+          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
           description: '',

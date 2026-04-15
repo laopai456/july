@@ -42,21 +42,11 @@ function loadLocalData() {
   return null;
 }
 
-function proxyCover(url) {
-  if (!url) return ''
-  url = url.replace(/[\s`'"''""]/g, '').trim()
-  if (url.match(/img\d*\.doubanio\.com/)) {
-    const path = url.replace(/https?:\/\//, '')
-    return 'https://images.weserv.nl/?url=' + path
-  }
-  return url
-}
-
 function formatItem(item) {
   return {
     id: item.id,
     title: item.title,
-    cover: proxyCover((item.cover || item.poster || '') + ''),
+    cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
     rate: item.rate || '0',
     year: item.year || '',
     genres: item.genres || [],
@@ -137,7 +127,7 @@ app.get('/api/movie/:type', async (req, res) => {
     if (data && data.subjects) {
       data.subjects = data.subjects.map(item => ({
         ...item,
-        cover: proxyCover(item.cover || '')
+        cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim()
       }));
     }
 
@@ -186,7 +176,7 @@ app.get('/api/drama/:type', async (req, res) => {
     if (data && data.subjects) {
       data.subjects = data.subjects.map(item => ({
         ...item,
-        cover: proxyCover(item.cover || '')
+        cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim()
       }));
     }
 
