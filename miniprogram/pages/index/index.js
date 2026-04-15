@@ -29,7 +29,8 @@ Page({
     searchKeyword: '',
     isSearching: false,
     showDetailCard: false,
-    detailItem: null
+    detailItem: null,
+    descExpanded: false
   },
 
   _tabDataCache: {},
@@ -649,7 +650,14 @@ Page({
 
     this.setData({
       showDetailCard: true,
-      detailItem: item
+      detailItem: item,
+      descExpanded: false
+    })
+  },
+
+  toggleDesc() {
+    this.setData({
+      descExpanded: !this.data.descExpanded
     })
   },
 

@@ -125,19 +125,43 @@
   </view>
 </view>
 
-<view class="card-mask" wx:if="{{showDetailCard}}" bindtap="hideDetail" catchtouchmove="true">
+<view class="card-mask" wx:if="{{showDetailCard}}" bindtap="hideDetail">
   <view class="detail-card" catchtap="preventBubble">
     <scroll-view scroll-y class="card-scroll">
-      <text class="card-title">{{detailItem.title}}</text>
-      <view class="card-meta" wx:if="{{detailItem.year || detailItem.rating || detailItem.director}}">
-        <text wx:if="{{detailItem.year}}">{{detailItem.year}}年</text>
-        <text wx:if="{{detailItem.rating > 0}}">★ {{detailItem.rating}}</text>
-        <text wx:if="{{detailItem.director}}">导演: {{detailItem.director}}</text>
+      <view class="card-header">
+        <text class="card-title">{{detailItem.title}}</text>
+        <view class="card-rating" wx:if="{{detailItem.rating > 0}}">
+          <text class="rating-star">★</text>
+          <text class="rating-num">{{detailItem.rating}}</text>
+        </view>
       </view>
-      <view class="card-cast" wx:if="{{detailItem.castDisplay}}">
-        <text>演员: {{detailItem.castDisplay}}</text>
+
+      <view class="card-tags">
+        <text class="tag" wx:if="{{detailItem.year}}">{{detailItem.year}}</text>
+        <text class="tag" wx:for="{{detailItem.genres}}" wx:if="{{item}}" wx:key="*this">{{item}}</text>
+        <text class="tag region-tag" wx:if="{{detailItem.region}}">{{detailItem.region === 'cn' ? '华语' : detailItem.region === 'kr' ? '韩国' : detailItem.region === 'jp' ? '日本' : item.region}}</text>
       </view>
-      <text class="card-desc">{{detailItem.description || '暂无简介'}}</text>
+
+      <view class="card-info-row" wx:if="{{detailItem.director}}">
+        <text class="info-label">导演</text>
+        <text class="info-value">{{detailItem.director}}</text>
+      </view>
+
+      <view class="card-info-row" wx:if="{{detailItem.castDisplay}}">
+        <text class="info-label">演员</text>
+        <text class="info-value">{{detailItem.castDisplay}}</text>
+      </view>
+
+      <view class="card-divider"></view>
+
+      <view class="card-desc-wrap" wx:if="{{detailItem.description}}">
+        <text class="card-desc {{descExpanded ? '' : 'collapsed'}}">{{detailItem.description}}</text>
+        <view class="expand-btn" wx:if="{{detailItem.description.length > 80}}" bindtap="toggleDesc">
+          <text>{{descExpanded ? '收起' : '展开全部'}}</text>
+        </view>
+      </view>
+
+      <text class="card-desc" wx:else>暂无简介</text>
     </scroll-view>
   </view>
 </view>
