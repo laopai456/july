@@ -127,7 +127,17 @@
 
 <view class="card-mask" wx:if="{{showDetailCard}}" bindtap="hideDetail" catchtouchmove="true">
   <view class="detail-card" catchtap="preventBubble">
-    <text class="card-title">{{detailItem.title}}</text>
-    <text class="card-desc">{{detailItem.description || '暂无简介'}}</text>
+    <scroll-view scroll-y class="card-scroll">
+      <text class="card-title">{{detailItem.title}}</text>
+      <view class="card-meta" wx:if="{{detailItem.year || detailItem.rating || detailItem.director}}">
+        <text wx:if="{{detailItem.year}}">{{detailItem.year}}年</text>
+        <text wx:if="{{detailItem.rating > 0}}">★ {{detailItem.rating}}</text>
+        <text wx:if="{{detailItem.director}}">导演: {{detailItem.director}}</text>
+      </view>
+      <view class="card-cast" wx:if="{{detailItem.castDisplay}}">
+        <text>演员: {{detailItem.castDisplay}}</text>
+      </view>
+      <text class="card-desc">{{detailItem.description || '暂无简介'}}</text>
+    </scroll-view>
   </view>
 </view>
