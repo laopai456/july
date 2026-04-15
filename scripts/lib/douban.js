@@ -135,16 +135,16 @@ async function fetchSubjectAbstract(subjectId) {
 async function fetchSubjectSummary(subjectId) {
   try {
     await waitForRateLimit();
-    const url = 'https://m.douban.com/subject/' + subjectId + '/';
+    const url = 'https://movie.douban.com/subject/' + subjectId + '/';
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
-        'Accept': 'text/html',
-        'Referer': 'https://m.douban.com/'
+        ...getHeaders(),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
       },
       timeout: RATE_LIMIT.requestTimeout
     });
     const html = typeof response.data === 'string' ? response.data : '';
+    if (html.length < 5000) return '';
     const match = html.match(/<span\s+property="v:summary"[^>]*>([\s\S]*?)<\/span>/);
     if (match) return match[1].replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ').trim();
     return '';
