@@ -35,10 +35,16 @@ Page({
 
   _tabDataCache: {},
   _summaryCache: {},
+  _scrollTop: 0,
 
   onLoad() {
     this._tabDataCache = {}
+    this._summaryCache = {}
     this.loadDataWithPreload()
+  },
+
+  onPageScroll(e) {
+    this._scrollTop = e.scrollTop
   },
 
   onPullDownRefresh() {
@@ -718,9 +724,14 @@ Page({
   },
 
   hideDetail() {
+    const scrollTop = this._scrollTop
     this.setData({
       showDetailCard: false,
       detailItem: null
+    }, () => {
+      if (scrollTop > 0) {
+        wx.pageScrollTo({ scrollTop, duration: 0 })
+      }
     })
   },
 
