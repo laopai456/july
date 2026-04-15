@@ -61,12 +61,12 @@ async function getDrama(event) {
 
 async function getSubject(event) {
   const { id } = event
-  if (!id || !/^\d+$/.test(id)) {
+  if (!id) {
     return { id: '', summary: '' }
   }
 
   try {
-    const res = await axios.get(SERVER_URL + '/api/subject/' + id, { timeout: 8000 })
+    const res = await axios.get(SERVER_URL + '/api/subject/' + encodeURIComponent(id), { timeout: 10000 })
     return res.data
   } catch (e) {
     return { id, summary: '' }

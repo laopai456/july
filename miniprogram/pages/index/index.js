@@ -661,21 +661,21 @@ Page({
 
   async fetchFullSummary(item) {
     try {
-      const doubanId = item.doubanId
-      if (!doubanId) return
+      const identifier = item.doubanId || item.title
+      if (!identifier) return
 
       let result
       try {
         const res = await wx.cloud.callFunction({
           name: 'dataService',
-          data: { action: 'getSubject', id: doubanId }
+          data: { action: 'getSubject', id: identifier }
         })
         result = res.result
       } catch (e) {
         const config = require('../../utils/config.js')
         const res = await new Promise((resolve, reject) => {
           wx.request({
-            url: config.apiBase + '/api/subject/' + doubanId,
+            url: config.apiBase + '/api/subject/' + encodeURIComponent(identifier),
             method: 'GET',
             timeout: 8000,
             success: r => resolve(r.data),
@@ -685,8 +685,8 @@ Page({
         result = res
       }
 
-      if (result && result.summary) {
-        const idx = this.data.list.findIndex(i => i.doubanId === doubanId)
+      if (result && result.summary && result.summary.length > (item.description || '').length) {
+        const idx = this.data.list.findIndex(i => (i.doubanId || i.title) === identifier)
         if (idx > -1) {
           this.setData({
             [`list[${idx}].description`]: result.summary,
