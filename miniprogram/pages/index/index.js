@@ -654,7 +654,7 @@ Page({
       descExpanded: false
     })
 
-    if (!item.description || item.description.length < 30) {
+    if (!item.description || item.description.length < 300) {
       this.fetchFullSummary(item)
     }
   },
