@@ -98,15 +98,18 @@ app.get('/api/movie/:type', async (req, res) => {
     'western': '欧美'
   };
 
-  if (localData && localData.movie && localData.movie.length > 0) {
-    const filtered = localData.movie.filter(item => item.subCategory === typeMap[type]);
-    const subjects = filtered.map(formatItem);
+  if (localData) {
+    if (localData.movie && localData.movie.length > 0) {
+      const filtered = localData.movie.filter(item => item.subCategory === typeMap[type]);
+      const subjects = filtered.map(formatItem);
 
-    return res.json({
-      subjects,
-      total: subjects.length,
-      source: 'local'
-    });
+      return res.json({
+        subjects,
+        total: subjects.length,
+        source: 'local'
+      });
+    }
+    return res.json({ subjects: [], total: 0, source: 'local-empty' });
   }
 
   try {
@@ -147,15 +150,18 @@ app.get('/api/drama/:type', async (req, res) => {
     'japanese': '日剧'
   };
 
-  if (localData && localData.drama && localData.drama.length > 0) {
-    const filtered = localData.drama.filter(item => item.subCategory === typeMap[type]);
-    const subjects = filtered.map(formatItem);
+  if (localData) {
+    if (localData.drama && localData.drama.length > 0) {
+      const filtered = localData.drama.filter(item => item.subCategory === typeMap[type]);
+      const subjects = filtered.map(formatItem);
 
-    return res.json({
-      subjects,
-      total: subjects.length,
-      source: 'local'
-    });
+      return res.json({
+        subjects,
+        total: subjects.length,
+        source: 'local'
+      });
+    }
+    return res.json({ subjects: [], total: 0, source: 'local-empty' });
   }
 
   try {
