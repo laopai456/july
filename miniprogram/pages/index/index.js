@@ -34,6 +34,7 @@ Page({
   },
 
   _tabDataCache: {},
+  _summaryCache: {},
 
   onLoad() {
     this._tabDataCache = {}
@@ -147,6 +148,58 @@ Page({
         refreshAt: '云存储数据'
       })
     }
+    this.preloadSummaries(list)
+  },
+
+  preloadSummaries(list) {
+    const needFetch = list.filter(item => {
+      if (!item.description || item.description.length < 300) {
+        return !this._summaryCache[item.title]
+      }
+      return false
+    }).map(item => item.title)
+
+    if (needFetch.length === 0) return
+
+    const fetchBatch = async (titles) => {
+      try {
+        const res = await wx.cloud.callFunction({
+          name: 'dataService',
+          data: { action: 'getSubjectsBatch', titles }
+        })
+        return res.result || {}
+      } catch (e) {
+        const config = require('../../utils/config.js')
+        return new Promise((resolve, reject) => {
+          wx.request({
+            url: config.apiBase + '/api/subjects/batch',
+            method: 'POST',
+            data: { titles },
+            header: { 'content-type': 'application/json' },
+            timeout: 30000,
+            success: r => resolve(r.data || {}),
+            fail: reject
+          })
+        })
+      }
+    }
+
+    fetchBatch(needFetch).then(results => {
+      if (!results) return
+      for (const [title, summary] of Object.entries(results)) {
+        if (summary) this._summaryCache[title] = summary
+      }
+      const list = this.data.list
+      let updated = false
+      for (let i = 0; i < list.length; i++) {
+        const cached = this._summaryCache[list[i].title]
+        if (cached && (!list[i].description || cached.length > list[i].description.length)) {
+          list[i].description = cached
+          updated = true
+        }
+      }
+      if (updated) this.setData({ list })
+    }).catch(() => {})
   },
 
   onTabChange(e) {
@@ -648,21 +701,19 @@ Page({
     const item = this.data.list[index]
     if (!item) return
 
-    const needFetch = !item.description || item.description.length < 300
+    const cachedSummary = this._summaryCache[item.title]
+    const finalDesc = cachedSummary && cachedSummary.length > (item.description || '').length
+      ? cachedSummary
+      : item.description
 
     this.setData({
       showDetailCard: true,
       detailItem: {
         ...item,
-        _originalDesc: item.description,
-        description: needFetch ? '正在加载简介...' : item.description
+        description: finalDesc || '暂无简介'
       },
       descExpanded: false
     })
-
-    if (needFetch) {
-      this.fetchFullSummary(item)
-    }
   },
 
   async fetchFullSummary(item) {

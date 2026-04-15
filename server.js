@@ -262,6 +262,60 @@ app.get('/api/subject/:id', async (req, res) => {
   }
 });
 
+app.post('/api/subjects/batch', async (req, res) => {
+  const { titles } = req.body;
+  if (!Array.isArray(titles) || titles.length === 0) {
+    return res.json({});
+  }
+
+  const limit = Math.min(titles.length, 30);
+  const batch = titles.slice(0, limit);
+
+  const results = {};
+  const concurrency = 5;
+  for (let i = 0; i < batch.length; i += concurrency) {
+    const chunk = batch.slice(i, i + concurrency);
+    const promises = chunk.map(async (title) => {
+      try {
+        const suggestRes = await axios.get('https://movie.douban.com/j/subject_suggest', {
+          params: { q: title },
+          headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://movie.douban.com/' },
+          timeout: 5000
+        });
+        const items = suggestRes.data;
+        if (!Array.isArray(items) || items.length === 0 || !items[0].id) return;
+
+        const doubanId = items[0].id;
+        const response = await axios.get(`https://m.douban.com/subject/${doubanId}/`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15',
+            'Referer': 'https://m.douban.com/'
+          },
+          timeout: 8000
+        });
+
+        const html = typeof response.data === 'string' ? response.data : '';
+        let summary = '';
+        const sectionMatch = html.match(/<section\s+class="subject-intro">[\s\S]*?<p[^>]*>\s*([\s\S]*?)<\/p>/);
+        if (sectionMatch) {
+          summary = sectionMatch[1].replace(/<[^>]+>/g, '').trim();
+        }
+        if (!summary) {
+          const metaMatch = html.match(/<meta\s+name="description"\s+content="[^"]*简介[：:]([^"]+)"/);
+          if (metaMatch) summary = metaMatch[1];
+        }
+        if (summary) {
+          summary = summary.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ').trim();
+        }
+        if (summary) results[title] = summary;
+      } catch (e) {}
+    });
+    await Promise.all(promises);
+  }
+
+  res.json(results);
+});
+
 app.post('/api/variety/sync', (req, res) => {
   try {
     const { secret, variety, config } = req.body;

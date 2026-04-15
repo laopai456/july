@@ -73,6 +73,20 @@ async function getSubject(event) {
   }
 }
 
+async function getSubjectsBatch(event) {
+  const { titles } = event
+  if (!Array.isArray(titles) || titles.length === 0) {
+    return {}
+  }
+
+  try {
+    const res = await axios.post(SERVER_URL + '/api/subjects/batch', { titles }, { timeout: 30000 })
+    return res.data
+  } catch (e) {
+    return {}
+  }
+}
+
 exports.main = async (event, context) => {
   const { action } = event
 
@@ -86,6 +100,8 @@ exports.main = async (event, context) => {
         return await getDrama(event)
       case 'getSubject':
         return await getSubject(event)
+      case 'getSubjectsBatch':
+        return await getSubjectsBatch(event)
       default:
         return { subjects: [], total: 0, error: '无效的action: ' + action }
     }
