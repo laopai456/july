@@ -653,6 +653,50 @@ Page({
       detailItem: item,
       descExpanded: false
     })
+
+    if (!item.description || item.description.length < 30) {
+      this.fetchFullSummary(item)
+    }
+  },
+
+  async fetchFullSummary(item) {
+    try {
+      const doubanId = item.doubanId
+      if (!doubanId) return
+
+      let result
+      try {
+        const res = await wx.cloud.callFunction({
+          name: 'dataService',
+          data: { action: 'getSubject', id: doubanId }
+        })
+        result = res.result
+      } catch (e) {
+        const config = require('../../utils/config.js')
+        const res = await new Promise((resolve, reject) => {
+          wx.request({
+            url: config.apiBase + '/api/subject/' + doubanId,
+            method: 'GET',
+            timeout: 8000,
+            success: r => resolve(r.data),
+            fail: reject
+          })
+        })
+        result = res
+      }
+
+      if (result && result.summary) {
+        const idx = this.data.list.findIndex(i => i.doubanId === doubanId)
+        if (idx > -1) {
+          this.setData({
+            [`list[${idx}].description`]: result.summary,
+            'detailItem.description': result.summary
+          })
+        }
+      }
+    } catch (err) {
+      console.error('获取完整简介失败:', err)
+    }
   },
 
   toggleDesc() {

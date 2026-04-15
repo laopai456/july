@@ -59,6 +59,20 @@ async function getDrama(event) {
   return data.drama[type] || { subjects: [], total: 0 }
 }
 
+async function getSubject(event) {
+  const { id } = event
+  if (!id || !/^\d+$/.test(id)) {
+    return { id: '', summary: '' }
+  }
+
+  try {
+    const res = await axios.get(SERVER_URL + '/api/subject/' + id, { timeout: 8000 })
+    return res.data
+  } catch (e) {
+    return { id, summary: '' }
+  }
+}
+
 exports.main = async (event, context) => {
   const { action } = event
 
@@ -70,6 +84,8 @@ exports.main = async (event, context) => {
         return await getMovie(event)
       case 'getDrama':
         return await getDrama(event)
+      case 'getSubject':
+        return await getSubject(event)
       default:
         return { subjects: [], total: 0, error: '无效的action: ' + action }
     }

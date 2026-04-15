@@ -186,6 +186,53 @@ app.get('/api/drama/:type', async (req, res) => {
   }
 });
 
+app.get('/api/subject/:id', async (req, res) => {
+  const { id } = req.params;
+  if (!id || !/^\d+$/.test(id)) {
+    return res.status(400).json({ error: '无效的ID' });
+  }
+
+  try {
+    const response = await axios.get(`https://m.douban.com/subject/${id}/`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+        'Accept': 'text/html',
+        'Referer': 'https://m.douban.com/'
+      },
+      timeout: 8000
+    });
+
+    const html = typeof response.data === 'string' ? response.data : '';
+    let summary = '';
+
+    const metaMatch = html.match(/<meta\s+name="description"\s+content="([^"]+)"/);
+    if (metaMatch) {
+      const content = metaMatch[1];
+      const colonIdx = content.indexOf('：');
+      if (colonIdx > -1) {
+        summary = content.substring(colonIdx + 1);
+      } else {
+        summary = content;
+      }
+    }
+
+    if (!summary) {
+      const sectionMatch = html.match(/<section\s+class="subject-intro">[\s\S]*?<p[^>]*>\s*([\s\S]*?)<\/p>/);
+      if (sectionMatch) {
+        summary = sectionMatch[1].replace(/<[^>]+>/g, '').trim();
+      }
+    }
+
+    if (summary) {
+      summary = summary.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ').trim();
+    }
+
+    res.json({ id, summary });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/variety/sync', (req, res) => {
   try {
     const { secret, variety, config } = req.body;
