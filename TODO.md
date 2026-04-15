@@ -1,111 +1,63 @@
 # 性能优化待办
 
 ## 更新时间
-2026-04-15
-
-## 优化目标
-提升小程序加载速度，减少用户等待时间。
+2026-04-16
 
 ---
 
-## P0 - 并行预加载（效果最大）
+## 待修复问题
+
+### BUG-1 - 简介截断，无法获取完整内容
 
 ### 问题
-当前切换主 tab（综艺/电影/热剧）时，只请求当前子分类数据。切换子分类时又要重新请求，每次切换都有网络等待。
+电影、热剧、综艺的简介只显示约 80 字就截断了。抓取脚本从豆瓣移动版 meta description 获取的简介本身就不完整。
 
-### 方案
-- 切换主 tab 时，**并行请求所有 3 个子分类**数据
-- 数据到达后缓存到内存，切换子分类直接从缓存读取
-- 首次加载时预加载第二个 tab 数据
+### 已完成的工作
+- server.js 已有 `/api/subject/:id` 接口，支持通过标题搜索获取完整简介
+- 前端 `fetchFullSummary` 已实现后台静默获取
+- `_summaryCache` 已实现内存缓存
+
+### 待解决
+- 云函数超时只有 3 秒，获取完整简介链路（云函数→服务器→豆瓣搜索→豆瓣页面解析）容易超时
+- 需要在微信云开发控制台将 dataService 云函数超时时间改为 20 秒
+- 或者考虑在抓取脚本中直接获取完整简介，避免运行时补全
 
 ### 涉及文件
-- `miniprogram/pages/index/index.js` - 修改 `loadData` 和 `switchSubCategory` 逻辑
-- `miniprogram/utils/api.js` - 可能需要调整 API 调用
-
-### 预期效果
-- 子分类切换从 ~1秒网络请求 → **0秒本地读取**
-- 首次进入第二/三个 tab 无需等待
+- `cloudfunctions/dataService/index.js` - 云函数超时配置
+- `scripts/lib/douban.js` - 抓取脚本简介获取逻辑
+- `server.js` - `/api/subject/:id` 接口
 
 ---
 
-## P1 - 综艺一次加载缓存
+### BUG-2 - 点击简介卡片关闭后回到榜单顶部
 
 ### 问题
-综艺数据每次切换子分类都重新请求 `/api/variety`，返回的是全部综艺数据然后前端过滤。重复请求浪费。
+用户滚动到列表中间，点击某个条目查看简介卡片，关闭卡片后页面自动回到顶部，应该停留在原来的位置。
 
-### 方案
-- 第一次请求综艺数据后，缓存全部综艺到内存
-- 切换子分类时只做前端过滤，不重复请求
-- 下拉刷新时才清除缓存重新请求
+### 已尝试的方案（均未生效）
+1. `hidden` 替代 `wx:if` — 无效
+2. `opacity` + `pointer-events` CSS 控制 — 导致模拟器崩溃（detailItem 为 null 时模板报错）
+3. `onPageScroll` 记录 + `wx.pageScrollTo` 恢复 — 无效
+4. `wx.nextTick` + `setTimeout` 延迟恢复 — 无效
+
+### 可能的方向
+- 小程序 `setData` 可能会触发页面重排导致滚动位置丢失
+- 考虑用 `scroll-view` 包裹整个列表，用 `scroll-top` 属性控制滚动位置
+- 或者排查 `setData` 中哪些字段变化导致了页面重排
 
 ### 涉及文件
-- `miniprogram/pages/index/index.js`
-
-### 预期效果
-- 综艺子分类切换 **0秒**
-- 减少 2 次重复网络请求
+- `miniprogram/pages/index/index.js` - hideDetail 方法
+- `miniprogram/pages/index/index.wxml` - card-mask 模板
+- `miniprogram/pages/index/index.wxss` - card-mask 样式
 
 ---
 
-## P2 - 图片缩略图优化
+## 已完成的优化（2026-04-15）
 
-### 问题
-当前加载的是豆瓣原图 URL，每张图片 100-300KB，列表 20 张图 = 2-6MB 流量。
-
-### 方案
-- 豆瓣图片 URL 支持尺寸参数，列表页使用小图
-- 示例：`/view/photo/s_ratio_poster/public/p123.jpg` → 添加 `?imageView2/2/w/200/q/80`
-
-### 涉及文件
-- `server.js` - 返回数据时替换 cover URL
-- 或 `miniprogram/components/movie-card/` - 前端处理 URL
-
-### 预期效果
-- 图片流量减少 **70%+**
-- 列表加载速度提升明显
-
----
-
-## P3 - setData 优化
-
-### 问题
-每次 `setData` 传递完整列表数据，小程序渲染层需要全量 diff。
-
-### 方案
-- 只在数据变化时 `setData`
-- 使用数据路径更新（`setData({'items[0].rate': '8.5'})`）
-- 避免频繁 `setData` 调用
-
-### 涉及文件
-- `miniprogram/pages/index/index.js`
-
-### 预期效果
-- 渲染性能提升
-- 减少内存抖动
-
----
-
-## P4 - 请求合并
-
-### 问题
-`onLoad` 时串行调用多个 API（先获取分类数据，再获取子分类数据）。
-
-### 方案
-- 使用 `Promise.all` 并行请求独立的 API
-- onLoad 时同时请求综艺、电影、热剧数据
-
-### 涉及文件
-- `miniprogram/pages/index/index.js`
-
-### 预期效果
-- 首屏加载时间减少 **50%+**
-
----
-
-## 实施顺序建议
-
-1. **P0 并行预加载** — 效果最明显，用户体验提升最大
-2. **P1 综艺缓存** — 改动最小，立竿见影
-3. **P4 请求合并** — 首屏体验优化
-4. **P2 图片优化** — 流量优化
-5. **P3 setData** — 细节优化
+### P0 - 并行预加载 ✅
+### P1 - 综艺一次加载缓存 ✅
+### P3 - setData 优化 ✅
+### P4 - 请求合并 ✅
+### data.json 自动备份 ✅
+### 详情卡片 UI 重构 ✅
+### 电影/热剧演员显示 ✅
