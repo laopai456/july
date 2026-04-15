@@ -11,6 +11,17 @@ const CACHE_EXPIRE = 30 * 60 * 1000
 
 const DOUBAN_API = 'https://movie.douban.com/j'
 
+function optimizePosterUrl(url) {
+  if (!url) return ''
+  url = url.replace(/[\s`'"''""]/g, '').trim()
+  if (url.includes('doubanio.com') || url.includes('douban.com') || url.includes('img3.doubanio.com')) {
+    if (!url.includes('imageView2')) {
+      url = url + (url.includes('?') ? '&' : '?') + 'imageView2/2/w/200/q/80'
+    }
+  }
+  return url
+}
+
 Page({
   data: {
     tabs: TABS,
@@ -32,13 +43,17 @@ Page({
     detailItem: null
   },
 
+  _tabDataCache: {},
+
   onLoad() {
-    this.loadData()
+    this._tabDataCache = {}
+    this.loadDataWithPreload()
   },
 
   onPullDownRefresh() {
     this.clearCache()
-    this.loadData().then(() => {
+    this._tabDataCache = {}
+    this.loadDataWithPreload().then(() => {
       wx.stopPullDownRefresh()
     })
   },
@@ -68,6 +83,93 @@ Page({
     } catch (e) {}
   },
 
+  async loadDataWithPreload() {
+    const { currentTabName, currentSubName } = this.data
+    this.setData({ loading: true })
+
+    const cached = this._tabDataCache[currentTabName]
+    if (cached) {
+      this.applyTabData(currentTabName, currentSubName)
+      return
+    }
+
+    const diskCache = this.getCache(currentTabName)
+    if (diskCache) {
+      this._tabDataCache[currentTabName] = diskCache
+      this.applyTabData(currentTabName, currentSubName)
+    }
+
+    this.loadTabFromNetwork(currentTabName)
+
+    const preloadTabs = TABS.filter(t => t !== currentTabName)
+    for (const tab of preloadTabs) {
+      if (!this._tabDataCache[tab]) {
+        this.loadTabFromNetwork(tab)
+      }
+    }
+  },
+
+  async loadTabFromNetwork(tabName) {
+    try {
+      let data
+      if (tabName === '综艺') {
+        data = await this.fetchVarietyAll()
+      } else if (tabName === '电影') {
+        data = await this.fetchMovieAll()
+      } else if (tabName === '热剧') {
+        data = await this.fetchDramaAll()
+      }
+
+      if (data) {
+        this._tabDataCache[tabName] = data
+        this.setCache(tabName, data)
+
+        if (this.data.currentTabName === tabName && this.data.loading) {
+          this.applyTabData(tabName, this.data.currentSubName)
+        }
+      }
+    } catch (err) {
+      console.error(`预加载 ${tabName} 失败:`, err)
+    }
+  },
+
+  applyTabData(tabName, subName) {
+    const data = this._tabDataCache[tabName]
+    if (!data) return
+
+    if (tabName === '综艺') {
+      const counts = data.counts
+      const list = (data.items[subName] || []).slice(0, 30)
+      this.setData({
+        list,
+        subCategoryCounts: [counts['真人秀'] || 0, counts['喜剧'] || 0, counts['音综'] || 0],
+        hasMore: false,
+        loading: false,
+        refreshAt: '云存储数据'
+      })
+    } else if (tabName === '电影') {
+      const list = (data.items[subName] || []).slice(0, 30)
+      const subs = SUB_CATEGORIES['电影']
+      this.setData({
+        list,
+        subCategoryCounts: subs.map(s => (data.items[s] || []).length),
+        hasMore: false,
+        loading: false,
+        refreshAt: '云存储数据'
+      })
+    } else if (tabName === '热剧') {
+      const list = (data.items[subName] || []).slice(0, 30)
+      const subs = SUB_CATEGORIES['热剧']
+      this.setData({
+        list,
+        subCategoryCounts: subs.map(s => (data.items[s] || []).length),
+        hasMore: false,
+        loading: false,
+        refreshAt: '云存储数据'
+      })
+    }
+  },
+
   onTabChange(e) {
     const index = e.currentTarget.dataset.index
     const tabName = TABS[index]
@@ -81,18 +183,38 @@ Page({
       loading: true,
       subCategoryCounts: [0, 0, 0]
     })
-    this.loadData()
+
+    if (this._tabDataCache[tabName]) {
+      this.applyTabData(tabName, SUB_CATEGORIES[tabName][0])
+    } else {
+      this.loadTabFromNetwork(tabName)
+    }
+
+    const preloadTabs = TABS.filter(t => t !== tabName)
+    for (const tab of preloadTabs) {
+      if (!this._tabDataCache[tab]) {
+        this.loadTabFromNetwork(tab)
+      }
+    }
   },
 
   onSubChange(e) {
     const index = e.currentTarget.dataset.index
     const subName = SUB_CATEGORIES[this.data.currentTabName][index]
+
     this.setData({
       currentSub: index,
       currentSubName: subName,
       list: [],
       loading: true
     })
+
+    const cached = this._tabDataCache[this.data.currentTabName]
+    if (cached) {
+      this.applyTabData(this.data.currentTabName, subName)
+      return
+    }
+
     this.loadData()
   },
 
@@ -107,7 +229,7 @@ Page({
     if (cached && cached.length > 0) {
       const cleanedList = cached.map(item => ({
         ...item,
-        poster: (item.poster || '').replace(/[\s`'"''""]/g, '').trim(),
+        poster: optimizePosterUrl(item.poster),
         castDisplay: item.castDisplay || (item.cast && item.cast.length > 0 ? item.cast.slice(0, 3).join(' / ') : '')
       }))
       this.setData({
@@ -175,7 +297,7 @@ Page({
     } else if (action === 'getDrama') {
       url = config.apiBase + '/api/drama/' + (params.type || 'korean')
     }
-    
+
     return new Promise((resolve, reject) => {
       wx.request({
         url,
@@ -208,6 +330,156 @@ Page({
     return '真人秀'
   },
 
+  async fetchVarietyAll() {
+    try {
+      const result = await this.callDataService('getVariety', {})
+
+      if (!result || !result.subjects) return null
+
+      const allItems = []
+      for (const item of result.subjects) {
+        if (allItems.some(i => i.doubanId === item.id)) continue
+
+        const subCat = item.subCategory || this.getSubCategoryForVariety(item.title, item.genres || [])
+
+        allItems.push({
+          doubanId: item.id,
+          title: item.title,
+          titleEn: '',
+          type: 'variety',
+          mainCategory: '综艺',
+          subCategory: subCat,
+          region: 'cn',
+          year: item.year ? parseInt(item.year) : 0,
+          genres: item.genres || [],
+          poster: optimizePosterUrl(item.cover),
+          rating: parseFloat(item.rate) || 0,
+          hotScore: item.hotScore || 0,
+          ratingSource: 'douban',
+          description: item.summary || '',
+          cast: item.casts || [],
+          castDisplay: (item.casts || []).slice(0, 3).join(' / '),
+          director: (item.directors || []).join(' / '),
+          status: 'ongoing',
+          viewCount: 0,
+          rank: allItems.length + 1
+        })
+      }
+
+      const items = {
+        '真人秀': allItems.filter(i => i.subCategory === '真人秀').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0)),
+        '喜剧': allItems.filter(i => i.subCategory === '喜剧').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0)),
+        '音综': allItems.filter(i => i.subCategory === '音综').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
+      }
+
+      const counts = {
+        '真人秀': items['真人秀'].length,
+        '喜剧': items['喜剧'].length,
+        '音综': items['音综'].length
+      }
+
+      return { items, counts }
+    } catch (err) {
+      console.error('fetchVarietyAll error:', err)
+      return null
+    }
+  },
+
+  async fetchMovieAll() {
+    try {
+      const typeMap = { '中国': 'chinese', '日韩': 'asia', '欧美': 'western' }
+      const subs = SUB_CATEGORIES['电影']
+
+      const promises = subs.map(sub =>
+        this.callDataService('getMovie', { type: typeMap[sub] }).catch(() => null)
+      )
+      const results = await Promise.all(promises)
+
+      const items = {}
+      subs.forEach((sub, idx) => {
+        const result = results[idx]
+        if (!result || !result.subjects) {
+          items[sub] = []
+          return
+        }
+        items[sub] = result.subjects.map((item, index) => ({
+          doubanId: item.id,
+          title: item.title,
+          titleEn: '',
+          type: 'movie',
+          mainCategory: '电影',
+          subCategory: sub,
+          region: 'cn',
+          year: item.year ? parseInt(item.year) : 0,
+          genres: item.genres || [],
+          poster: optimizePosterUrl(item.cover),
+          rating: parseFloat(item.rate) || 0,
+          ratingSource: 'douban',
+          description: item.summary || '',
+          cast: item.casts || [],
+          director: (item.directors || [])[0] || '',
+          hotScore: item.hotScore || 0,
+          status: 'released',
+          viewCount: 0,
+          rank: index + 1
+        })).sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
+      })
+
+      return { items }
+    } catch (err) {
+      console.error('fetchMovieAll error:', err)
+      return null
+    }
+  },
+
+  async fetchDramaAll() {
+    try {
+      const typeMap = { '韩剧': 'korean', '日剧': 'japanese', '国产剧': 'chinese' }
+      const regionMap = { '韩剧': 'kr', '日剧': 'jp', '国产剧': 'cn' }
+      const subs = SUB_CATEGORIES['热剧']
+
+      const promises = subs.map(sub =>
+        this.callDataService('getDrama', { type: typeMap[sub] }).catch(() => null)
+      )
+      const results = await Promise.all(promises)
+
+      const items = {}
+      subs.forEach((sub, idx) => {
+        const result = results[idx]
+        if (!result || !result.subjects) {
+          items[sub] = []
+          return
+        }
+        items[sub] = result.subjects.map((item, index) => ({
+          doubanId: item.id,
+          title: item.title,
+          titleEn: '',
+          type: 'drama',
+          mainCategory: '热剧',
+          subCategory: sub,
+          region: regionMap[sub] || 'cn',
+          year: item.year ? parseInt(item.year) : 0,
+          genres: item.genres || [],
+          poster: optimizePosterUrl(item.cover),
+          rating: parseFloat(item.rate) || 0,
+          ratingSource: 'douban',
+          description: item.summary || '',
+          cast: item.casts || [],
+          director: (item.directors || [])[0] || '',
+          hotScore: item.hotScore || 0,
+          status: 'ongoing',
+          viewCount: 0,
+          rank: index + 1
+        })).sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
+      })
+
+      return { items }
+    } catch (err) {
+      console.error('fetchDramaAll error:', err)
+      return null
+    }
+  },
+
   async loadVariety(subCategory) {
     try {
       const result = await this.callDataService('getVariety', {})
@@ -230,7 +502,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+          poster: optimizePosterUrl(item.cover),
           rating: parseFloat(item.rate) || 0,
           hotScore: item.hotScore || 0,
           ratingSource: 'douban',
@@ -294,7 +566,7 @@ Page({
         region: 'cn',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+        poster: optimizePosterUrl(item.cover),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -338,7 +610,7 @@ Page({
         region: regionMap[subCategory] || 'cn',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+        poster: optimizePosterUrl(item.cover),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -464,7 +736,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: [],
-          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+          poster: optimizePosterUrl(item.cover),
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
           description: '',
