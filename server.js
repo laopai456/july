@@ -46,7 +46,7 @@ function formatItem(item) {
   return {
     id: item.id,
     title: item.title,
-    cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+    cover: ((item.cover || item.poster || '') + '').replace(/[\s`'"''""]/g, '').trim(),
     rate: item.rate || '0',
     year: item.year || '',
     genres: item.genres || [],
