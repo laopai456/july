@@ -46,13 +46,13 @@ function formatItem(item) {
   return {
     id: item.id,
     title: item.title,
-    cover: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
-    rate: item.rate || '0',
+    cover: (item.cover || item.poster || '').replace(/[\s`'"''""]/g, '').trim(),
+    rate: item.rate || item.rating || '0',
     year: item.year || '',
     genres: item.genres || [],
-    summary: item.abstract || '',
-    directors: item.directors || [],
-    casts: item.casts || [],
+    summary: item.abstract || item.description || item.summary || '',
+    directors: item.directors || (item.director ? [item.director] : []),
+    casts: item.casts || item.cast || [],
     subCategory: item.subCategory || '',
     hotScore: item.hotScore || 0
   };
