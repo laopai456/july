@@ -125,7 +125,7 @@
   </view>
 </view>
 
-<view class="card-mask" wx:if="{{showDetailCard}}" bindtap="hideDetail">
+<view class="card-mask" hidden="{{!showDetailCard}}" bindtap="hideDetail">
   <view class="detail-card" catchtap="preventBubble">
     <scroll-view scroll-y class="card-scroll">
       <view class="card-header">
