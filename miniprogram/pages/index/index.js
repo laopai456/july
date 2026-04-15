@@ -661,7 +661,7 @@ Page({
 
   async fetchFullSummary(item) {
     try {
-      const identifier = item.doubanId || item.title
+      const identifier = item.title
       if (!identifier) return
 
       let result
@@ -686,7 +686,7 @@ Page({
       }
 
       if (result && result.summary && result.summary.length > (item.description || '').length) {
-        const idx = this.data.list.findIndex(i => (i.doubanId || i.title) === identifier)
+        const idx = this.data.list.findIndex(i => i.title === identifier)
         if (idx > -1) {
           this.setData({
             [`list[${idx}].description`]: result.summary,
