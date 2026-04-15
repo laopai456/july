@@ -648,13 +648,19 @@ Page({
     const item = this.data.list[index]
     if (!item) return
 
+    const needFetch = !item.description || item.description.length < 300
+
     this.setData({
       showDetailCard: true,
-      detailItem: item,
+      detailItem: {
+        ...item,
+        _originalDesc: item.description,
+        description: needFetch ? '正在加载简介...' : item.description
+      },
       descExpanded: false
     })
 
-    if (!item.description || item.description.length < 300) {
+    if (needFetch) {
       this.fetchFullSummary(item)
     }
   },
@@ -693,9 +699,16 @@ Page({
             'detailItem.description': result.summary
           })
         }
+      } else {
+        this.setData({
+          'detailItem.description': item.description || '暂无简介'
+        })
       }
     } catch (err) {
       console.error('获取完整简介失败:', err)
+      this.setData({
+        'detailItem.description': item.description || '暂无简介'
+      })
     }
   },
 
