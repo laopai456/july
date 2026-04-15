@@ -146,7 +146,21 @@ function saveData(category, items, allData, indexKey) {
     [indexKey]: index,
     [category + 'UpdatedAt']: new Date().toISOString()
   };
-  
+
+  if (fs.existsSync(DATA_FILE)) {
+    const backupDir = path.join(__dirname, '..', '..', 'backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupPath = path.join(backupDir, `data-${ts}.json`);
+    fs.copyFileSync(DATA_FILE, backupPath);
+    const backups = fs.readdirSync(backupDir).filter(f => f.startsWith('data-')).sort();
+    while (backups.length > 5) {
+      fs.unlinkSync(path.join(backupDir, backups.shift()));
+    }
+  }
+
   fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
   
   return { itemCount: items.length, indexCount: Object.keys(index).length };
