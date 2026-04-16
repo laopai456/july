@@ -115,6 +115,46 @@
 
 ---
 
+## BUG-3：简介提速改动导致简介完全不显示
+
+> 2026-04-16
+
+### 问题
+
+将 `fetchFullSummary` 的参数从 `item.title` 改为 `item.doubanId` 后，简介弹窗不再显示完整简介，连原来的缓慢加载都无法实现。
+
+### 根因
+
+**改了半截——服务端和前端不同步。**
+
+完整数据流追踪：
+
+```
+data.json                         server.js formatItem             前端 fetchXxxAll
+─────────                         ──────────────────               ──────────────
+doubanId: "37561280"   ──(原本丢弃)──>  不返回           ──映射──>  doubanId: item.id = "show_001"
+id: "show_001"         ──保留──>        id: "show_001"   ──映射──>  (拿到自定义ID)
+```
+
+1. **服务端** `formatItem` 不返回 `doubanId` 字段 → 前端 `doubanId: item.id` 拿到 `"show_001"`（自定义 ID，不是豆瓣数字 ID）
+2. 我给 `formatItem` 加了 `doubanId` 返回 → 服务端现在返回 `doubanId: "37561280"`
+3. **但前端的映射没改！** 6 个 fetch 函数里写的都是 `doubanId: item.id`（读的是服务端返回的 `id` 字段 = `"show_001"`），没有读 `item.doubanId`
+4. `fetchFullSummary` 用 `item.doubanId`（= `"show_001"`）请求 → `/api/subject/show_001` → 不是纯数字 → 走 `subject_suggest` 搜索 `"show_001"` → 搜不到 → 返回空
+
+### 正确的修复
+
+需要**同步改两处**：
+1. 服务端 `formatItem` 返回 `doubanId` 字段
+2. 前端 fetch 函数改为 `doubanId: item.doubanId || item.id`（读服务端的 `doubanId` 字段）
+
+### 教训
+
+1. **跨层改动必须同步。** 服务端加了字段，前端不去读，等于没加。改数据流要追踪到每一层的消费者。
+2. **不要在失败后立即重试用同一个方案。** 第一次失败后应该完整复盘根因，而不是"再修一下服务端就行"。
+3. **验证假设。** "服务端返回了 doubanId，前端就能拿到"这个假设是错的——前端读的是 `item.id`，不是 `item.doubanId`。
+
+---
+
 ## 反爬现状备忘
 
 - `m.douban.com/subject/ID/`：服务器 IP 返回 302 + JS 验证，本地住宅 IP 正常
