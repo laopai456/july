@@ -66,6 +66,55 @@
 | 4 | 验收后再做下一个 | 直接开始改 BUG-2 |
 | 5 | 小步测试每个假设 | 一次性改多个地方 |
 
+## BUG-2：关闭简介弹窗后页面滚回顶部
+
+> 2026-04-16
+
+### 问题
+
+用户在榜单中向下滚动，点击某个条目查看简介弹窗，点击空白关闭弹窗后，页面自动回到顶部，而不是停留在之前浏览的位置。
+
+### 根因
+
+`index.wxml` 第 1 行使用了 `wx:if="{{!showDetailCard}}"` 控制主容器的显示。
+
+`wx:if` 在条件为 `false` 时会**销毁整个 DOM 子树**（包括列表、滚动状态等所有节点），条件变回 `true` 时再**重新创建**。这意味着：
+
+1. 点击条目 → `showDetailCard = true` → 主容器 DOM 被销毁 → 滚动位置丢失
+2. 关闭弹窗 → `showDetailCard = false` → DOM 重建 → 页面从顶部开始渲染
+
+虽然 `hideDetail()` 中用了 `wx.pageScrollTo` 尝试恢复，但 DOM 重建是异步渲染的，`pageScrollTo` 执行时内容可能还没渲染完，恢复失败。
+
+### 修复
+
+将 `wx:if` 改为 `hidden`：
+
+```html
+<!-- 修改前 -->
+<view class="container" wx:if="{{!showDetailCard}}">
+
+<!-- 修改后 -->
+<view class="container" hidden="{{showDetailCard}}">
+```
+
+`hidden` 只是 `display: none`，不销毁 DOM，滚动位置自然保持。
+
+### 教训
+
+**微信小程序中 `wx:if` 和 `hidden` 的区别要牢记：**
+
+| | `wx:if` | `hidden` |
+|---|---------|----------|
+| 条件为 false | 销毁 DOM 节点 | `display: none` 隐藏 |
+| 条件变为 true | 重新创建 DOM | 恢复显示 |
+| 状态保持 | 不保持（滚动位置、输入框内容等全部丢失） | 完整保持 |
+| 切换开销 | 高（重建 DOM） | 低（仅切换样式） |
+| 适用场景 | 条件很少变化，或需要彻底回收内存 | 频繁切换显示/隐藏 |
+
+**当需要保留滚动位置、表单输入等状态时，必须用 `hidden` 而不是 `wx:if`。**
+
+---
+
 ## 反爬现状备忘
 
 - `m.douban.com/subject/ID/`：服务器 IP 返回 302 + JS 验证，本地住宅 IP 正常
