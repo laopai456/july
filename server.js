@@ -11,6 +11,10 @@ const DOUBAN_API = 'https://movie.douban.com/j';
 const DATA_FILE = path.join(__dirname, 'data.json');
 const SYNC_SECRET = 'july2026sync';
 
+const summaryCache = new Map();
+const SUMMARY_CACHE_TTL = 24 * 60 * 60 * 1000;
+const SUMMARY_CACHE_MAX = 500;
+
 async function fetchWithRetry(url, params, retries = 3) {
   for (let i = 0; i < retries; i++) {
     try {
@@ -45,6 +49,7 @@ function loadLocalData() {
 function formatItem(item) {
   return {
     id: item.id,
+    doubanId: item.doubanId || '',
     title: item.title,
     cover: (item.cover || item.poster || '').replace(/[\s`'"''""]/g, '').trim(),
     rate: item.rate || item.rating || '0',
@@ -194,13 +199,19 @@ app.get('/api/drama/:type', async (req, res) => {
 
 app.get('/api/subject/:id', async (req, res) => {
   const { id } = req.params;
-  let doubanId = id;
 
   if (!id) {
     return res.status(400).json({ error: '缺少ID' });
   }
 
+  const cached = summaryCache.get(id);
+  if (cached && Date.now() - cached.time < SUMMARY_CACHE_TTL) {
+    return res.json(cached.data);
+  }
+
   try {
+    let doubanId = id;
+
     if (!/^\d+$/.test(id)) {
       const title = decodeURIComponent(id);
       const suggestRes = await axios.get('https://movie.douban.com/j/subject_suggest', {
@@ -215,7 +226,9 @@ app.get('/api/subject/:id', async (req, res) => {
       if (Array.isArray(results) && results.length > 0 && results[0].id) {
         doubanId = results[0].id;
       } else {
-        return res.json({ id, summary: '' });
+        const emptyResult = { id, summary: '' };
+        summaryCache.set(id, { data: emptyResult, time: Date.now() });
+        return res.json(emptyResult);
       }
     }
 
@@ -256,7 +269,15 @@ app.get('/api/subject/:id', async (req, res) => {
       summary = summary.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ').trim();
     }
 
-    res.json({ id, doubanId, summary });
+    const result = { id, doubanId, summary };
+
+    if (summaryCache.size >= SUMMARY_CACHE_MAX) {
+      const oldestKey = summaryCache.keys().next().value;
+      summaryCache.delete(oldestKey);
+    }
+    summaryCache.set(id, { data: result, time: Date.now() });
+
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

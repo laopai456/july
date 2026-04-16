@@ -327,7 +327,7 @@ Page({
         const subCat = item.subCategory || this.getSubCategoryForVariety(item.title, item.genres || [])
 
         allItems.push({
-          doubanId: item.id,
+          doubanId: item.doubanId || item.id,
           title: item.title,
           titleEn: '',
           type: 'variety',
@@ -387,7 +387,7 @@ Page({
           return
         }
         items[sub] = result.subjects.map((item, index) => ({
-          doubanId: item.id,
+          doubanId: item.doubanId || item.id,
           title: item.title,
           titleEn: '',
           type: 'movie',
@@ -436,7 +436,7 @@ Page({
           return
         }
         items[sub] = result.subjects.map((item, index) => ({
-          doubanId: item.id,
+          doubanId: item.doubanId || item.id,
           title: item.title,
           titleEn: '',
           type: 'drama',
@@ -479,7 +479,7 @@ Page({
         const subCat = item.subCategory || this.getSubCategoryForVariety(item.title, item.genres || [])
 
         allItems.push({
-          doubanId: item.id,
+          doubanId: item.doubanId || item.id,
           title: item.title,
           titleEn: '',
           type: 'variety',
@@ -543,7 +543,7 @@ Page({
       if (!result || !result.subjects) return []
 
       const allItems = result.subjects.map((item, index) => ({
-        doubanId: item.id,
+        doubanId: item.doubanId || item.id,
         title: item.title,
         titleEn: '',
         type: 'movie',
@@ -588,7 +588,7 @@ Page({
       const regionMap = { '韩剧': 'kr', '日剧': 'jp', '国产剧': 'cn' }
 
       const allItems = result.subjects.map((item, index) => ({
-        doubanId: item.id,
+        doubanId: item.doubanId || item.id,
         title: item.title,
         titleEn: '',
         type: 'drama',
@@ -655,7 +655,8 @@ Page({
     const item = this.data.list[index]
     if (!item) return
 
-    const cachedSummary = this._summaryCache[item.title]
+    const cacheKey = item.doubanId || item.title
+    const cachedSummary = this._summaryCache[cacheKey]
     const finalDesc = (cachedSummary && cachedSummary.length > (item.description || '').length)
       ? cachedSummary
       : item.description
@@ -678,21 +679,21 @@ Page({
 
   async fetchFullSummary(item) {
     try {
-      const identifier = item.title
+      const identifier = item.doubanId || item.title
       if (!identifier) return
 
       let result
       try {
         const res = await wx.cloud.callFunction({
           name: 'dataService',
-          data: { action: 'getSubject', id: identifier }
+          data: { action: 'getSubject', id: String(identifier) }
         })
         result = res.result
       } catch (e) {
         const config = require('../../utils/config.js')
         const res = await new Promise((resolve, reject) => {
           wx.request({
-            url: config.apiBase + '/api/subject/' + encodeURIComponent(identifier),
+            url: config.apiBase + '/api/subject/' + encodeURIComponent(String(identifier)),
             method: 'GET',
             timeout: 8000,
             success: r => resolve(r.data),
@@ -703,8 +704,9 @@ Page({
       }
 
       if (result && result.summary && result.summary.length > (item.description || '').length) {
-        this._summaryCache[item.title] = result.summary
-        const idx = this.data.list.findIndex(i => i.title === identifier)
+        const cacheKey = item.doubanId || item.title
+        this._summaryCache[cacheKey] = result.summary
+        const idx = this.data.list.findIndex(i => (i.doubanId || i.title) === cacheKey)
         if (idx > -1) {
           this.setData({
             [`list[${idx}].description`]: result.summary,
@@ -777,7 +779,7 @@ Page({
 
       if (result && result.subjects) {
         const items = result.subjects.map((item, index) => ({
-          doubanId: item.id,
+          doubanId: item.doubanId || item.id,
           title: item.title,
           titleEn: '',
           type: item.type === 'movie' ? 'movie' : 'drama',
