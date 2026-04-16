@@ -1,4 +1,4 @@
-<view class="container" wx:if="{{!showDetailCard}}">
+<view class="container" hidden="{{showDetailCard}}">
   <view class="header">
     <view class="tabs">
       <view 
