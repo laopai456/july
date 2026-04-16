@@ -724,14 +724,9 @@ Page({
   },
 
   hideDetail() {
-    const scrollTop = this._scrollTop
     this.setData({
       showDetailCard: false,
       detailItem: null
-    }, () => {
-      if (scrollTop > 0) {
-        wx.pageScrollTo({ scrollTop, duration: 0 })
-      }
     })
   },
 
