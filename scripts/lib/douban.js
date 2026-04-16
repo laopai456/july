@@ -148,14 +148,14 @@ async function fetchSubjectSummary(subjectId) {
     if (html.length < 5000) return '';
 
     let summary = '';
-    const metaMatch = html.match(/<meta\s+name="description"\s+content="[^"]*简介[：:]([^"]+)"/);
-    if (metaMatch) {
-      summary = metaMatch[1];
+    const sectionMatch = html.match(/<section\s+class="subject-intro">[\s\S]*?<p[^>]*>\s*([\s\S]*?)<\/p>/);
+    if (sectionMatch) {
+      summary = sectionMatch[1].replace(/<[^>]+>/g, '').trim();
     }
     if (!summary) {
-      const sectionMatch = html.match(/<section\s+class="subject-intro">[\s\S]*?<p[^>]*>\s*([\s\S]*?)<\/p>/);
-      if (sectionMatch) {
-        summary = sectionMatch[1].replace(/<[^>]+>/g, '').trim();
+      const metaMatch = html.match(/<meta\s+name="description"\s+content="[^"]*简介[：:]([^"]+)"/);
+      if (metaMatch) {
+        summary = metaMatch[1];
       }
     }
     if (summary) {
