@@ -19,12 +19,14 @@
 }
 
 .genre-btn {
-  font-size: 26rpx;
-  color: #7a8b9a;
+  font-size: 24rpx;
+  color: #ffffff;
   padding: 14rpx 24rpx;
-  background: linear-gradient(145deg, #f0f8ff, #e8f0f0);
-  border-radius: 20rpx;
-  box-shadow: 3rpx 3rpx 6rpx #d0d8e0, -3rpx -3rpx 6rpx #ffffff;
+  background: linear-gradient(135deg, #a8b4fc, #f0a0b8);
+  border-radius: 30rpx;
+  box-shadow: 4rpx 4rpx 8rpx #c0b0e0, -4rpx -4rpx 8rpx #ffffff;
+  font-weight: 500;
+  letter-spacing: 2rpx;
 }
 
 .search-btn {
@@ -86,16 +88,6 @@
   justify-content: center;
   flex: 1;
   padding: 0 20rpx;
-}
-
-.debug-btn {
-  font-size: 22rpx;
-  color: #9aa8b8;
-  padding: 12rpx 20rpx;
-  background: linear-gradient(145deg, #f0f8ff, #e8f0f0);
-  border-radius: 20rpx;
-  box-shadow: 3rpx 3rpx 6rpx #d0d8e0, -3rpx -3rpx 6rpx #ffffff;
-  margin-right: 10rpx;
 }
 
 .tab-item {

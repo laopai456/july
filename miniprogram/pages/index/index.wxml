@@ -12,11 +12,10 @@
       </view>
     </view>
     <view class="header-actions">
-      <view class="genre-btn" bindtap="goToGenre">分类</view>
       <view class="search-btn" bindtap="showSearch">
         <text>🔍</text>
       </view>
-      <view class="debug-btn" bindtap="goToAdmin">调试</view>
+      <view class="genre-btn" bindtap="goToGenre">🏷 标签</view>
     </view>
   </view>
 
