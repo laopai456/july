@@ -1,4 +1,4 @@
-const GENRE_LIST = ['悬疑', '喜剧', '恐怖', '犯罪', '动作', '爱情']
+const GENRE_LIST = ['悬疑', '喜剧', '恐怖', '犯罪', '爱情']
 const CACHE_KEY = 'genre_cache'
 const CACHE_EXPIRE = 30 * 60 * 1000
 const QUICK_LOAD_COUNT = 10

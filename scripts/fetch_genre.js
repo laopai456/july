@@ -204,6 +204,44 @@ async function processGenre(genreConfig, args) {
   }
 }
 
+function dedupGenres() {
+  const { data: allData } = loadExistingData();
+  const genreIndex = allData.genreIndex;
+  if (!genreIndex) return;
+
+  const seenMovie = new Set();
+  const seenDrama = new Set();
+  let totalRemoved = 0;
+
+  for (const tag of GENRE_TAGS.map(g => g.tag)) {
+    const genreData = genreIndex[tag];
+    if (!genreData) continue;
+
+    const movieBefore = (genreData.movie || []).length;
+    genreData.movie = (genreData.movie || []).filter(item => {
+      const id = item.doubanId;
+      if (seenMovie.has(id)) return false;
+      seenMovie.add(id);
+      return true;
+    });
+    totalRemoved += movieBefore - genreData.movie.length;
+
+    const dramaBefore = (genreData.drama || []).length;
+    genreData.drama = (genreData.drama || []).filter(item => {
+      const id = item.doubanId;
+      if (seenDrama.has(id)) return false;
+      seenDrama.add(id);
+      return true;
+    });
+    totalRemoved += dramaBefore - genreData.drama.length;
+  }
+
+  if (totalRemoved > 0) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(allData, null, 2));
+    console.log('\n跨类型去重: 移除 ' + totalRemoved + ' 条重复作品');
+  }
+}
+
 async function main() {
   const args = parseGenreArgs();
 
@@ -231,6 +269,10 @@ async function main() {
 
   for (const genreConfig of tagsToProcess) {
     await processGenre(genreConfig, args);
+  }
+
+  if (tagsToProcess.length > 1) {
+    dedupGenres();
   }
 
   console.log('\n========================================');
