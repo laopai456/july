@@ -13,7 +13,6 @@ const GENRE_TAGS = [
   { tag: '喜剧', movieCount: 150, dramaCount: 50 },
   { tag: '恐怖', movieCount: 150, dramaCount: 50 },
   { tag: '犯罪', movieCount: 150, dramaCount: 50 },
-  { tag: '动作', movieCount: 150, dramaCount: 50 },
   { tag: '爱情', movieCount: 150, dramaCount: 50 }
 ];
 
