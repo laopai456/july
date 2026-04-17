@@ -78,12 +78,13 @@ let genreCacheTime = 0
 const GENRE_CACHE_TTL = 10 * 60 * 1000
 
 async function getGenre(event) {
-  const { name, section } = event
+  const { name, section, limit } = event
   const now = Date.now()
+  const useLimit = limit ? '?limit=' + limit : ''
 
   if (!genreCache[name] || now - genreCacheTime > GENRE_CACHE_TTL) {
     try {
-      const res = await axios.get(SERVER_URL + '/api/genre/' + encodeURIComponent(name), { timeout: 10000 })
+      const res = await axios.get(SERVER_URL + '/api/genre/' + encodeURIComponent(name) + useLimit, { timeout: 10000 })
       genreCache[name] = res.data
       genreCacheTime = now
     } catch (e) {
@@ -95,10 +96,10 @@ async function getGenre(event) {
   if (!data) return { subjects: [], total: 0 }
 
   if (section === 'movie') {
-    return { subjects: data.movie || [], total: (data.movie || []).length }
+    return { subjects: data.movie || [], total: data.movieTotal || (data.movie || []).length }
   }
   if (section === 'drama') {
-    return { subjects: data.drama || [], total: (data.drama || []).length }
+    return { subjects: data.drama || [], total: data.dramaTotal || (data.drama || []).length }
   }
 
   return data

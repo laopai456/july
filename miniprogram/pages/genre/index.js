@@ -1,6 +1,7 @@
 const GENRE_LIST = ['悬疑', '喜剧', '恐怖', '犯罪', '动作', '爱情']
 const CACHE_KEY = 'genre_cache'
 const CACHE_EXPIRE = 30 * 60 * 1000
+const QUICK_LOAD_COUNT = 10
 
 Page({
   data: {
@@ -16,6 +17,7 @@ Page({
 
   _genreDataCache: {},
   _summaryCache: {},
+  _fullLoadPending: null,
 
   onLoad() {
     this._genreDataCache = {}
@@ -25,8 +27,13 @@ Page({
 
   onPullDownRefresh() {
     this._genreDataCache = {}
+    this._fullLoadPending = null
     try { wx.removeStorageSync(CACHE_KEY) } catch (e) {}
     this.loadGenreData().then(() => wx.stopPullDownRefresh())
+  },
+
+  onUnload() {
+    this._fullLoadPending = null
   },
 
   getCache(key) {
@@ -50,6 +57,7 @@ Page({
     const genre = e.currentTarget.dataset.genre
     if (genre === this.data.currentGenre) return
 
+    this._fullLoadPending = null
     this.setData({
       currentGenre: genre,
       list: [],
@@ -64,7 +72,6 @@ Page({
 
     this.setData({
       currentSection: section,
-      list: [],
       loading: true
     })
     this.applySectionData()
@@ -86,17 +93,54 @@ Page({
       return
     }
 
+    await this.quickLoad(cacheKey)
+  },
+
+  async quickLoad(cacheKey) {
     try {
-      const result = await this.callDataService('getGenre', { name: currentGenre })
-      if (result) {
-        const processed = this.processGenreResult(result)
-        this._genreDataCache[cacheKey] = processed
-        this.setCache(cacheKey, processed)
+      const result = await this.callDataService('getGenre', { name: cacheKey, limit: QUICK_LOAD_COUNT })
+      if (!result) {
+        this.setData({ loading: false, list: [] })
+        return
+      }
+
+      const processed = this.processGenreResult(result)
+      this._genreDataCache[cacheKey] = processed
+      this.applySectionData()
+      this.fullLoad(cacheKey)
+    } catch (err) {
+      console.error('快速加载失败:', err)
+      this.setData({ loading: false, list: [] })
+    }
+  },
+
+  async fullLoad(cacheKey) {
+    if (this._fullLoadPending === cacheKey) return
+    this._fullLoadPending = cacheKey
+
+    try {
+      const result = await this.callDataService('getGenre', { name: cacheKey })
+      if (!result || this._fullLoadPending !== cacheKey) return
+
+      const processed = this.processGenreResult(result)
+
+      const quickData = this._genreDataCache[cacheKey]
+      const { currentSection } = this.data
+      const quickList = quickData ? (quickData[currentSection] || []) : []
+      const fullList = processed[currentSection] || []
+
+      this._genreDataCache[cacheKey] = processed
+      this.setCache(cacheKey, processed)
+
+      if (this.data.currentGenre === cacheKey && fullList.length > quickList.length) {
         this.applySectionData()
       }
     } catch (err) {
-      console.error('加载类型数据失败:', err)
-      this.setData({ loading: false, list: [] })
+      console.error('完整加载失败:', err)
+    } finally {
+      if (this._fullLoadPending === cacheKey) {
+        this._fullLoadPending = null
+      }
     }
   },
 
@@ -154,7 +198,8 @@ Page({
   async fetchDirect(action, params) {
     const config = require('../../utils/config.js')
     if (action === 'getGenre') {
-      const url = config.apiBase + '/api/genre/' + encodeURIComponent(params.name)
+      let url = config.apiBase + '/api/genre/' + encodeURIComponent(params.name)
+      if (params.limit) url += '?limit=' + params.limit
       return new Promise((resolve, reject) => {
         wx.request({
           url,
