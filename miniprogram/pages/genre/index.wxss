@@ -10,6 +10,7 @@
 
 .genre-scroll {
   white-space: nowrap;
+  padding-right: 30rpx;
 }
 
 .genre-tag {
