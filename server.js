@@ -11,6 +11,26 @@ const DOUBAN_API = 'https://movie.douban.com/j';
 const DATA_FILE = path.join(__dirname, 'data.json');
 const SYNC_SECRET = 'july2026sync';
 
+let _dataCache = null;
+let _dataCacheMtime = null;
+
+function loadLocalData() {
+  try {
+    const stat = fs.statSync(DATA_FILE);
+    const mtime = stat.mtimeMs;
+    if (_dataCache && _dataCacheMtime === mtime) {
+      return _dataCache;
+    }
+    const data = fs.readFileSync(DATA_FILE, 'utf8');
+    _dataCache = JSON.parse(data);
+    _dataCacheMtime = mtime;
+    return _dataCache;
+  } catch (error) {
+    console.error('读取本地数据失败:', error.message);
+    return _dataCache;
+  }
+}
+
 const summaryCache = new Map();
 const SUMMARY_CACHE_TTL = 24 * 60 * 60 * 1000;
 const SUMMARY_CACHE_MAX = 500;
@@ -32,18 +52,6 @@ async function fetchWithRetry(url, params, retries = 3) {
       await new Promise(r => setTimeout(r, 300));
     }
   }
-}
-
-function loadLocalData() {
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      const data = fs.readFileSync(DATA_FILE, 'utf8');
-      return JSON.parse(data);
-    }
-  } catch (error) {
-    console.error('读取本地数据失败:', error.message);
-  }
-  return null;
 }
 
 function formatItem(item) {
@@ -393,6 +401,8 @@ app.post('/api/variety/sync', (req, res) => {
     };
 
     fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
+    _dataCache = null;
+    _dataCacheMtime = null;
 
     console.log(`数据已更新: ${variety.length} 条综艺, ${new Date().toLocaleString()}`);
 
