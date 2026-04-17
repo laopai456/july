@@ -1,73 +1,55 @@
 <view class="container">
-  <view class="header">
-    <view class="tabs">
-      <view 
-        class="tab-item {{currentTab === index ? 'active' : ''}}" 
-        wx:for="{{tabs}}" 
-        wx:key="index"
-        data-index="{{index}}"
-        bindtap="onTabChange"
+  <view class="genre-selector">
+    <scroll-view scroll-x class="genre-scroll">
+      <view
+        class="genre-tag {{currentGenre === item ? 'active' : ''}}"
+        wx:for="{{genreList}}"
+        wx:key="*this"
+        data-genre="{{item}}"
+        bindtap="onGenreChange"
       >
         {{item}}
       </view>
-    </view>
-    <view class="header-actions">
-      <view class="genre-btn" bindtap="goToGenre">分类</view>
-      <view class="search-btn" bindtap="showSearch">
-        <text>🔍</text>
-      </view>
-      <view class="debug-btn" bindtap="goToAdmin">调试</view>
-    </view>
+    </scroll-view>
   </view>
 
-  <view class="search-bar" wx:if="{{showSearchBar}}">
-    <view class="search-input-wrap">
-      <text class="search-icon">🔍</text>
-      <input 
-        class="search-input" 
-        placeholder="搜索影片名称" 
-        value="{{searchKeyword}}" 
-        bindinput="onSearchInput" 
-        bindconfirm="onSearchConfirm"
-        focus="{{showSearchBar}}"
-      />
-      <text class="search-clear" wx:if="{{searchKeyword}}" bindtap="clearSearch">✕</text>
-    </view>
-    <text class="search-cancel" bindtap="hideSearch">取消</text>
-  </view>
-
-  <view class="sub-tabs">
-    <view 
-      class="sub-item {{currentSub === index ? 'active' : ''}}" 
-      wx:for="{{subCategories}}" 
-      wx:key="index"
-      data-index="{{index}}"
-      bindtap="onSubChange"
+  <view class="section-tabs">
+    <view
+      class="section-item {{currentSection === 'movie' ? 'active' : ''}}"
+      data-section="movie"
+      bindtap="onSectionChange"
     >
-      <text class="sub-name">{{item}}</text>
+      电影
+    </view>
+    <view
+      class="section-item {{currentSection === 'drama' ? 'active' : ''}}"
+      data-section="drama"
+      bindtap="onSectionChange"
+    >
+      热剧
     </view>
   </view>
 
   <view class="list-container">
     <block wx:if="{{!loading || list.length > 0}}">
       <view class="movie-list">
-        <view 
-          class="movie-item" 
-          wx:for="{{list}}" 
-          wx:key="_id"
+        <view
+          class="movie-item"
+          wx:for="{{list}}"
+          wx:key="doubanId"
           data-index="{{index}}"
           bindtap="showDetail"
         >
           <view class="rank">{{index + 1}}</view>
           <view class="poster-wrap">
-            <image 
-              wx:if="{{item.poster}}" 
-              class="poster" 
-              src="{{item.poster}}" 
-              mode="aspectFill" 
-              lazy-load 
-              binderror="onPosterError" 
-              data-index="{{index}}" 
+            <image
+              wx:if="{{item.poster}}"
+              class="poster"
+              src="{{item.poster}}"
+              mode="aspectFill"
+              lazy-load
+              binderror="onPosterError"
+              data-index="{{index}}"
             />
             <view wx:else class="poster-placeholder">
               <text>{{item.title[0]}}</text>
@@ -93,20 +75,16 @@
           </view>
         </view>
       </view>
-      
+
       <view class="loading-more" wx:if="{{loading}}">
-        <text class="loading-text">服务器摸鱼中</text>
+        <text class="loading-text">加载中</text>
         <image class="emoji-bounce" src="/images/loading.png" mode="aspectFit" />
         <image class="emoji-bounce delay-1" src="/images/loading.png" mode="aspectFit" />
         <image class="emoji-bounce delay-2" src="/images/loading.png" mode="aspectFit" />
       </view>
-      
-      <view class="no-more" wx:if="{{!hasMore && list.length > 0}}">
+
+      <view class="no-more" wx:if="{{!loading && list.length > 0}}">
         <text>— 已加载全部 —</text>
-      </view>
-      
-      <view class="refresh-time" wx:if="{{refreshAt && list.length > 0 && !isSearching}}">
-        <text>榜单更新于 {{refreshAt}}</text>
       </view>
     </block>
 
@@ -114,11 +92,10 @@
       <view class="empty-icon">📭</view>
       <text class="empty-title">暂无数据</text>
       <text class="empty-desc">该分类下还没有内容</text>
-      <view class="empty-btn" bindtap="goToAdmin">去导入数据</view>
     </view>
 
     <view class="loading-wrap" wx:if="{{loading && list.length === 0}}">
-      <text class="loading-text">服务器摸鱼中</text>
+      <text class="loading-text">加载中</text>
       <image class="emoji-bounce" src="/images/loading.png" mode="aspectFit" />
       <image class="emoji-bounce delay-1" src="/images/loading.png" mode="aspectFit" />
       <image class="emoji-bounce delay-2" src="/images/loading.png" mode="aspectFit" />
@@ -140,7 +117,6 @@
       <view class="card-tags">
         <text class="tag" wx:if="{{detailItem.year}}">{{detailItem.year}}</text>
         <text class="tag" wx:for="{{detailItem.genres}}" wx:if="{{item}}" wx:key="*this">{{item}}</text>
-        <text class="tag region-tag" wx:if="{{detailItem.region}}">{{detailItem.region === 'cn' ? '华语' : detailItem.region === 'kr' ? '韩国' : detailItem.region === 'jp' ? '日本' : item.region}}</text>
       </view>
 
       <view class="card-info-row" wx:if="{{detailItem.director}}">

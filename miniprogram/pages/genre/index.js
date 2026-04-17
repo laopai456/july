@@ -1,0 +1,261 @@
+const GENRE_LIST = ['悬疑', '喜剧', '恐怖', '犯罪', '动作', '爱情']
+const CACHE_KEY = 'genre_cache'
+const CACHE_EXPIRE = 30 * 60 * 1000
+
+Page({
+  data: {
+    genreList: GENRE_LIST,
+    currentGenre: '悬疑',
+    currentSection: 'movie',
+    list: [],
+    loading: true,
+    showDetailCard: false,
+    detailItem: null,
+    descExpanded: false
+  },
+
+  _genreDataCache: {},
+  _summaryCache: {},
+
+  onLoad() {
+    this._genreDataCache = {}
+    this._summaryCache = {}
+    this.loadGenreData()
+  },
+
+  onPullDownRefresh() {
+    this._genreDataCache = {}
+    try { wx.removeStorageSync(CACHE_KEY) } catch (e) {}
+    this.loadGenreData().then(() => wx.stopPullDownRefresh())
+  },
+
+  getCache(key) {
+    try {
+      const cache = wx.getStorageSync(CACHE_KEY) || {}
+      const item = cache[key]
+      if (item && Date.now() - item.time < CACHE_EXPIRE) return item.data
+    } catch (e) {}
+    return null
+  },
+
+  setCache(key, data) {
+    try {
+      const cache = wx.getStorageSync(CACHE_KEY) || {}
+      cache[key] = { data, time: Date.now() }
+      wx.setStorageSync(CACHE_KEY, cache)
+    } catch (e) {}
+  },
+
+  onGenreChange(e) {
+    const genre = e.currentTarget.dataset.genre
+    if (genre === this.data.currentGenre) return
+
+    this.setData({
+      currentGenre: genre,
+      list: [],
+      loading: true
+    })
+    this.loadGenreData()
+  },
+
+  onSectionChange(e) {
+    const section = e.currentTarget.dataset.section
+    if (section === this.data.currentSection) return
+
+    this.setData({
+      currentSection: section,
+      list: [],
+      loading: true
+    })
+    this.applySectionData()
+  },
+
+  async loadGenreData() {
+    const { currentGenre } = this.data
+    const cacheKey = currentGenre
+
+    if (this._genreDataCache[cacheKey]) {
+      this.applySectionData()
+      return
+    }
+
+    const diskCache = this.getCache(cacheKey)
+    if (diskCache) {
+      this._genreDataCache[cacheKey] = diskCache
+      this.applySectionData()
+      return
+    }
+
+    try {
+      const result = await this.callDataService('getGenre', { name: currentGenre })
+      if (result) {
+        const processed = this.processGenreResult(result)
+        this._genreDataCache[cacheKey] = processed
+        this.setCache(cacheKey, processed)
+        this.applySectionData()
+      }
+    } catch (err) {
+      console.error('加载类型数据失败:', err)
+      this.setData({ loading: false, list: [] })
+    }
+  },
+
+  processGenreResult(result) {
+    const processSection = (items, type) => {
+      if (!items) return []
+      return items.map((item, index) => ({
+        doubanId: item.doubanId || item.id,
+        title: item.title,
+        type: type,
+        genres: item.genres || [],
+        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+        rating: parseFloat(item.rate) || 0,
+        year: item.year || '',
+        description: item.summary || item.abstract || '',
+        cast: item.casts || [],
+        castDisplay: (item.casts || []).slice(0, 3).join(' / '),
+        director: (item.directors || [])[0] || '',
+        hotScore: item.hotScore || 0,
+        rank: index + 1
+      })).sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
+    }
+
+    return {
+      movie: processSection(result.movie || result.subjects, 'movie'),
+      drama: processSection(result.drama || [], 'drama')
+    }
+  },
+
+  applySectionData() {
+    const { currentGenre, currentSection } = this.data
+    const data = this._genreDataCache[currentGenre]
+    if (!data) return
+
+    const list = (data[currentSection] || []).slice(0, 50)
+    this.setData({
+      list,
+      loading: false
+    })
+  },
+
+  async callDataService(action, params) {
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'dataService',
+        data: { action, ...params }
+      })
+      return res.result
+    } catch (cloudErr) {
+      console.warn('云函数失败，尝试直连:', cloudErr.message)
+      return await this.fetchDirect(action, params)
+    }
+  },
+
+  async fetchDirect(action, params) {
+    const config = require('../../utils/config.js')
+    if (action === 'getGenre') {
+      const url = config.apiBase + '/api/genre/' + encodeURIComponent(params.name)
+      return new Promise((resolve, reject) => {
+        wx.request({
+          url,
+          method: 'GET',
+          timeout: 15000,
+          success: (res) => {
+            if (res.statusCode === 200 && res.data) {
+              resolve(res.data)
+            } else {
+              reject(new Error('HTTP ' + res.statusCode))
+            }
+          },
+          fail: (err) => reject(err)
+        })
+      })
+    }
+    return null
+  },
+
+  showDetail(e) {
+    const index = e.currentTarget.dataset.index
+    const item = this.data.list[index]
+    if (!item) return
+
+    const cacheKey = item.doubanId || item.title
+    const cachedSummary = this._summaryCache[cacheKey]
+    const finalDesc = (cachedSummary && cachedSummary.length > (item.description || '').length)
+      ? cachedSummary
+      : item.description
+
+    this.setData({
+      showDetailCard: true,
+      detailItem: {
+        ...item,
+        description: finalDesc || '暂无简介'
+      },
+      descExpanded: false
+    })
+
+    if (!item.description || item.description.length < 300) {
+      if (!cachedSummary) {
+        this.fetchFullSummary(item)
+      }
+    }
+  },
+
+  async fetchFullSummary(item) {
+    try {
+      const identifier = item.doubanId || item.title
+      if (!identifier) return
+
+      let result
+      try {
+        const res = await wx.cloud.callFunction({
+          name: 'dataService',
+          data: { action: 'getSubject', id: String(identifier) }
+        })
+        result = res.result
+      } catch (e) {
+        const config = require('../../utils/config.js')
+        const res = await new Promise((resolve, reject) => {
+          wx.request({
+            url: config.apiBase + '/api/subject/' + encodeURIComponent(String(identifier)),
+            method: 'GET',
+            timeout: 8000,
+            success: r => resolve(r.data),
+            fail: reject
+          })
+        })
+        result = res
+      }
+
+      if (result && result.summary && result.summary.length > (item.description || '').length) {
+        const cacheKey = item.doubanId || item.title
+        this._summaryCache[cacheKey] = result.summary
+        const idx = this.data.list.findIndex(i => (i.doubanId || i.title) === cacheKey)
+        if (idx > -1) {
+          this.setData({
+            [`list[${idx}].description`]: result.summary,
+            'detailItem.description': result.summary
+          })
+        }
+      }
+    } catch (err) {
+      console.error('获取完整简介失败:', err)
+    }
+  },
+
+  toggleDesc() {
+    this.setData({ descExpanded: !this.data.descExpanded })
+  },
+
+  hideDetail() {
+    this.setData({ showDetailCard: false, detailItem: null })
+  },
+
+  preventBubble() {},
+
+  onPosterError(e) {
+    const index = e.currentTarget.dataset.index
+    const item = this.data.list[index]
+    console.error('图片加载失败:', item?.title)
+  }
+})

@@ -753,6 +753,12 @@ Page({
     })
   },
 
+  goToGenre() {
+    wx.navigateTo({
+      url: '/pages/genre/index'
+    })
+  },
+
   toggleSearchBar() {
     this.setData({
       showSearchBar: !this.data.showSearchBar,

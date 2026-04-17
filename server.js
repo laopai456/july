@@ -197,6 +197,37 @@ app.get('/api/drama/:type', async (req, res) => {
   }
 });
 
+app.get('/api/genre/:name', async (req, res) => {
+  const { name } = req.params;
+  const { section } = req.query;
+  const localData = loadLocalData();
+
+  if (!localData || !localData.genreIndex || !localData.genreIndex[name]) {
+    return res.json({ subjects: [], total: 0, source: 'local-empty' });
+  }
+
+  const genreData = localData.genreIndex[name];
+
+  if (section === 'movie') {
+    const subjects = (genreData.movie || []).map(formatItem);
+    return res.json({ subjects, total: subjects.length, source: 'local' });
+  }
+
+  if (section === 'drama') {
+    const subjects = (genreData.drama || []).map(formatItem);
+    return res.json({ subjects, total: subjects.length, source: 'local' });
+  }
+
+  const movieSubjects = (genreData.movie || []).map(formatItem);
+  const dramaSubjects = (genreData.drama || []).map(formatItem);
+  res.json({
+    movie: movieSubjects,
+    drama: dramaSubjects,
+    updatedAt: genreData.updatedAt,
+    source: 'local'
+  });
+});
+
 app.get('/api/subject/:id', async (req, res) => {
   const { id } = req.params;
 

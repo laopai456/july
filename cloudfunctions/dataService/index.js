@@ -73,6 +73,37 @@ async function getSubject(event) {
   }
 }
 
+let genreCache = {}
+let genreCacheTime = 0
+const GENRE_CACHE_TTL = 10 * 60 * 1000
+
+async function getGenre(event) {
+  const { name, section } = event
+  const now = Date.now()
+
+  if (!genreCache[name] || now - genreCacheTime > GENRE_CACHE_TTL) {
+    try {
+      const res = await axios.get(SERVER_URL + '/api/genre/' + encodeURIComponent(name), { timeout: 10000 })
+      genreCache[name] = res.data
+      genreCacheTime = now
+    } catch (e) {
+      return { subjects: [], total: 0 }
+    }
+  }
+
+  const data = genreCache[name]
+  if (!data) return { subjects: [], total: 0 }
+
+  if (section === 'movie') {
+    return { subjects: data.movie || [], total: (data.movie || []).length }
+  }
+  if (section === 'drama') {
+    return { subjects: data.drama || [], total: (data.drama || []).length }
+  }
+
+  return data
+}
+
 async function getSubjectsBatch(event) {
   const { titles } = event
   if (!Array.isArray(titles) || titles.length === 0) {
@@ -102,6 +133,8 @@ exports.main = async (event, context) => {
         return await getSubject(event)
       case 'getSubjectsBatch':
         return await getSubjectsBatch(event)
+      case 'getGenre':
+        return await getGenre(event)
       default:
         return { subjects: [], total: 0, error: '无效的action: ' + action }
     }
