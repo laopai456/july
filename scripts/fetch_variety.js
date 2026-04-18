@@ -28,6 +28,21 @@ const VARIETY_TAGS = [
 
 const VARIETY_DISPLAY_COUNT = 100;
 
+let scheduleMap = {};
+try { scheduleMap = JSON.parse(fs.readFileSync(__dirname + '/variety_schedule.json', 'utf8')) } catch (e) {}
+
+function isAired(title) {
+  const keys = Object.keys(scheduleMap);
+  for (const key of keys) {
+    if (title.includes(key) || key.includes(title)) {
+      const scheduledMonth = scheduleMap[key];
+      const currentMonth = new Date().getMonth() + 1;
+      return scheduledMonth <= currentMonth;
+    }
+  }
+  return true;
+}
+
 async function main() {
   const args = parseArgs();
 
@@ -122,7 +137,14 @@ async function main() {
   const chineseItems = allResults.filter(item => isChineseVariety(item.title, item.genres));
   console.log('过滤国外综艺: ' + (allResults.length - chineseItems.length) + ' 条, 剩余 ' + chineseItems.length + ' 条');
 
-  const finalItems = chineseItems
+  const currentMonth = new Date().getMonth() + 1;
+  const airedItems = chineseItems.filter(item => isAired(item.title));
+  const filteredBySchedule = chineseItems.length - airedItems.length;
+  if (filteredBySchedule > 0) {
+    console.log('过滤未播出(>' + currentMonth + '月): ' + filteredBySchedule + ' 条, 剩余 ' + airedItems.length + ' 条');
+  }
+
+  const finalItems = airedItems
     .sort((a, b) => b.hotScore - a.hotScore)
     .slice(0, VARIETY_DISPLAY_COUNT)
     .map((item, i) => ({ ...item, id: 'variety_' + String(i + 1).padStart(3, '0') }));
