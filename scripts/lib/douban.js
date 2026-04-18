@@ -224,6 +224,7 @@ const FOREIGN_KEYWORDS = [
   '禹智皓', '申效涉', '李星和', '权爀禹', '朴宰范',
   'Biong Biong', '黑白厨师', '思想验证区域', '三傻游肯尼亚', '豆豆饭饭', '恋爱女子宿舍',
   '超时空辉夜姬', '泰勒·汤姆林森',
+  '格莱美', 'Grammy', '奥斯卡', '金球奖', '艾美奖', 'Emmy',
   '麻浦帅小伙', 'Rap: Public', '新人歌手曹政奭', '超级乐队',
   '基和皮尔', 'Key & Peele',
   '康熙来了', '锵锵三人行', '锵锵行天下', '天天向上', '快乐大本营', '非正式会谈',
@@ -247,6 +248,12 @@ function isChineseVariety(title, genres) {
     for (const t of NON_VARIETY_TYPES) {
       if (typeStr.includes(t)) return false;
     }
+  }
+
+  const englishPattern = /[a-zA-Z]{3,}/;
+  if (englishPattern.test(title)) {
+    const chineseChars = (title.match(/[\u4e00-\u9fff]/g) || []).length;
+    if (chineseChars < 2) return false;
   }
 
   for (const keyword of FOREIGN_KEYWORDS) {
