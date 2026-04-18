@@ -8,9 +8,9 @@ const {
 const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
 
 const VARIETY_TAGS = [
-  { tag: '综艺', hotCount: 100, recentCount: 50 },
-  { tag: '综艺,音乐', hotCount: 100, recentCount: 50 },
-  { tag: '综艺,脱口秀', hotCount: 100, recentCount: 50 },
+  { tag: '综艺', hotCount: 30, recentCount: 50 },
+  { tag: '综艺,音乐', hotCount: 30, recentCount: 50 },
+  { tag: '综艺,脱口秀', hotCount: 30, recentCount: 50 },
   { tag: '真人秀', hotCount: 0, recentCount: 50, yearOnly: true }
 ];
 
