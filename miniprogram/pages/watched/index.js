@@ -22,19 +22,7 @@ Page({
   },
 
   loadWatched() {
-    const watchedIds = userStore.getWatched()
-    const favorites = userStore.getFavorites()
-    const favMap = {}
-    favorites.forEach(f => { favMap[f.doubanId] = f })
-
-    const list = watchedIds.map(id => {
-      const fav = favMap[id]
-      if (fav) {
-        return { doubanId: id, title: fav.title, poster: fav.poster, rating: fav.rating, year: fav.year, genres: fav.genres }
-      }
-      return { doubanId: id, title: '未知作品', poster: '', rating: 0, year: '', genres: [] }
-    })
-
+    const list = userStore.getWatched()
     this.setData({ list, loading: false })
   },
 

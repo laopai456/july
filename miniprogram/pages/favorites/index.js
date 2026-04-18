@@ -40,7 +40,7 @@ Page({
   onMarkWatched() {
     const item = this.data.actionMenuItem
     if (!item) return
-    userStore.markWatched(item.doubanId)
+    userStore.markWatched(item)
     this.hideActionMenu()
     this.loadFavorites()
     wx.showToast({ title: '已标记为看过', icon: 'success' })
