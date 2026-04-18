@@ -12,6 +12,7 @@
       </view>
     </view>
     <view class="header-actions">
+      <view class="fav-btn" bindtap="goToFavorites">❤️</view>
       <view class="search-btn" bindtap="showSearch">
         <text>🔍</text>
       </view>

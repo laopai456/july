@@ -797,6 +797,12 @@ Page({
     })
   },
 
+  goToFavorites() {
+    wx.navigateTo({
+      url: '/pages/favorites/index'
+    })
+  },
+
   toggleSearchBar() {
     this.setData({
       showSearchBar: !this.data.showSearchBar,

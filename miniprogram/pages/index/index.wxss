@@ -29,6 +29,14 @@
   letter-spacing: 2rpx;
 }
 
+.fav-btn {
+  font-size: 28rpx;
+  padding: 12rpx 20rpx;
+  background: linear-gradient(145deg, #f0f8ff, #e8f0f0);
+  border-radius: 20rpx;
+  box-shadow: 3rpx 3rpx 6rpx #d0d8e0, -3rpx -3rpx 6rpx #ffffff;
+}
+
 .search-btn {
   width: 60rpx;
   height: 60rpx;

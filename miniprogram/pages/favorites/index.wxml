@@ -1,0 +1,62 @@
+<view class="container">
+  <view class="fav-header" wx:if="{{list.length > 0}}">
+    <text class="fav-count">共 {{list.length}} 部收藏</text>
+  </view>
+
+  <view class="movie-list" wx:if="{{list.length > 0}}">
+    <view
+      class="movie-item"
+      wx:for="{{list}}"
+      wx:key="doubanId"
+      data-index="{{index}}"
+      bindtap="showDetail"
+      bindlongpress="onItemLongPress"
+    >
+      <view class="poster-wrap">
+        <image
+          wx:if="{{item.poster}}"
+          class="poster"
+          src="{{item.poster}}"
+          mode="aspectFill"
+          lazy-load
+        />
+        <view wx:else class="poster-placeholder">
+          <text>{{item.title[0]}}</text>
+        </view>
+      </view>
+      <view class="info">
+        <text class="title">{{item.title}}</text>
+        <view class="meta">
+          <text wx:if="{{item.year}}">{{item.year}}</text>
+          <text wx:if="{{item.rating}}"> ★ {{item.rating}}</text>
+        </view>
+        <view class="tags" wx:if="{{item.genres.length > 0}}">
+          <text class="tag" wx:for="{{item.genres}}" wx:for-item="g" wx:key="*this">{{g}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty" wx:if="{{!loading && list.length === 0}}">
+    <view class="empty-icon">📭</view>
+    <text class="empty-title">还没有收藏</text>
+    <text class="empty-desc">长按榜单中的作品即可收藏</text>
+  </view>
+</view>
+
+<view class="action-mask" hidden="{{!showActionMenu}}" bindtap="hideActionMenu">
+  <view class="action-sheet" catchtap="preventBubble">
+    <view class="action-sheet-title">{{actionMenuItem.title}}</view>
+    <view class="action-item action-watched" bindtap="onMarkWatched">
+      <text class="action-icon">👁</text>
+      <text>标记已看（移出清单）</text>
+    </view>
+    <view class="action-item action-remove" bindtap="onRemoveFavorite">
+      <text class="action-icon">🗑</text>
+      <text>移除收藏</text>
+    </view>
+    <view class="action-item action-cancel" bindtap="hideActionMenu">
+      <text>取消</text>
+    </view>
+  </view>
+</view>
