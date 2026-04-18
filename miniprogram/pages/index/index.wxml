@@ -34,7 +34,7 @@
     <text class="search-cancel" bindtap="hideSearch">取消</text>
   </view>
 
-  <view class="sub-tabs">
+  <view class="sub-tabs" wx:if="{{subCategories.length > 0}}">
     <view 
       class="sub-item {{currentSub === index ? 'active' : ''}}" 
       wx:for="{{subCategories}}" 

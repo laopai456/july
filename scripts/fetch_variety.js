@@ -2,7 +2,7 @@ const fs = require('fs');
 const {
   fetchWithCurrentYearPriority, fetchSubjectAbstract,
   fetchDetailsBatch, searchSupplementItems,
-  calculateHotScore, isChineseVariety, getSubCategory, parallelLimit,
+  calculateHotScore, isChineseVariety, parallelLimit,
   getRequestCount, TOTAL_PER_CATEGORY, RATE_LIMIT, sleep
 } = require('./lib/douban');
 const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
@@ -12,6 +12,8 @@ const VARIETY_TAGS = [
   { tag: '综艺,音乐', hotCount: 100 },
   { tag: '综艺,脱口秀', hotCount: 100 }
 ];
+
+const VARIETY_DISPLAY_COUNT = 100;
 
 async function main() {
   const args = parseArgs();
@@ -23,14 +25,12 @@ async function main() {
 
   console.log('========================================');
   console.log('开始' + (args.full ? '全量' : '增量') + '更新综艺数据');
-  console.log('每分类: 当年动态比例(40%热度) + 当年最新50条(时间排序) + 热门100条补充');
+  console.log('总榜单模式: 按热力值排序, 展示' + VARIETY_DISPLAY_COUNT + '条');
   console.log('========================================\n');
 
-  // ========== 第1步: 加载现有索引 ==========
   const { indexMap, allData } = loadCategoryData('variety');
   console.log('现有索引: ' + indexMap.size + ' 条');
 
-  // ========== 第2步: 抓取列表（当年优先 → 往年补齐） ==========
   const allItems = [];
   const seenIds = new Set();
 
@@ -57,7 +57,6 @@ async function main() {
 
   if (allItems.length === 0) { console.log('未获取到数据'); return; }
 
-  // ========== 第3步: 比对索引，区分新增/已存在 ==========
   let itemsToFetch;
 
   if (args.full) {
@@ -71,20 +70,10 @@ async function main() {
     itemsToFetch = newItems;
   }
 
-  // ========== 第4步: 抓取新增详情 ==========
   const newResults = await fetchDetailsBatch(itemsToFetch, { useAbstract: true });
 
   console.log('\n详情获取完成: ' + newResults.length + ' 条');
 
-  // ========== 第5步: 分类（综艺专用，已在详情中获取abstract） ==========
-  for (let i = 0; i < newResults.length; i++) {
-    const item = newResults[i];
-    item.subCategory = getSubCategory(item.title, item.genres);
-    if ((i + 1) % 20 === 0) process.stdout.write('\r分类处理: ' + (i + 1) + '/' + newResults.length + '...');
-  }
-  console.log('\n分类处理完成');
-
-  // ========== 第6步: 合并数据，更新索引 ==========
   const now = new Date().toISOString().split('T')[0];
 
   for (const item of newResults) {
@@ -97,7 +86,6 @@ async function main() {
         directors: item.directors || [],
         casts: item.casts || [],
         genres: item.genres || [],
-        subCategory: item.subCategory || '',
         abstract: item.abstract || '',
         lastUpdate: now
       });
@@ -106,12 +94,9 @@ async function main() {
 
   console.log('索引更新后: ' + indexMap.size + ' 条');
 
-  // ========== 第7步: 从索引构建完整列表，计算热力分，过滤 ==========
   const allResults = [];
   for (const [doubanId, item] of indexMap) {
     const hotScore = calculateHotScore(item.rate, item.year);
-    const subCategory = getSubCategory(item.title, item.genres);
-    item.subCategory = subCategory;
     allResults.push({
       ...item,
       doubanId: doubanId,
@@ -124,20 +109,11 @@ async function main() {
   const chineseItems = allResults.filter(item => isChineseVariety(item.title, item.genres));
   console.log('过滤国外综艺: ' + (allResults.length - chineseItems.length) + ' 条, 剩余 ' + chineseItems.length + ' 条');
 
-  // ========== 第8步: 分类排序截取 ==========
-  const showItems = chineseItems.filter(i => i.subCategory === '真人秀').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
-  const comedyItems = chineseItems.filter(i => i.subCategory === '喜剧').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
-  const musicItems = chineseItems.filter(i => i.subCategory === '音综').sort((a, b) => b.hotScore - a.hotScore).slice(0, TOTAL_PER_CATEGORY);
+  const finalItems = chineseItems
+    .sort((a, b) => b.hotScore - a.hotScore)
+    .slice(0, VARIETY_DISPLAY_COUNT)
+    .map((item, i) => ({ ...item, id: 'variety_' + String(i + 1).padStart(3, '0') }));
 
-  console.log('分类统计: 真人秀 ' + showItems.length + ' / 喜剧 ' + comedyItems.length + ' / 音综 ' + musicItems.length);
-
-  const finalItems = [
-    ...showItems.map((item, i) => ({ ...item, id: 'show_' + String(i + 1).padStart(3, '0') })),
-    ...comedyItems.map((item, i) => ({ ...item, id: 'comedy_' + String(i + 1).padStart(3, '0') })),
-    ...musicItems.map((item, i) => ({ ...item, id: 'music_' + String(i + 1).padStart(3, '0') }))
-  ];
-
-  // ========== 第9步: 保存 ==========
   const allIndex = {};
   for (const [doubanId, item] of indexMap) {
     allIndex['douban_' + doubanId] = item;
@@ -152,14 +128,8 @@ async function main() {
 
   fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
 
-  // ========== 输出统计 ==========
-  console.log('\n各分类前5部:');
-  console.log('\n【真人秀】');
-  showItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
-  console.log('\n【喜剧】');
-  comedyItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
-  console.log('\n【音综】');
-  musicItems.slice(0, 5).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
+  console.log('\n总榜前10部:');
+  finalItems.slice(0, 10).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));
 
   const savedRequests = !args.full && allItems.length > 0
     ? Math.round(((allItems.length - itemsToFetch.length) / allItems.length) * 100)

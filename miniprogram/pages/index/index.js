@@ -3,7 +3,6 @@ const userStore = require('../../utils/userStore.js')
 const TABS = ['综艺', '电影', '热剧']
 
 const SUB_CATEGORIES = {
-  '综艺': ['真人秀', '喜剧', '音综'],
   '电影': ['中国', '日韩', '欧美'],
   '热剧': ['韩剧', '日剧', '国产剧']
 }
@@ -18,15 +17,15 @@ Page({
     tabs: TABS,
     currentTab: 0,
     currentTabName: '综艺',
-    subCategories: SUB_CATEGORIES['综艺'],
+    subCategories: [],
     currentSub: 0,
-    currentSubName: '真人秀',
+    currentSubName: '',
     list: [],
     loading: true,
     page: 1,
     hasMore: false,
     refreshAt: null,
-    subCategoryCounts: [0, 0, 0],
+    subCategoryCounts: [],
     showSearchBar: false,
     searchKeyword: '',
     isSearching: false,
@@ -137,21 +136,19 @@ Page({
     const data = this._tabDataCache[tabName]
     if (!data) return
 
-    const rawList = (data.items[subName] || [])
-    const list = userStore.filterWatched(rawList).slice(0, 30)
-    const subs = SUB_CATEGORIES[tabName]
-
-    let counts
     if (tabName === '综艺') {
-      counts = data.counts
+      const rawList = Array.isArray(data) ? data : (data.items || [])
+      const list = userStore.filterWatched(rawList).slice(0, 50)
       this.setData({
         list,
-        subCategoryCounts: [counts['真人秀'] || 0, counts['喜剧'] || 0, counts['音综'] || 0],
         hasMore: false,
         loading: false,
         refreshAt: '云存储数据'
       })
     } else {
+      const rawList = (data.items[subName] || [])
+      const list = userStore.filterWatched(rawList).slice(0, 30)
+      const subs = SUB_CATEGORIES[tabName]
       this.setData({
         list,
         subCategoryCounts: subs.map(s => (data.items[s] || []).length),
@@ -165,19 +162,20 @@ Page({
   onTabChange(e) {
     const index = e.currentTarget.dataset.index
     const tabName = TABS[index]
+    const subs = SUB_CATEGORIES[tabName] || []
     this.setData({
       currentTab: index,
       currentTabName: tabName,
-      subCategories: SUB_CATEGORIES[tabName],
+      subCategories: subs,
       currentSub: 0,
-      currentSubName: SUB_CATEGORIES[tabName][0],
+      currentSubName: subs[0] || '',
       list: [],
       loading: true,
-      subCategoryCounts: [0, 0, 0]
+      subCategoryCounts: subs.map(() => 0)
     })
 
     if (this._tabDataCache[tabName]) {
-      this.applyTabData(tabName, SUB_CATEGORIES[tabName][0])
+      this.applyTabData(tabName, subs[0] || '')
     } else {
       this.loadTabFromNetwork(tabName)
     }
@@ -192,7 +190,9 @@ Page({
 
   onSubChange(e) {
     const index = e.currentTarget.dataset.index
-    const subName = SUB_CATEGORIES[this.data.currentTabName][index]
+    const subs = SUB_CATEGORIES[this.data.currentTabName]
+    if (!subs) return
+    const subName = subs[index]
 
     this.setData({
       currentSub: index,
@@ -236,7 +236,7 @@ Page({
       let list = []
 
       if (currentTabName === '综艺') {
-        list = await this.loadVariety(currentSubName)
+        list = await this.loadVariety()
       } else if (currentTabName === '电影') {
         list = await this.loadMovie(currentSubName)
       } else if (currentTabName === '热剧') {
@@ -306,21 +306,6 @@ Page({
     })
   },
 
-  getSubCategoryForVariety(title, genres) {
-    const allText = title + ' ' + (genres || []).join(' ')
-
-    const musicKeywords = ['音乐', '歌唱', '歌手', '唱歌', '声音', '好声音', '我是歌手', '超级女声', '快乐男声', '创造营', '青春有你', '偶像练习生', '乘风', '披荆斩棘', '舞蹈', '跳舞', '舞者', '街舞', '舞蹈风暴', '选秀', '偶像', '练习生', '出道', '成团', '蒙面唱', '蒙面歌王', '天赐的声音', '声入人心', '我们的歌', '时光音乐会', '乐队的夏天', '说唱', '明日之子', '创造101', '以团之名', '音综', '乐队']
-    const comedyKeywords = ['喜剧', '搞笑', '脱口秀', '吐槽', '段子', '欢乐', '开心', '爆笑', '笑傲', '喜剧人', '喜剧大赛', '一年一度', '喜人', '欢乐喜剧']
-
-    for (const keyword of musicKeywords) {
-      if (allText.includes(keyword)) return '音综'
-    }
-    for (const keyword of comedyKeywords) {
-      if (allText.includes(keyword)) return '喜剧'
-    }
-    return '真人秀'
-  },
-
   async fetchVarietyAll() {
     try {
       const result = await this.callDataService('getVariety', {})
@@ -330,15 +315,12 @@ Page({
       for (const item of result.subjects) {
         if (allItems.some(i => i.doubanId === item.id)) continue
 
-        const subCat = item.subCategory || this.getSubCategoryForVariety(item.title, item.genres || [])
-
         allItems.push({
           doubanId: item.doubanId || item.id,
           title: item.title,
           titleEn: '',
           type: 'variety',
           mainCategory: '综艺',
-          subCategory: subCat,
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
@@ -356,19 +338,7 @@ Page({
         })
       }
 
-      const items = {
-        '真人秀': allItems.filter(i => i.subCategory === '真人秀').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0)),
-        '喜剧': allItems.filter(i => i.subCategory === '喜剧').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0)),
-        '音综': allItems.filter(i => i.subCategory === '音综').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
-      }
-
-      const counts = {
-        '真人秀': items['真人秀'].length,
-        '喜剧': items['喜剧'].length,
-        '音综': items['音综'].length
-      }
-
-      return { items, counts }
+      return allItems.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
     } catch (err) {
       console.error('fetchVarietyAll error:', err)
       return null
@@ -472,7 +442,7 @@ Page({
     }
   },
 
-  async loadVariety(subCategory) {
+  async loadVariety() {
     try {
       const result = await this.callDataService('getVariety', {})
 
@@ -482,15 +452,12 @@ Page({
       for (const item of result.subjects) {
         if (allItems.some(i => i.doubanId === item.id)) continue
 
-        const subCat = item.subCategory || this.getSubCategoryForVariety(item.title, item.genres || [])
-
         allItems.push({
           doubanId: item.doubanId || item.id,
           title: item.title,
           titleEn: '',
           type: 'variety',
           mainCategory: '综艺',
-          subCategory: subCat,
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
@@ -508,28 +475,7 @@ Page({
         })
       }
 
-      const showItems = allItems.filter(i => i.subCategory === '真人秀').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
-      const comedyItems = allItems.filter(i => i.subCategory === '喜剧').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
-      const musicItems = allItems.filter(i => i.subCategory === '音综').sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
-
-      const counts = {
-        '真人秀': showItems.length,
-        '喜剧': comedyItems.length,
-        '音综': musicItems.length
-      }
-
-      this.setData({ subCategoryCounts: [counts['真人秀'] || 0, counts['喜剧'] || 0, counts['音综'] || 0] })
-
-      let filteredItems = []
-      if (subCategory === '真人秀') {
-        filteredItems = showItems
-      } else if (subCategory === '喜剧') {
-        filteredItems = comedyItems
-      } else if (subCategory === '音综') {
-        filteredItems = musicItems
-      }
-
-      return filteredItems.slice(0, 30)
+      return allItems.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0)).slice(0, 50)
     } catch (err) {
       console.error('loadVariety error:', err)
       return []
