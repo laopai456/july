@@ -8,9 +8,9 @@ const {
 const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
 
 const VARIETY_TAGS = [
-  { tag: '综艺', yearCount: 100, hotCount: 100 },
-  { tag: '综艺,音乐', yearCount: 100, hotCount: 100 },
-  { tag: '综艺,脱口秀', yearCount: 100, hotCount: 100 }
+  { tag: '综艺', hotCount: 100 },
+  { tag: '综艺,音乐', hotCount: 100 },
+  { tag: '综艺,脱口秀', hotCount: 100 }
 ];
 
 async function main() {
@@ -23,7 +23,7 @@ async function main() {
 
   console.log('========================================');
   console.log('开始' + (args.full ? '全量' : '增量') + '更新综艺数据');
-  console.log('每分类: 当年100条 + 热门100条, 去重后按子分类截取');
+  console.log('每分类: 当年动态比例(40%头部,最少50最多200) + 热门100条补充');
   console.log('========================================\n');
 
   // ========== 第1步: 加载现有索引 ==========
@@ -35,8 +35,8 @@ async function main() {
   const seenIds = new Set();
 
   const varietyResults = await parallelLimit(
-    VARIETY_TAGS.map(({ tag, yearCount, hotCount }) =>
-      () => fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag })
+    VARIETY_TAGS.map(({ tag, hotCount }) =>
+      () => fetchWithCurrentYearPriority(tag, hotCount, { logLabel: tag })
         .then(items => ({ items }))
     ),
     RATE_LIMIT.maxConcurrent

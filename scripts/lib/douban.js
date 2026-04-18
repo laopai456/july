@@ -101,7 +101,8 @@ async function fetchList(tag, start, limit, yearRange = '') {
   if (data && data.msg) {
     console.log('\n  [API消息] ' + data.msg);
   }
-  return data ? (data.data || []) : [];
+  if (!data) return { items: [], total: 0 };
+  return { items: data.data || [], total: data.total || 0 };
 }
 
 async function fetchDetailByTitle(title, doubanId, preferType = null) {
@@ -316,8 +317,8 @@ async function fetchTagItems(tag, count, yearRange = '') {
     const batchNum = Math.floor(start / RATE_LIMIT.batchSize) + 1;
     process.stdout.write('\r    [批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, count) + ' 条...');
 
-    const list = await fetchList(tag, start, RATE_LIMIT.batchSize, yearRange);
-    items.push(...list);
+    const result = await fetchList(tag, start, RATE_LIMIT.batchSize, yearRange);
+    items.push(...result.items);
 
     if (start + RATE_LIMIT.batchSize < count) {
       process.stdout.write(' 等待中...');
@@ -328,15 +329,25 @@ async function fetchTagItems(tag, count, yearRange = '') {
   return items;
 }
 
+async function fetchTagTotal(tag, yearRange = '') {
+  const result = await fetchList(tag, 0, 1, yearRange);
+  return result.total;
+}
+
 async function fetchWithCurrentYearPriority(tag, hotCount, options = {}) {
   const currentYear = new Date().getFullYear();
   const yearRange = currentYear + ',' + currentYear;
-  const { yearCount = 20, logLabel = tag } = options;
+  const { logLabel = tag, minYearCount = 50, maxYearCount = 200, yearRatio = 0.4 } = options;
 
   const allItems = [];
   const seenIds = new Set();
 
-  console.log('\n  [获取' + logLabel + ' - 当年新作优先]');
+  console.log('\n  [探测' + logLabel + '当年总量]');
+  const yearTotal = await fetchTagTotal(tag, yearRange);
+  const yearCount = Math.min(maxYearCount, Math.max(minYearCount, Math.ceil(yearTotal * yearRatio)));
+  console.log('  [' + logLabel + ' 当年总量: ' + yearTotal + ' 条, 按' + (yearRatio * 100) + '%比例取 ' + yearCount + ' 条]');
+
+  console.log('  [获取' + logLabel + ' - 当年新作]');
   const yearItems = await fetchTagItems(tag, yearCount, yearRange);
   for (const item of yearItems) {
     if (!seenIds.has(item.id)) {
@@ -484,6 +495,7 @@ module.exports = {
   isChineseVariety,
   getSubCategory,
   fetchTagItems,
+  fetchTagTotal,
   fetchWithCurrentYearPriority,
   fetchDetailForItem,
   fetchDetailsBatch,
