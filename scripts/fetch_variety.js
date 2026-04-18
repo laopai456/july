@@ -9,21 +9,9 @@ const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE }
 
 const VARIETY_TAGS = [
   { tag: '综艺', hotCount: 30, recentCount: 50 },
-  { tag: '综艺,真人秀', hotCount: 0, recentCount: 50, yearOnly: true },
   { tag: '综艺,音乐', hotCount: 30, recentCount: 50 },
   { tag: '综艺,脱口秀', hotCount: 30, recentCount: 50 },
-  { tag: '综艺,选秀', hotCount: 0, recentCount: 30, yearOnly: true },
-  { tag: '综艺,搞笑', hotCount: 0, recentCount: 30, yearOnly: true },
-  { tag: '综艺,竞技', hotCount: 0, recentCount: 30, yearOnly: true },
-  { tag: '综艺,美食', hotCount: 0, recentCount: 30, yearOnly: true },
-  { tag: '综艺,旅行', hotCount: 0, recentCount: 30, yearOnly: true },
-  { tag: '综艺,游戏', hotCount: 0, recentCount: 30, yearOnly: true },
-  { tag: '综艺,恋爱', hotCount: 0, recentCount: 30, yearOnly: true },
-  { tag: '真人秀', hotCount: 0, recentCount: 50, yearOnly: true },
-  { tag: '真人秀,爱情', hotCount: 0, recentCount: 30, yearOnly: true },
-  { tag: '真人秀,游戏', hotCount: 0, recentCount: 30, yearOnly: true },
-  { tag: '真人秀,搞笑', hotCount: 0, recentCount: 30, yearOnly: true },
-  { tag: '真人秀,美食', hotCount: 0, recentCount: 30, yearOnly: true }
+  { tag: '真人秀', hotCount: 0, recentCount: 50, yearOnly: true }
 ];
 
 const VARIETY_DISPLAY_COUNT = 100;
