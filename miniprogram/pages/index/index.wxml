@@ -54,7 +54,7 @@
         <view 
           class="movie-item" 
           wx:for="{{list}}" 
-          wx:key="_id"
+          wx:key="doubanId"
           data-index="{{index}}"
           bindtap="showDetail"
           bindlongpress="onItemLongPress"
