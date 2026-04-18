@@ -1,3 +1,5 @@
+const userStore = require('../../utils/userStore.js')
+
 const TABS = ['综艺', '电影', '热剧']
 
 const SUB_CATEGORIES = {
@@ -30,7 +32,10 @@ Page({
     isSearching: false,
     showDetailCard: false,
     detailItem: null,
-    descExpanded: false
+    descExpanded: false,
+    showActionMenu: false,
+    actionMenuItem: null,
+    actionMenuIndex: -1
   },
 
   _tabDataCache: {},
@@ -132,7 +137,8 @@ Page({
     const data = this._tabDataCache[tabName]
     if (!data) return
 
-    const list = (data.items[subName] || []).slice(0, 30)
+    const rawList = (data.items[subName] || []).slice(0, 30)
+    const list = userStore.filterWatched(rawList)
     const subs = SUB_CATEGORIES[tabName]
 
     let counts
@@ -730,6 +736,38 @@ Page({
       showDetailCard: false,
       detailItem: null
     })
+  },
+
+  onItemLongPress(e) {
+    const index = e.currentTarget.dataset.index
+    const item = this.data.list[index]
+    if (!item) return
+    this.setData({
+      showActionMenu: true,
+      actionMenuItem: item,
+      actionMenuIndex: index
+    })
+  },
+
+  hideActionMenu() {
+    this.setData({ showActionMenu: false, actionMenuItem: null, actionMenuIndex: -1 })
+  },
+
+  onMarkWatched() {
+    const item = this.data.actionMenuItem
+    if (!item) return
+    userStore.markWatched(item.doubanId)
+    this.hideActionMenu()
+    this.applyTabData(this.data.currentTabName, this.data.currentSubName)
+    wx.showToast({ title: '已标记为看过', icon: 'success' })
+  },
+
+  onAddFavorite() {
+    const item = this.data.actionMenuItem
+    if (!item) return
+    userStore.addFavorite(item)
+    this.hideActionMenu()
+    wx.showToast({ title: '已收藏', icon: 'success' })
   },
 
   preventBubble() {},

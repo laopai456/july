@@ -56,6 +56,7 @@
           wx:key="_id"
           data-index="{{index}}"
           bindtap="showDetail"
+          bindlongpress="onItemLongPress"
         >
           <view class="rank">{{index + 1}}</view>
           <view class="poster-wrap">
@@ -121,6 +122,23 @@
       <image class="emoji-bounce" src="/images/loading.png" mode="aspectFit" />
       <image class="emoji-bounce delay-1" src="/images/loading.png" mode="aspectFit" />
       <image class="emoji-bounce delay-2" src="/images/loading.png" mode="aspectFit" />
+    </view>
+  </view>
+</view>
+
+<view class="action-mask" hidden="{{!showActionMenu}}" bindtap="hideActionMenu">
+  <view class="action-sheet" catchtap="preventBubble">
+    <view class="action-sheet-title">{{actionMenuItem.title}}</view>
+    <view class="action-item action-watched" bindtap="onMarkWatched">
+      <text class="action-icon">👁</text>
+      <text>标记已看</text>
+    </view>
+    <view class="action-item action-fav" bindtap="onAddFavorite">
+      <text class="action-icon">❤️</text>
+      <text>收藏</text>
+    </view>
+    <view class="action-item action-cancel" bindtap="hideActionMenu">
+      <text>取消</text>
     </view>
   </view>
 </view>
