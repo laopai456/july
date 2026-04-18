@@ -4,6 +4,7 @@
     "pages/detail/index",
     "pages/genre/index",
     "pages/favorites/index",
+    "pages/watched/index",
     "pages/admin/index"
   ],
   "window": {

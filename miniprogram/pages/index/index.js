@@ -803,6 +803,12 @@ Page({
     })
   },
 
+  goTowatched() {
+    wx.navigateTo({
+      url: '/pages/watched/index'
+    })
+  },
+
   toggleSearchBar() {
     this.setData({
       showSearchBar: !this.data.showSearchBar,

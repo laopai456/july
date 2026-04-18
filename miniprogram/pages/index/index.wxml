@@ -12,10 +12,8 @@
       </view>
     </view>
     <view class="header-actions">
+      <view class="watched-btn" bindtap="goTowatched">👁 已看</view>
       <view class="fav-btn" bindtap="goToFavorites">❤️</view>
-      <view class="search-btn" bindtap="showSearch">
-        <text>🔍</text>
-      </view>
       <view class="genre-btn" bindtap="goToGenre">🏷 标签</view>
     </view>
   </view>
