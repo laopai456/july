@@ -15,8 +15,8 @@ const RATE_LIMIT = {
   banCooldown: 60000
 };
 
-const DISPLAY_COUNT = 20;
-const BACKUP_COUNT = 30;
+const DISPLAY_COUNT = 100;
+const BACKUP_COUNT = 100;
 const TOTAL_PER_CATEGORY = DISPLAY_COUNT + BACKUP_COUNT;
 
 let requestCount = 0;
