@@ -10,7 +10,8 @@ const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE }
 const VARIETY_TAGS = [
   { tag: '综艺', hotCount: 100 },
   { tag: '综艺,音乐', hotCount: 100 },
-  { tag: '综艺,脱口秀', hotCount: 100 }
+  { tag: '综艺,脱口秀', hotCount: 100 },
+  { tag: '真人秀', hotCount: 100 }
 ];
 
 const VARIETY_DISPLAY_COUNT = 100;
