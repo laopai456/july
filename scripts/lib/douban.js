@@ -345,7 +345,7 @@ async function fetchTagTotal(tag, yearRange = '', sort = '') {
 async function fetchWithCurrentYearPriority(tag, hotCount, options = {}) {
   const currentYear = new Date().getFullYear();
   const yearRange = currentYear + ',' + currentYear;
-  const { logLabel = tag, minYearCount = 50, maxYearCount = 200, yearRatio = 0.4, recentCount = 50 } = options;
+  const { logLabel = tag, minYearCount = 50, maxYearCount = 200, yearRatio = 0.4, recentCount = 50, yearOnly = false } = options;
 
   const allItems = [];
   const seenIds = new Set();
@@ -377,17 +377,19 @@ async function fetchWithCurrentYearPriority(tag, hotCount, options = {}) {
   }
   console.log('  [' + logLabel + ' 当年最新] ' + recentItems.length + ' 条, 新增 ' + recentNew + ' 条');
 
-  console.log('  [获取' + logLabel + ' - 往年热门补充]');
-  const hotItems = await fetchTagItems(tag, hotCount);
-  let supplementCount = 0;
-  for (const item of hotItems) {
-    if (!seenIds.has(item.id)) {
-      seenIds.add(item.id);
-      allItems.push(item);
-      supplementCount++;
+  if (!yearOnly && hotCount > 0) {
+    console.log('  [获取' + logLabel + ' - 往年热门补充]');
+    const hotItems = await fetchTagItems(tag, hotCount);
+    let supplementCount = 0;
+    for (const item of hotItems) {
+      if (!seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        allItems.push(item);
+        supplementCount++;
+      }
     }
+    console.log('  [' + logLabel + ' 往年补充] ' + supplementCount + ' 条');
   }
-  console.log('  [' + logLabel + ' 往年补充] ' + supplementCount + ' 条');
 
   return allItems;
 }

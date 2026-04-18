@@ -8,10 +8,10 @@ const {
 const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
 
 const VARIETY_TAGS = [
-  { tag: '综艺', hotCount: 100 },
-  { tag: '综艺,音乐', hotCount: 100 },
-  { tag: '综艺,脱口秀', hotCount: 100 },
-  { tag: '真人秀', hotCount: 100 }
+  { tag: '综艺', hotCount: 100, recentCount: 50 },
+  { tag: '综艺,音乐', hotCount: 100, recentCount: 50 },
+  { tag: '综艺,脱口秀', hotCount: 100, recentCount: 50 },
+  { tag: '真人秀', hotCount: 0, recentCount: 50, yearOnly: true }
 ];
 
 const VARIETY_DISPLAY_COUNT = 100;
@@ -36,8 +36,8 @@ async function main() {
   const seenIds = new Set();
 
   const varietyResults = await parallelLimit(
-    VARIETY_TAGS.map(({ tag, hotCount }) =>
-      () => fetchWithCurrentYearPriority(tag, hotCount, { logLabel: tag })
+    VARIETY_TAGS.map(({ tag, hotCount, recentCount, yearOnly }) =>
+      () => fetchWithCurrentYearPriority(tag, hotCount, { logLabel: tag, recentCount, yearOnly })
         .then(items => ({ items }))
     ),
     RATE_LIMIT.maxConcurrent
