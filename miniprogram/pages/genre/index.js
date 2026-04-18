@@ -1,3 +1,5 @@
+const userStore = require('../../utils/userStore.js')
+
 const GENRE_LIST = ['悬疑', '喜剧', '恐怖', '犯罪', '爱情']
 const CACHE_KEY = 'genre_cache'
 const CACHE_EXPIRE = 30 * 60 * 1000
@@ -12,7 +14,9 @@ Page({
     loading: true,
     showDetailCard: false,
     detailItem: null,
-    descExpanded: false
+    descExpanded: false,
+    showActionMenu: false,
+    actionMenuItem: null
   },
 
   _genreDataCache: {},
@@ -175,7 +179,8 @@ Page({
     const data = this._genreDataCache[currentGenre]
     if (!data) return
 
-    const list = (data[currentSection] || []).slice(0, 50)
+    const rawList = (data[currentSection] || [])
+    const list = userStore.filterWatched(rawList).slice(0, 50)
     this.setData({
       list,
       loading: false
@@ -294,6 +299,34 @@ Page({
 
   hideDetail() {
     this.setData({ showDetailCard: false, detailItem: null })
+  },
+
+  onItemLongPress(e) {
+    const index = e.currentTarget.dataset.index
+    const item = this.data.list[index]
+    if (!item) return
+    this.setData({ showActionMenu: true, actionMenuItem: item })
+  },
+
+  hideActionMenu() {
+    this.setData({ showActionMenu: false, actionMenuItem: null })
+  },
+
+  onMarkWatched() {
+    const item = this.data.actionMenuItem
+    if (!item) return
+    userStore.markWatched(item.doubanId)
+    this.hideActionMenu()
+    this.applySectionData()
+    wx.showToast({ title: '已标记为看过', icon: 'success' })
+  },
+
+  onAddFavorite() {
+    const item = this.data.actionMenuItem
+    if (!item) return
+    userStore.addFavorite(item)
+    this.hideActionMenu()
+    wx.showToast({ title: '已收藏', icon: 'success' })
   },
 
   preventBubble() {},

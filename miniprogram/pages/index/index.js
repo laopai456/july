@@ -137,8 +137,8 @@ Page({
     const data = this._tabDataCache[tabName]
     if (!data) return
 
-    const rawList = (data.items[subName] || []).slice(0, 30)
-    const list = userStore.filterWatched(rawList)
+    const rawList = (data.items[subName] || [])
+    const list = userStore.filterWatched(rawList).slice(0, 30)
     const subs = SUB_CATEGORIES[tabName]
 
     let counts
