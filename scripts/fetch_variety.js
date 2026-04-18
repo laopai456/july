@@ -19,7 +19,11 @@ const VARIETY_TAGS = [
   { tag: '综艺,旅行', hotCount: 0, recentCount: 30, yearOnly: true },
   { tag: '综艺,游戏', hotCount: 0, recentCount: 30, yearOnly: true },
   { tag: '综艺,恋爱', hotCount: 0, recentCount: 30, yearOnly: true },
-  { tag: '真人秀', hotCount: 0, recentCount: 50, yearOnly: true }
+  { tag: '真人秀', hotCount: 0, recentCount: 50, yearOnly: true },
+  { tag: '真人秀,爱情', hotCount: 0, recentCount: 30, yearOnly: true },
+  { tag: '真人秀,游戏', hotCount: 0, recentCount: 30, yearOnly: true },
+  { tag: '真人秀,搞笑', hotCount: 0, recentCount: 30, yearOnly: true },
+  { tag: '真人秀,美食', hotCount: 0, recentCount: 30, yearOnly: true }
 ];
 
 const VARIETY_DISPLAY_COUNT = 100;
