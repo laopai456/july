@@ -465,11 +465,33 @@ async function searchSupplementItems(category, seenIds) {
   const titles = await loadSupplement(category);
   if (titles.length === 0) return [];
 
-  console.log('\n[补充搜索: ' + titles.length + ' 个作品]');
+  const fs = require('fs');
+  const path = require('path');
+  let scheduleMap = {};
+  try { scheduleMap = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'variety_schedule.json'), 'utf8')) } catch (e) {}
+
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+  const filteredTitles = titles.filter(title => {
+    for (const key of Object.keys(scheduleMap)) {
+      if (title.includes(key) || key.includes(title)) {
+        if (scheduleMap[key] > currentMonth) return false;
+      }
+    }
+    return true;
+  });
+
+  const skipped = titles.length - filteredTitles.length;
+  console.log('\n[补充搜索: ' + filteredTitles.length + ' 个作品' + (skipped > 0 ? ', 跳过未播出 ' + skipped + ' 个' : '') + ']');
   const items = [];
-  for (const title of titles) {
+  for (const title of filteredTitles) {
     const detail = await fetchDetailByTitle(title);
     if (detail && detail.id && !seenIds.has(detail.id)) {
+      const year = parseInt(detail.year) || 0;
+      if (year > 0 && year < currentYear - 1) {
+        console.log('  跳过(年份不匹配): ' + (detail.title || title) + ' (' + detail.year + ')');
+        continue;
+      }
       seenIds.add(detail.id);
       items.push({
         id: detail.id,
