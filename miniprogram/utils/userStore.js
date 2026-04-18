@@ -22,7 +22,7 @@ function markWatched(doubanId) {
   const id = String(doubanId)
   if (!list.includes(id)) {
     list.push(id)
-    wx.setStorageSync(WATCHED_KEY, list)
+    try { wx.setStorageSync(WATCHED_KEY, list) } catch (e) { console.error('markWatched write fail', e) }
   }
   removeFavorite(id)
   return list
@@ -41,19 +41,19 @@ function addFavorite(item) {
     genres: item.genres || [],
     addedAt: Date.now()
   })
-  wx.setStorageSync(FAVORITES_KEY, list)
+  try { wx.setStorageSync(FAVORITES_KEY, list) } catch (e) { console.error('addFavorite write fail', e) }
   return list
 }
 
 function removeFavorite(doubanId) {
   const list = getFavorites().filter(f => f.doubanId !== String(doubanId))
-  wx.setStorageSync(FAVORITES_KEY, list)
+  try { wx.setStorageSync(FAVORITES_KEY, list) } catch (e) { console.error('removeFavorite write fail', e) }
   return list
 }
 
 function unmarkWatched(doubanId) {
   const list = getWatched().filter(id => id !== String(doubanId))
-  wx.setStorageSync(WATCHED_KEY, list)
+  try { wx.setStorageSync(WATCHED_KEY, list) } catch (e) { console.error('unmarkWatched write fail', e) }
   return list
 }
 

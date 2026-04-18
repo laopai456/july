@@ -224,7 +224,7 @@ Page({
         castDisplay: item.castDisplay || (item.cast && item.cast.length > 0 ? item.cast.slice(0, 3).join(' / ') : '')
       }))
       this.setData({
-        list: cleanedList,
+        list: userStore.filterWatched(cleanedList),
         hasMore: false,
         loading: false,
         refreshAt: '缓存数据'
@@ -248,7 +248,7 @@ Page({
       }
 
       this.setData({
-        list,
+        list: userStore.filterWatched(list),
         hasMore: false,
         loading: false,
         refreshAt: '云存储数据'
