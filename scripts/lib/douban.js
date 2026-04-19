@@ -472,9 +472,12 @@ async function searchSupplementItems(category, seenIds) {
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
+  const norm = t => t.replace(/\s+/g, '').replace(/第/g, '').replace(/季/g, '');
   const filteredTitles = titles.filter(title => {
+    const nt = norm(title);
     for (const key of Object.keys(scheduleMap)) {
-      if (title.includes(key) || key.includes(title)) {
+      const nk = norm(key);
+      if (nt.includes(nk) || nk.includes(nt)) {
         if (scheduleMap[key] > currentMonth) return false;
       }
     }

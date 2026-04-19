@@ -19,10 +19,16 @@ const VARIETY_DISPLAY_COUNT = 100;
 let scheduleMap = {};
 try { scheduleMap = JSON.parse(fs.readFileSync(__dirname + '/variety_schedule.json', 'utf8')) } catch (e) {}
 
+function normalizeTitle(t) {
+  return t.replace(/\s+/g, '').replace(/第/g, '').replace(/季/g, '')
+}
+
 function isAired(title) {
   const keys = Object.keys(scheduleMap);
+  const normTitle = normalizeTitle(title);
   for (const key of keys) {
-    if (title.includes(key) || key.includes(title)) {
+    const normKey = normalizeTitle(key);
+    if (normTitle.includes(normKey) || normKey.includes(normTitle)) {
       const scheduledMonth = scheduleMap[key];
       const currentMonth = new Date().getMonth() + 1;
       return scheduledMonth <= currentMonth;
