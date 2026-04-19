@@ -45,7 +45,7 @@
     "disableSWC": true
   },
   "appid": "wx80f06e6a023811ea",
-  "projectname": "quickstart-wx-cloud",
+  "projectname": "西瓜太浪HD",
   "libVersion": "2.20.1",
   "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
   "condition": {
