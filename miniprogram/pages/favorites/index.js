@@ -59,7 +59,10 @@ Page({
     const index = e.currentTarget.dataset.index
     const item = this.data.list[index]
     if (!item) return
-    wx.showToast({ title: '详情功能开发中', icon: 'none' })
+    try { wx.setStorageSync('currentDetail', item) } catch (e) {}
+    wx.navigateTo({
+      url: `/pages/detail/index?id=${item.doubanId}`
+    })
   },
 
   preventBubble() {}

@@ -4,7 +4,7 @@
       <view 
         class="tab-item {{currentTab === index ? 'active' : ''}}" 
         wx:for="{{tabs}}" 
-        wx:key="index"
+      wx:key="*this"
         data-index="{{index}}"
         bindtap="onTabChange"
       >
@@ -26,12 +26,12 @@
         placeholder="搜索影片名称" 
         value="{{searchKeyword}}" 
         bindinput="onSearchInput" 
-        bindconfirm="onSearchConfirm"
+        bindconfirm="onSearch"
         focus="{{showSearchBar}}"
       />
       <text class="search-clear" wx:if="{{searchKeyword}}" bindtap="clearSearch">✕</text>
     </view>
-    <text class="search-cancel" bindtap="hideSearch">取消</text>
+    <text class="search-cancel" bindtap="clearSearch">取消</text>
   </view>
 
   <view class="sub-tabs" wx:if="{{subCategories.length > 0}}">
