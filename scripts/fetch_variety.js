@@ -23,20 +23,6 @@ function normalizeTitle(t) {
   return t.replace(/\s+/g, '').replace(/第/g, '').replace(/季/g, '')
 }
 
-function isAired(title) {
-  const keys = Object.keys(scheduleMap);
-  const normTitle = normalizeTitle(title);
-  for (const key of keys) {
-    const normKey = normalizeTitle(key);
-    if (normTitle.includes(normKey) || normKey.includes(normTitle)) {
-      const scheduledMonth = scheduleMap[key];
-      const currentMonth = new Date().getMonth() + 1;
-      return scheduledMonth <= currentMonth;
-    }
-  }
-  return true;
-}
-
 async function main() {
   const args = parseArgs();
 
@@ -131,14 +117,19 @@ async function main() {
   const chineseItems = allResults.filter(item => isChineseVariety(item.title, item.genres));
   console.log('过滤国外综艺: ' + (allResults.length - chineseItems.length) + ' 条, 剩余 ' + chineseItems.length + ' 条');
 
-  const currentMonth = new Date().getMonth() + 1;
-  const airedItems = chineseItems.filter(item => isAired(item.title));
-  const filteredBySchedule = chineseItems.length - airedItems.length;
-  if (filteredBySchedule > 0) {
-    console.log('过滤未播出(>' + currentMonth + '月): ' + filteredBySchedule + ' 条, 剩余 ' + airedItems.length + ' 条');
+  function getAirMonth(title) {
+    const normTitle = normalizeTitle(title);
+    for (const key of Object.keys(scheduleMap)) {
+      const normKey = normalizeTitle(key);
+      if (normTitle.includes(normKey) || normKey.includes(normTitle)) {
+        return scheduleMap[key];
+      }
+    }
+    return 0;
   }
 
-  const finalItems = airedItems
+  const finalItems = chineseItems
+    .map(item => ({ ...item, airMonth: getAirMonth(item.title) }))
     .sort((a, b) => b.hotScore - a.hotScore)
     .slice(0, VARIETY_DISPLAY_COUNT)
     .map((item, i) => ({ ...item, id: 'variety_' + String(i + 1).padStart(3, '0') }));
