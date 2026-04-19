@@ -67,7 +67,8 @@ function formatItem(item) {
     directors: item.directors || (item.director ? [item.director] : []),
     casts: item.casts || item.cast || [],
     subCategory: item.subCategory || '',
-    hotScore: item.hotScore || 0
+    hotScore: item.hotScore || 0,
+    airMonth: item.airMonth || 0
   };
 }
 
