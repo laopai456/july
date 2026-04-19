@@ -20,7 +20,7 @@ let scheduleMap = {};
 try { scheduleMap = JSON.parse(fs.readFileSync(__dirname + '/variety_schedule.json', 'utf8')) } catch (e) {}
 
 function normalizeTitle(t) {
-  return t.replace(/\s+/g, '').replace(/第/g, '').replace(/季/g, '')
+  return t.replace(/[\s！!：:·\-—]/g, '').replace(/第/g, '').replace(/季/g, '')
     .replace(/1/g, '一').replace(/2/g, '二').replace(/3/g, '三').replace(/4/g, '四')
     .replace(/5/g, '五').replace(/6/g, '六').replace(/7/g, '七').replace(/8/g, '八')
     .replace(/9/g, '九').replace(/0/g, '零')
