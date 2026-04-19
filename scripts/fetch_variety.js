@@ -69,11 +69,12 @@ async function main() {
 
   console.log('\n共获取列表: ' + allItems.length + ' 条');
 
-  if (allItems.length === 0) { console.log('未获取到数据'); return; }
-
   let itemsToFetch;
 
-  if (args.full) {
+  if (allItems.length === 0) {
+    console.log('无新增列表数据，直接用索引重新生成榜单\n');
+    itemsToFetch = [];
+  } else if (args.full) {
     itemsToFetch = allItems;
     console.log('强制全量: 需要获取详情 ' + itemsToFetch.length + ' 条\n');
   } else {
