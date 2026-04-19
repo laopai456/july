@@ -44,6 +44,9 @@ async function main() {
 
   const allItems = [];
   const seenIds = new Set();
+  for (const [doubanId] of indexMap) {
+    seenIds.add(doubanId);
+  }
 
   const varietyResults = await parallelLimit(
     VARIETY_TAGS.map(({ tag, hotCount, recentCount, yearOnly }) =>
