@@ -1,38 +1,80 @@
 # 西瓜太浪hd
 
-一款采用新拟态（Neumorphism)设计风格的微信小程序，用于浏览综艺、电影、热剧排行榜。
+微信小程序，浏览综艺、电影、热剧排行榜。新拟态（Neumorphism）设计风格。
 
-## 项目特点
+## 功能一览
 
-- **新拟态设计**：柔和的渐变背景、软质凸起的光影效果、大圆角设计
-- **子分类榜单**：每个主分类下有3个子分类，精细化内容展示
-- **服务端数据**：数据由服务端脚本定期抓取，存储在 data.json
-- **本地缓存**：30分钟缓存，下拉刷新清除缓存
-- **国产综艺**：综艺数据仅包含国产综艺，自动过滤韩综、美综等国外内容
-- **作品简介**：点击榜单条目弹出卡片，展示作品内容简介，数据同步时预抓取完整简介
-- **并发抓取**：并行抓取数据，带限速和防封机制
-- **非电影过滤**：自动过滤开幕式、晚会等非电影内容
-- **服务端缓存**：简介接口带内存缓存，重复点击秒开
+| 功能 | 说明 |
+|------|------|
+| 榜单展示 | 综艺/电影/热剧三个 Tab，综艺为总榜（无子分类），电影按地区分3类，热剧按产地分3类 |
+| 标签分类 | 悬疑/喜剧/恐怖/犯罪/爱情，每个标签下分电影/热剧两个分区 |
+| 详情卡片 | 点击条目弹出浮层，显示评分/导演/演员/简介 |
+| 标记已看 | 长按条目标记已看，从榜单隐藏，进入已看列表 |
+| 收藏 | 长按条目收藏，收藏页可查看和管理 |
+| 搜索 | 调用豆瓣搜索 API |
+| 缓存 | 内存缓存 + 磁盘缓存（30分钟过期），下拉刷新清除 |
 
-## 数据源
+## 数据链路
 
-| 分类 | 子分类 | 数据源 | 说明 |
-|------|--------|--------|------|
-| 综艺 | 真人秀/喜剧/音综 | 豆瓣API | 服务端脚本抓取，过滤国外综艺 |
-| 电影 | 中国/日韩/欧美 | 豆瓣API | 服务端脚本抓取，按地区分类 |
-| 热剧 | 国产剧/韩剧/日剧 | 豆瓣API | 服务端脚本抓取 |
+```
+抓取脚本 (scripts/fetch_*.js)
+  → data.json (本地 JSON 文件)
+    → server.js formatItem() (白名单式字段过滤)
+      → 云函数 dataService (缓存 5-10 分钟)
+        → 前端 fetchXxxAll() / loadXxx() (逐字段构造对象)
+          → 前端 applyTabData() (airMonth 过滤 + 已看过滤 + 截断)
+```
 
-### 豆瓣API调用说明
+**关键提醒**：`server.js formatItem()` 是白名单式返回，新增字段必须手动加入。前端 `fetchXxx` / `loadXxx` 也是逐字段赋值，漏加任何一层都会导致字段丢失。
 
-数据抓取需要组合调用多个API：
+## 数据模型
 
-| API | 端点 | 返回字段 | 用途 |
-|-----|------|----------|------|
-| 列表API | `/j/new_search_subjects` | id, title, rate, cover, directors, casts | 获取基础列表信息（**无年份**） |
-| 详情API | `/j/subject_suggest` | id, title, year, type, genres | 获取年份和类型信息 |
-| 简介API | `m.douban.com/subject/{id}/` | HTML中的meta description | 解析提取作品简介 |
+### data.json 中的条目字段
 
-**注意**：列表API不返回年份字段，必须通过详情API搜索标题获取年份。简介通过解析移动版页面HTML获取。
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | string | 自增 ID（如 `variety_001`、`chinese_001`） |
+| doubanId | string | 豆瓣 ID |
+| title | string | 标题 |
+| rate | string | 评分（如 `"8.5"`） |
+| year | string | 年份 |
+| cover | string | 封面 URL |
+| directors | string[] | 导演列表 |
+| casts | string[] | 演员/嘉宾列表 |
+| genres | string[] | 类型标签 |
+| subCategory | string | 子分类（电影：中国/日韩/欧美；热剧：韩剧/日剧/国产剧；综艺：空） |
+| abstract | string | 简介 |
+| hotScore | number | 热力值 |
+| airMonth | number | 播出月份（仅综艺，0 表示未知） |
+| lastUpdate | string | 最后更新日期 |
+
+### formatItem() 白名单字段（server.js → 前端）
+
+id, doubanId, title, cover, rate, year, genres, summary, directors, casts, subCategory, hotScore, airMonth
+
+## 分类结构
+
+| 主分类 | 子分类 | 说明 |
+|--------|--------|------|
+| 综艺 | 无 | 单一总榜，按 hotScore 排序，前端按 airMonth 过滤未播出 |
+| 电影 | 中国 / 日韩 / 欧美 | 中国=大陆+台湾+香港；日韩=日本+韩国+泰国+印度；欧美=美英法德等 |
+| 热剧 | 韩剧 / 日剧 / 国产剧 | 按产地分类 |
+
+### 综艺过滤规则
+
+- 自动过滤韩综、日综、欧美综艺（标题含韩文/英文/特定关键词）
+- 自动过滤颁奖典礼（格莱美/奥斯卡等）
+- `airMonth` 字段用于前端过滤：当前月份 < airMonth 的条目不显示
+- 播出时间表维护在 `scripts/variety_schedule.json`
+
+## 用户数据
+
+用户数据（已看/收藏）存储在微信小程序本地 Storage 中，不上传服务端。
+
+| 存储键 | 数据结构 |
+|--------|----------|
+| `userWatched` | `[{doubanId, title, poster, rating, year, genres, addedAt}]` |
+| `userFavorites` | 同上 |
 
 ## 项目结构
 
@@ -40,9 +82,12 @@
 july/
 ├── miniprogram/                 # 小程序前端
 │   ├── pages/
-│   │   ├── index/               # 首页（排行榜列表）
-│   │   ├── admin/               # 调试页面
-│   │   └── detail/              # 详情页
+│   │   ├── index/               # 首页（三大 Tab 榜单）
+│   │   ├── detail/              # 详情页
+│   │   ├── genre/               # 标签分类页（悬疑/喜剧/恐怖/犯罪/爱情）
+│   │   ├── favorites/           # 收藏页
+│   │   ├── watched/             # 已看列表页
+│   │   └── admin/               # 调试工具页
 │   ├── components/              # 组件
 │   │   ├── movie-card/          # 影视卡片
 │   │   ├── movie-list/          # 列表组件
@@ -50,197 +95,121 @@ july/
 │   │   ├── loading/             # 加载组件
 │   │   └── empty/               # 空状态组件
 │   └── utils/
-│       ├── api.js               # API 封装
-│       └── config.js            # 配置文件
+│       ├── api.js               # API 封装（movieService 云函数）
+│       ├── config.js            # 配置文件（API 地址）
+│       ├── userStore.js         # 用户数据管理（已看/收藏）
+│       ├── imageCache.js        # 图片缓存
+│       └── util.js              # 通用工具
 ├── scripts/                     # 数据抓取脚本
 │   ├── fetch_variety.js         # 综艺数据抓取
 │   ├── fetch_movie.js           # 电影数据抓取
-│   └── fetch_drama.js           # 热剧数据抓取
-├── server.js                    # 后端服务（部署到云服务器）
-├── data.json                    # 数据存储文件
+│   ├── fetch_drama.js           # 热剧数据抓取
+│   ├── fetch_genre.js           # 标签索引生成
+│   ├── fetch_all.js             # 一键全量更新
+│   ├── dedup_genre.js           # 标签去重
+│   ├── supplement.json          # 综艺补充搜索列表
+│   ├── variety_schedule.json    # 综艺播出时间表（名称→月份映射）
+│   └── lib/
+│       ├── douban.js            # 豆瓣 API 封装
+│       └── incremental.js       # 增量更新工具
+├── server.js                    # 后端服务（Express，部署到 43.167.233.80:3000）
+├── data.json                    # 数据存储（gitignore，服务器独有）
 └── project.config.json
 ```
 
+## 后端 API
+
+| 端点 | 方法 | 功能 |
+|------|------|------|
+| `/api/variety` | GET | 综艺列表 |
+| `/api/movie/:type` | GET | 电影列表（chinese/asia/western） |
+| `/api/drama/:type` | GET | 热剧列表（chinese/korean/japanese） |
+| `/api/genre/:name` | GET | 标签分类数据 |
+| `/api/subject/:id` | GET | 单条详情（简介） |
+| `/api/subjects/batch` | POST | 批量获取简介 |
+
+## 豆瓣 API
+
+| API | 端点 | 返回字段 | 用途 |
+|-----|------|----------|------|
+| 列表 | `/j/new_search_subjects` | id, title, rate, cover, directors, casts | 基础列表（无年份、无播放平台） |
+| 搜索 | `/j/subject_suggest` | id, title, year, type, genres | 获取年份和类型 |
+| 摘要 | `/j/subject_abstract` | types, region, directors, actors | 地区和类型 |
+| 简介 | `m.douban.com/subject/{id}/` | HTML 解析 | 提取作品简介 |
+
+**注意**：列表 API 不返回年份和播放平台。播放平台信息在豆瓣 API 中不可用。
+
 ## 快速开始
 
-### 1. 环境准备
+### 环境准备
 
-- 安装 [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
-- 注册微信小程序账号，获取 AppID
-- 云服务器（腾讯云等）
+- [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
+- 微信小程序 AppID
+- 云服务器（腾讯云）
 
-### 2. 导入项目
-
-1. 打开微信开发者工具
-2. 导入项目目录
-3. 填写 AppID
-
-### 3. 部署后端服务
+### 部署后端
 
 ```bash
-# 在云服务器上
 cd /opt
 git clone https://github.com/laopai456/july.git movie-api
 cd movie-api
 npm install express axios
-
-# 启动服务
-node server.js
-
-# 或使用 pm2 守护进程
 pm2 start server.js --name movie-api
 pm2 save
 ```
 
-### 4. 更新数据
+### 更新数据
 
 ```bash
-# 在服务器上运行
-cd /opt/movie-api
+# 服务器上执行（合并为一条命令防止遗漏）
+cd /opt/movie-api && git pull && node scripts/fetch_variety.js && pm2 restart movie-api
 
-# 更新综艺数据
-node scripts/fetch_variety.js
-
-# 更新电影数据
-node scripts/fetch_movie.js
-
-# 更新热剧数据
-node scripts/fetch_drama.js
-
-# 重启服务
-pm2 restart movie-api
+# 或分别执行
+node scripts/fetch_variety.js          # 综艺（增量）
+node scripts/fetch_variety.js --full   # 综艺（全量）
+node scripts/fetch_movie.js            # 电影
+node scripts/fetch_drama.js            # 热剧
+pm2 restart movie-api                  # 重启服务（必须）
 ```
 
-### 5. 通过 Git 同步更新
+### 本地同步
 
 ```bash
-# 本地修改后推送到 GitHub
-git add .
-git commit -m "v1.0.0.6.6"
-git push origin main
+# 本地修改 → push
+git add .; git commit -m "feat(xxx): 描述"; git push origin main
 
-# 服务器拉取更新
-cd /opt/movie-api
-git pull origin main
-pm2 restart movie-api
+# 服务器拉取（不要从服务器 push）
+cd /opt/movie-api && git pull && pm2 restart movie-api
 ```
 
 ## 开发规范
 
-### Commit Message 命名规则
+### Commit 规则
 
-格式：`type(scope): 描述`（中文描述）
+格式：`type(scope): 中文描述`
 
 | type | 说明 |
 |------|------|
 | feat | 新功能 |
 | fix | Bug 修复 |
-| refactor | 重构（不改变行为） |
-| docs | 文档更新 |
-| chore | 杂项（构建、配置等） |
+| refactor | 重构 |
+| docs | 文档 |
+| chore | 杂项 |
 
-示例：
-- `feat(variety): 新增国产综艺过滤功能`
-- `fix(movie): 修复年份提取失败的问题`
-- `refactor(drama): 重构为统一的8步索引流程`
+### 注意事项
 
-> AI 辅助编码时，每次代码修改完成后自动执行 `git add` + `git commit`，无需手动确认。
-
-### 数据更新命令
-
-```bash
-# 增量更新（默认）
-node scripts/fetch_variety.js
-node scripts/fetch_movie.js
-node scripts/fetch_drama.js
-
-# 强制全量更新
-node scripts/fetch_variety.js --full
-
-# 查看帮助
-node scripts/fetch_variety.js --help
-```
-
-## 分类结构
-
-| 主分类 | 子分类 |
-|--------|--------|
-| 综艺 | 真人秀 / 喜剧 / 音综 |
-| 电影 | 中国 / 日韩 / 欧美 |
-| 热剧 | 国产剧 / 韩剧 / 日剧 |
-
-每个子分类展示 **20条** 显示 + **30条** 备用
-
-## 电影分类规则
-
-电影按地区分类：
-
-| 子分类 | 包含地区 |
-|--------|----------|
-| 中国 | 中国大陆、台湾、香港 |
-| 日韩 | 日本、韩国、泰国、印度 |
-| 欧美 | 美国、英国、法国、德国、西班牙、意大利、俄罗斯、加拿大、澳大利亚 |
-
-## 综艺分类规则
-
-综艺根据标题关键词自动分类：
-
-| 子分类 | 关键词示例 |
-|--------|-----------|
-| 音综 | 音乐、歌手、好声音、创造营、乘风、披荆斩棘、街舞、乐队的夏天... |
-| 喜剧 | 喜剧、搞笑、脱口秀、吐槽、一年一度喜剧大赛... |
-| 真人秀 | 其他所有综艺（默认分类） |
-
-> **注意**：`subCategory` 在每次从索引构建列表时统一重新计算，确保旧条目的分类与最新分类逻辑一致。
-
-## 国产综艺过滤规则
-
-自动过滤以下内容：
-
-| 过滤类型 | 示例 |
-|----------|------|
-| 韩国综艺 | Running Man、无限挑战、新西游记、认识的哥哥... |
-| 日本综艺 | 日本、Japanese... |
-| 欧美综艺 | 美国、Netflix、HBO、BBC... |
-| 韩文字符 | 标题包含韩文（Unicode范围 \uAC00-\uD7AF） |
-| 韩国姓氏 | 演员/嘉宾中40%以上为韩国姓氏 |
-| 非综艺类型 | 剧集、电影等非综艺类型 |
-
-## 设计风格
-
-采用新拟态（Neumorphism）设计：
-
-- **渐变背景**：左上浅天蓝 → 右下浅樱花粉
-- **凸起效果**：左上高光阴影 + 右下深色阴影
-- **凹陷效果**：激活状态使用内阴影
-- **圆角设计**：大圆角，柔和视觉
+- `data.json` 已加入 `.gitignore`，不要 track 它
+- 服务器上操作 `data.json` 前必须先备份
+- 涉及服务器更新：`git pull → 跑脚本 → pm2 restart`，三步缺一不可
+- 新增字段时必须 grep 全项目确认每层都添加（抓取脚本 → data.json → server.js formatItem → 前端 fetchXxx/loadXxx）
 
 ## 技术栈
 
 - 微信小程序原生框架
-- Express.js（后端服务）
-- 豆瓣API（数据源）
+- Express.js（后端）
+- 豆瓣 API（数据源）
 - Node.js 数据抓取脚本
-
-## 当前状态
-
-| 功能 | 状态 |
-|------|------|
-| 综艺列表 | ✅ 已完成 |
-| 综艺分类 | ✅ 已完成 |
-| 国产综艺过滤 | ✅ 已完成 |
-| 电影列表 | ✅ 已完成 |
-| 电影地区分类 | ✅ 已完成 |
-| 电影非电影过滤 | ✅ 已完成 |
-| 热剧列表 | ✅ 已完成 |
-| 增量更新机制 | ✅ 已完成 |
-| 并发抓取+防封 | ✅ 已完成 |
-| 作品简介弹窗 | ✅ 已完成 |
-| 简介数据抓取 | ✅ 已完成 |
-| 弹窗关闭保持滚动位置 | ✅ 已完成 |
-| 简介秒开（预抓取+缓存） | ✅ 已完成 |
-| 搜索功能 | ⏳ 待完善 |
-| 收藏功能 | ⏳ 待完善 |
+- wx-server-sdk（云函数）
 
 ## License
 
