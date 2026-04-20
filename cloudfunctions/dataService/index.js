@@ -4,59 +4,42 @@ const axios = require('axios')
 cloud.init({ env: 'cloud1-5gl9tqz7860b840c' })
 
 const SERVER_URL = 'http://43.167.233.80:3000'
-
-let dataCache = null
-let dataCacheTime = 0
 const CACHE_TTL = 5 * 60 * 1000
 
-async function getData() {
+const apiCache = {}
+
+async function fetchApi(key, url) {
   const now = Date.now()
-  if (dataCache && now - dataCacheTime < CACHE_TTL) {
-    return dataCache
+  const cached = apiCache[key]
+  if (cached && now - cached.time < CACHE_TTL) {
+    return cached.data
   }
 
-  const [varietyRes, movieChineseRes, movieAsiaRes, movieWesternRes, dramaChineseRes, dramaKoreanRes, dramaJapaneseRes] = await Promise.all([
-    axios.get(SERVER_URL + '/api/variety').catch(() => null),
-    axios.get(SERVER_URL + '/api/movie/chinese').catch(() => null),
-    axios.get(SERVER_URL + '/api/movie/asia').catch(() => null),
-    axios.get(SERVER_URL + '/api/movie/western').catch(() => null),
-    axios.get(SERVER_URL + '/api/drama/chinese').catch(() => null),
-    axios.get(SERVER_URL + '/api/drama/korean').catch(() => null),
-    axios.get(SERVER_URL + '/api/drama/japanese').catch(() => null)
-  ])
-
-  dataCache = {
-    variety: varietyRes?.data || { subjects: [], total: 0 },
-    movie: {
-      chinese: movieChineseRes?.data || { subjects: [], total: 0 },
-      asia: movieAsiaRes?.data || { subjects: [], total: 0 },
-      western: movieWesternRes?.data || { subjects: [], total: 0 }
-    },
-    drama: {
-      chinese: dramaChineseRes?.data || { subjects: [], total: 0 },
-      korean: dramaKoreanRes?.data || { subjects: [], total: 0 },
-      japanese: dramaJapaneseRes?.data || { subjects: [], total: 0 }
-    }
+  try {
+    const res = await axios.get(url, { timeout: 10000 })
+    const data = res.data || { subjects: [], total: 0 }
+    apiCache[key] = { data, time: now }
+    return data
+  } catch (e) {
+    if (cached) return cached.data
+    return { subjects: [], total: 0 }
   }
-  dataCacheTime = now
-  return dataCache
 }
 
 async function getVariety() {
-  const data = await getData()
-  return data.variety
+  return fetchApi('variety', SERVER_URL + '/api/variety')
 }
 
 async function getMovie(event) {
   const { type } = event
-  const data = await getData()
-  return data.movie[type] || { subjects: [], total: 0 }
+  if (!type) return { subjects: [], total: 0 }
+  return fetchApi('movie_' + type, SERVER_URL + '/api/movie/' + type)
 }
 
 async function getDrama(event) {
   const { type } = event
-  const data = await getData()
-  return data.drama[type] || { subjects: [], total: 0 }
+  if (!type) return { subjects: [], total: 0 }
+  return fetchApi('drama_' + type, SERVER_URL + '/api/drama/' + type)
 }
 
 async function getSubject(event) {

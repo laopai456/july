@@ -65,11 +65,12 @@ Page({
     } catch (e) {}
   },
 
-  getCache(key) {
+  getCache(key, allowExpired) {
     try {
       const cache = wx.getStorageSync(CACHE_KEY) || {}
       const item = cache[key]
-      if (item && Date.now() - item.time < CACHE_EXPIRE) {
+      if (!item) return null
+      if (allowExpired || Date.now() - item.time < CACHE_EXPIRE) {
         return item.data
       }
     } catch (e) {}
@@ -91,11 +92,16 @@ Page({
     if (this._tabDataCache[currentTabName]) {
       this.applyTabData(currentTabName, currentSubName)
     } else {
-      const diskCache = this.getCache(currentTabName)
-      if (diskCache) {
-        this._tabDataCache[currentTabName] = diskCache
+      const freshCache = this.getCache(currentTabName)
+      if (freshCache) {
+        this._tabDataCache[currentTabName] = freshCache
         this.applyTabData(currentTabName, currentSubName)
       } else {
+        const expiredCache = this.getCache(currentTabName, true)
+        if (expiredCache) {
+          this._tabDataCache[currentTabName] = expiredCache
+          this.applyTabData(currentTabName, currentSubName)
+        }
         this.loadTabFromNetwork(currentTabName)
       }
     }
@@ -123,7 +129,7 @@ Page({
         this._tabDataCache[tabName] = data
         this.setCache(tabName, data)
 
-        if (this.data.currentTabName === tabName && this.data.loading) {
+        if (this.data.currentTabName === tabName) {
           this.applyTabData(tabName, this.data.currentSubName)
         }
       }

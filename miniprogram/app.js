@@ -12,6 +12,11 @@ App({
         env: this.globalData.env,
         traceUser: true,
       })
+
+      wx.cloud.callFunction({
+        name: 'dataService',
+        data: { action: 'getVariety' }
+      }).catch(() => {})
     }
     
     console.log('小程序启动，请到调试页面手动导入数据')
