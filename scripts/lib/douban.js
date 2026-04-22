@@ -237,8 +237,14 @@ const NON_VARIETY_TYPES = ['纪录片', '电影', '电视剧', '动画'];
 
 const NON_VARIETY_TITLES = ['不讨好的勇气'];
 
-function isChineseVariety(title, genres) {
+const CHINESE_REGIONS = ['中国大陆', '中国香港', '中国台湾'];
+
+function isChineseVariety(title, genres, region) {
   if (!title) return true;
+
+  if (region && !CHINESE_REGIONS.some(r => region.includes(r))) {
+    return false;
+  }
 
   for (const t of NON_VARIETY_TITLES) {
     if (title.includes(t)) return false;
@@ -422,7 +428,8 @@ async function fetchDetailForItem(item, options = {}) {
     casts: abstract ? abstract.actors : (item.casts || []),
     genres: abstract ? abstract.types : (detail ? (detail.genres || item.genres || []) : (item.genres || [])),
     subCategory: item.subCategory || '',
-    abstract: summary || (abstract ? abstract.abstract : '')
+    abstract: summary || (abstract ? abstract.abstract : ''),
+    region: abstract ? abstract.region : (item.region || '')
   };
 
   return result;

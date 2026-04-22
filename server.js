@@ -68,7 +68,8 @@ function formatItem(item) {
     casts: item.casts || item.cast || [],
     subCategory: item.subCategory || '',
     hotScore: item.hotScore || 0,
-    airMonth: item.airMonth || 0
+    airMonth: item.airMonth || 0,
+    region: item.region || ''
   };
 }
 
@@ -76,7 +77,7 @@ app.get('/api/variety', async (req, res) => {
   const localData = loadLocalData();
 
   if (localData && localData.variety && localData.variety.length > 0) {
-    const filtered = localData.variety.filter(item => isChineseVariety(item.title, item.genres));
+    const filtered = localData.variety.filter(item => isChineseVariety(item.title, item.genres, item.region));
     const subjects = filtered.map(formatItem);
 
     return res.json({
