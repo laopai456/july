@@ -202,7 +202,7 @@ const FOREIGN_KEYWORDS = [
   '泰版', '泰剧', '泰国版',
   '男人们的恋爱', '我的咖啡男友', '少年星球', '再次出发',
   '背叛者', '秘密朋友俱乐部', '野兽游戏',
-  '韩国', '日本', '美国', '英国', 'Korean', 'Japanese', 'American',
+  '韩国', '韩元', '日本', '美国', '英国', 'Korean', 'Japanese', 'American',
   'Running Man', '无限挑战', '新西游记', '我独自生活', '认识的哥哥',
   '爬梯子', 'EXO', 'exo', 'Exo',
   'Happy Together', 'Radio Star', '音乐银行', '人气歌谣', 'M COUNTDOWN',
