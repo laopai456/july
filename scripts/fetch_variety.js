@@ -62,7 +62,9 @@ async function main() {
     }
   }
 
-  const supplementItems = await searchSupplementItems('variety', seenIds);
+  const supplementItems = await searchSupplementItems('variety', seenIds, {
+    schedulePath: __dirname + '/variety_schedule.json'
+  });
   for (const item of supplementItems) {
     allItems.push(item);
   }

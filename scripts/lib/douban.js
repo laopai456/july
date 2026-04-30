@@ -468,29 +468,34 @@ async function loadSupplement(category) {
   return supplement[category] || [];
 }
 
-async function searchSupplementItems(category, seenIds) {
+async function searchSupplementItems(category, seenIds, options = {}) {
   const titles = await loadSupplement(category);
   if (titles.length === 0) return [];
 
   const fs = require('fs');
   const path = require('path');
   let scheduleMap = {};
-  try { scheduleMap = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'variety_schedule.json'), 'utf8')) } catch (e) {}
+  if (options.schedulePath) {
+    try { scheduleMap = JSON.parse(fs.readFileSync(options.schedulePath, 'utf8')) } catch (e) {}
+  }
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   const norm = t => t.replace(/[\s！!：:·\-—]/g, '').replace(/第/g, '').replace(/季/g, '').replace(/1/g, '一').replace(/2/g, '二').replace(/3/g, '三').replace(/4/g, '四').replace(/5/g, '五').replace(/6/g, '六').replace(/7/g, '七').replace(/8/g, '八').replace(/9/g, '九').replace(/0/g, '零');
   const filteredTitles = titles.filter(title => {
-    const nt = norm(title);
-    for (const key of Object.keys(scheduleMap)) {
-      const nk = norm(key);
-      if (nt.includes(nk) || nk.includes(nt)) {
-        if (scheduleMap[key] > currentMonth) return false;
+    if (scheduleMap && Object.keys(scheduleMap).length > 0) {
+      const nt = norm(title);
+      for (const key of Object.keys(scheduleMap)) {
+        const nk = norm(key);
+        if (nt.includes(nk) || nk.includes(nt)) {
+          if (scheduleMap[key] > currentMonth) return false;
+        }
       }
     }
     return true;
   });
 
+  const subCategory = options.subCategory || '';
   const skipped = titles.length - filteredTitles.length;
   console.log('\n[补充搜索: ' + filteredTitles.length + ' 个作品' + (skipped > 0 ? ', 跳过未播出 ' + skipped + ' 个' : '') + ']');
   const items = [];
@@ -511,9 +516,10 @@ async function searchSupplementItems(category, seenIds) {
         year: detail.year || '',
         directors: [],
         casts: [],
-        genres: detail.type ? [detail.type] : []
+        genres: detail.type ? [detail.type] : [],
+        subCategory: subCategory
       });
-      console.log('  补充: ' + (detail.title || title) + ' (' + (detail.year || '未知') + ')');
+      console.log('  补充: ' + (detail.title || title) + ' (' + (detail.year || '未知') + ')' + (subCategory ? ' [' + subCategory + ']' : ''));
     }
   }
   return items;

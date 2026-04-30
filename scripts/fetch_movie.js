@@ -2,6 +2,7 @@ const fs = require('fs');
 const {
   fetchWithCurrentYearPriority, fetchTagItems,
   fetchDetailsBatch,
+  searchSupplementItems,
   calculateHotScore,
   parallelLimit,
   getRequestCount, TOTAL_PER_CATEGORY, RATE_LIMIT, sleep
@@ -122,13 +123,22 @@ async function main() {
     }
   }
 
+  for (const catName of ['中国', '日韩', '欧美']) {
+    const supplementItems = await searchSupplementItems('movie_' + catName, seenIds, { subCategory: catName });
+    for (const item of supplementItems) {
+      allItems.push(item);
+    }
+  }
+
   console.log('\n共获取 ' + allItems.length + ' 条电影\n');
-  if (allItems.length === 0) { console.log('未获取到数据'); return; }
 
   // ========== 第3步: 比对索引，区分新增/已存在 ==========
   let itemsToFetch;
 
-  if (args.full) {
+  if (allItems.length === 0) {
+    console.log('无新增列表数据，直接用索引重新生成榜单\n');
+    itemsToFetch = [];
+  } else if (args.full) {
     itemsToFetch = allItems;
     console.log('强制全量: 需要获取详情 ' + itemsToFetch.length + ' 条\n');
   } else {
