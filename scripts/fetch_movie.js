@@ -51,6 +51,27 @@ const NON_MOVIE_PATTERNS = [
   '直播', '晚会', '盛典', ' Gala'
 ];
 
+const EXCLUDED_GENRES = ['动画', '纪录片', '短片'];
+
+const REGION_TO_SUBCATEGORY = {
+  '中国大陆': '中国', '中国香港': '中国', '中国台湾': '中国',
+  '日本': '日韩', '韩国': '日韩', '泰国': '日韩', '印度': '日韩',
+  '美国': '欧美', '英国': '欧美', '法国': '欧美', '德国': '欧美',
+  '西班牙': '欧美', '意大利': '欧美', '俄罗斯': '欧美', '加拿大': '欧美',
+  '澳大利亚': '欧美', '新西兰': '欧美', '爱尔兰': '欧美', '荷兰': '欧美',
+  '瑞典': '欧美', '丹麦': '欧美', '挪威': '欧美', '波兰': '欧美',
+  '巴西': '欧美', '墨西哥': '欧美', '阿根廷': '欧美'
+};
+
+function getExpectedSubCategory(region) {
+  if (!region) return null;
+  const parts = region.split(/[\/\s,、]+/).map(s => s.trim()).filter(Boolean);
+  for (const part of parts) {
+    if (REGION_TO_SUBCATEGORY[part]) return REGION_TO_SUBCATEGORY[part];
+  }
+  return null;
+}
+
 function isRealMovie(title) {
   const lower = title.toLowerCase();
   return !NON_MOVIE_PATTERNS.some(p => lower.includes(p.toLowerCase()));
@@ -137,6 +158,7 @@ async function main() {
         casts: item.casts || [],
         genres: item.genres || [],
         subCategory: item.subCategory || '',
+        region: item.region || '',
         abstract: item.abstract || '',
         lastUpdate: now
       });
@@ -145,12 +167,23 @@ async function main() {
 
   console.log('索引更新后: ' + indexMap.size + ' 条');
 
-  // ========== 第6步: 从索引构建完整列表，计算热力分，过滤非电影 ==========
+  // ========== 第6步: 从索引构建完整列表，计算热力分，过滤非电影/动画/region校验 ==========
   const allResults = [];
   let filteredCount = 0;
+  let genreFilteredCount = 0;
+  let regionMismatchCount = 0;
   for (const [doubanId, item] of indexMap) {
     if (!isRealMovie(item.title)) {
       filteredCount++;
+      continue;
+    }
+    if (item.genres && item.genres.some(g => EXCLUDED_GENRES.includes(g))) {
+      genreFilteredCount++;
+      continue;
+    }
+    const expected = getExpectedSubCategory(item.region);
+    if (expected && expected !== item.subCategory) {
+      regionMismatchCount++;
       continue;
     }
     const hotScore = calculateHotScore(item.rate, item.year);
@@ -163,6 +196,12 @@ async function main() {
 
   if (filteredCount > 0) {
     console.log('过滤非电影内容: ' + filteredCount + ' 条');
+  }
+  if (genreFilteredCount > 0) {
+    console.log('过滤动画/纪录片/短片: ' + genreFilteredCount + ' 条');
+  }
+  if (regionMismatchCount > 0) {
+    console.log('过滤地区不匹配: ' + regionMismatchCount + ' 条');
   }
   console.log('索引总量: ' + allResults.length + ' 条');
 

@@ -156,7 +156,7 @@
       <view class="card-tags">
         <text class="tag" wx:if="{{detailItem.year}}">{{detailItem.year}}</text>
         <text class="tag" wx:for="{{detailItem.genres}}" wx:if="{{item}}" wx:key="*this">{{item}}</text>
-        <text class="tag region-tag" wx:if="{{detailItem.region}}">{{detailItem.region === 'cn' ? '华语' : detailItem.region === 'kr' ? '韩国' : detailItem.region === 'jp' ? '日本' : item.region}}</text>
+        <text class="tag region-tag" wx:if="{{detailItem.region}}">{{detailItem.region === 'cn' ? '华语' : detailItem.region === 'kr' ? '韩国' : detailItem.region === 'jp' ? '日本' : detailItem.region === 'us' ? '欧美' : ''}}</text>
       </view>
 
       <view class="card-info-row" wx:if="{{detailItem.director}}">

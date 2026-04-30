@@ -12,6 +12,14 @@ const CACHE_EXPIRE = 30 * 60 * 1000
 
 const DOUBAN_API = 'https://movie.douban.com/j'
 
+function toRegionCode(regionStr) {
+  if (!regionStr) return ''
+  if (['中国大陆', '中国香港', '中国台湾'].some(r => regionStr.includes(r))) return 'cn'
+  if (regionStr.includes('韩国')) return 'kr'
+  if (regionStr.includes('日本')) return 'jp'
+  return 'us'
+}
+
 Page({
   data: {
     tabs: TABS,
@@ -329,7 +337,7 @@ Page({
           titleEn: '',
           type: 'variety',
           mainCategory: '综艺',
-          region: 'cn',
+          region: toRegionCode(item.region) || 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
           poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
@@ -381,7 +389,7 @@ Page({
           type: 'movie',
           mainCategory: '电影',
           subCategory: sub,
-          region: 'cn',
+          region: toRegionCode(item.region) || 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
           poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
@@ -517,7 +525,7 @@ Page({
         type: 'movie',
         mainCategory: '电影',
         subCategory: subCategory,
-        region: 'cn',
+        region: toRegionCode(item.region) || 'cn',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
         poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
@@ -803,7 +811,7 @@ Page({
           type: item.type === 'movie' ? 'movie' : 'drama',
           mainCategory: item.type === 'movie' ? '电影' : '热剧',
           subCategory: '',
-          region: 'cn',
+          region: toRegionCode(item.region) || 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: [],
           poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),

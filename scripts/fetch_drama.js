@@ -14,6 +14,23 @@ const DRAMA_TAGS = [
   { tag: '日剧', yearCount: 20, hotCount: 40 }
 ];
 
+const EXCLUDED_GENRES = ['动画', '纪录片'];
+
+const REGION_TO_SUBCATEGORY = {
+  '中国大陆': '国产剧', '中国香港': '国产剧', '中国台湾': '国产剧',
+  '韩国': '韩剧',
+  '日本': '日剧'
+};
+
+function getExpectedSubCategory(region) {
+  if (!region) return null;
+  const parts = region.split(/[\/\s,、]+/).map(s => s.trim()).filter(Boolean);
+  for (const part of parts) {
+    if (REGION_TO_SUBCATEGORY[part]) return REGION_TO_SUBCATEGORY[part];
+  }
+  return null;
+}
+
 async function main() {
   const args = parseArgs();
 
@@ -89,6 +106,7 @@ async function main() {
         casts: item.casts || [],
         genres: item.genres || [],
         subCategory: item.subCategory || '',
+        region: item.region || '',
         abstract: item.abstract || '',
         lastUpdate: now
       });
@@ -97,15 +115,33 @@ async function main() {
 
   console.log('索引更新后: ' + indexMap.size + ' 条');
 
-  // ========== 第6步: 从索引构建完整列表，计算热力分 ==========
+  // ========== 第6步: 从索引构建完整列表，计算热力分，过滤动画/region校验 ==========
   const allResults = [];
+  let genreFilteredCount = 0;
+  let regionMismatchCount = 0;
   for (const [doubanId, item] of indexMap) {
+    if (item.genres && item.genres.some(g => EXCLUDED_GENRES.includes(g))) {
+      genreFilteredCount++;
+      continue;
+    }
+    const expected = getExpectedSubCategory(item.region);
+    if (expected && expected !== item.subCategory) {
+      regionMismatchCount++;
+      continue;
+    }
     const hotScore = calculateHotScore(item.rate, item.year);
     allResults.push({
       ...item,
       doubanId: doubanId,
       hotScore: hotScore
     });
+  }
+
+  if (genreFilteredCount > 0) {
+    console.log('过滤动画/纪录片: ' + genreFilteredCount + ' 条');
+  }
+  if (regionMismatchCount > 0) {
+    console.log('过滤地区不匹配: ' + regionMismatchCount + ' 条');
   }
 
   console.log('索引总量: ' + allResults.length + ' 条');
