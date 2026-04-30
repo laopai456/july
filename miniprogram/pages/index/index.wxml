@@ -113,7 +113,6 @@
       <view class="empty-icon">📭</view>
       <text class="empty-title">暂无数据</text>
       <text class="empty-desc">该分类下还没有内容</text>
-      <view class="empty-btn" bindtap="goToAdmin">去导入数据</view>
     </view>
 
     <view class="loading-wrap" wx:if="{{loading && list.length === 0}}">

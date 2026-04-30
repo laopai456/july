@@ -1,8 +1,7 @@
 App({
   onLaunch: function () {
     this.globalData = {
-      env: "cloud1-5gl9tqz7860b840c",
-      dataImported: false
+      env: "cloud1-5gl9tqz7860b840c"
     }
     
     if (!wx.cloud) {
@@ -18,7 +17,5 @@ App({
         data: { action: 'getVariety' }
       }).catch(() => {})
     }
-    
-    console.log('小程序启动，请到调试页面手动导入数据')
   }
 })

@@ -401,15 +401,6 @@
   margin-bottom: 32rpx;
 }
 
-.empty-btn {
-  padding: 16rpx 48rpx;
-  font-size: 28rpx;
-  color: #ffffff;
-  background: linear-gradient(145deg, #a8b4fc, #f0a0b8);
-  border-radius: 30rpx;
-  box-shadow: 4rpx 4rpx 8rpx #d0d8e0, -4rpx -4rpx 8rpx #ffffff;
-}
-
 .refresh-time {
   text-align: center;
   padding: 20rpx;

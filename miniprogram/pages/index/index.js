@@ -110,7 +110,7 @@ Page({
           this._tabDataCache[currentTabName] = expiredCache
           this.applyTabData(currentTabName, currentSubName)
         }
-        this.loadTabFromNetwork(currentTabName)
+        await this.loadTabFromNetwork(currentTabName)
       }
     }
 
@@ -753,12 +753,6 @@ Page({
         url: `/pages/detail/index?id=${id}&from=${item.ratingSource || 'tmdb'}`
       })
     }
-  },
-
-  goToAdmin() {
-    wx.navigateTo({
-      url: '/pages/admin/index'
-    })
   },
 
   goToGenre() {
