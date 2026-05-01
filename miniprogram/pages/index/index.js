@@ -48,10 +48,12 @@ Page({
   _tabDataCache: {},
   _summaryCache: {},
   _scrollTop: 0,
+  _pendingLoads: {},
 
   onLoad() {
     this._tabDataCache = {}
     this._summaryCache = {}
+    this._pendingLoads = {}
     this.loadDataWithPreload()
   },
 
@@ -62,6 +64,7 @@ Page({
   onPullDownRefresh() {
     this.clearCache()
     this._tabDataCache = {}
+    this._pendingLoads = {}
     this.loadDataWithPreload().then(() => {
       wx.stopPullDownRefresh()
     })
@@ -123,6 +126,9 @@ Page({
   },
 
   async loadTabFromNetwork(tabName) {
+    if (this._pendingLoads[tabName]) return
+    this._pendingLoads[tabName] = true
+
     try {
       let data
       if (tabName === '综艺') {
@@ -140,9 +146,18 @@ Page({
         if (this.data.currentTabName === tabName) {
           this.applyTabData(tabName, this.data.currentSubName)
         }
+      } else {
+        if (this.data.currentTabName === tabName) {
+          this.setData({ loading: false })
+        }
       }
     } catch (err) {
-      console.error(`预加载 ${tabName} 失败:`, err)
+      console.error(`加载 ${tabName} 失败:`, err)
+      if (this.data.currentTabName === tabName) {
+        this.setData({ loading: false })
+      }
+    } finally {
+      this._pendingLoads[tabName] = false
     }
   },
 
@@ -193,7 +208,13 @@ Page({
     if (this._tabDataCache[tabName]) {
       this.applyTabData(tabName, subs[0] || '')
     } else {
-      this.loadTabFromNetwork(tabName)
+      const diskCache = this.getCache(tabName)
+      if (diskCache) {
+        this._tabDataCache[tabName] = diskCache
+        this.applyTabData(tabName, subs[0] || '')
+      } else {
+        this.loadTabFromNetwork(tabName)
+      }
     }
 
     const preloadTabs = TABS.filter(t => t !== tabName)
@@ -406,7 +427,8 @@ Page({
         })).sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
       })
 
-      return { items }
+      const totalItems = Object.values(items).reduce((sum, arr) => sum + arr.length, 0)
+      return totalItems > 0 ? { items } : null
     } catch (err) {
       console.error('fetchMovieAll error:', err)
       return null
@@ -455,7 +477,8 @@ Page({
         })).sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
       })
 
-      return { items }
+      const totalItems = Object.values(items).reduce((sum, arr) => sum + arr.length, 0)
+      return totalItems > 0 ? { items } : null
     } catch (err) {
       console.error('fetchDramaAll error:', err)
       return null
