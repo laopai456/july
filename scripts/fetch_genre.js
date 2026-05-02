@@ -12,7 +12,6 @@ const GENRE_TAGS = [
   { tag: '悬疑', movieCount: 150, dramaCount: 50 },
   { tag: '喜剧', movieCount: 150, dramaCount: 50 },
   { tag: '恐怖', movieCount: 150, dramaCount: 50 },
-  { tag: '犯罪', movieCount: 150, dramaCount: 50 },
   { tag: '爱情', movieCount: 150, dramaCount: 50 }
 ];
 
@@ -39,7 +38,7 @@ function printGenreHelp() {
 用法: node scripts/fetch_genre.js [选项]
 
 选项:
-  --genre <类型>  抓取单个类型 (悬疑/喜剧/恐怖/犯罪/动作/爱情)
+  --genre <类型>  抓取单个类型 (悬疑/喜剧/恐怖/爱情)
   --all           抓取全部6个类型
   --full          强制全量更新，忽略索引
   -h, --help      显示帮助信息

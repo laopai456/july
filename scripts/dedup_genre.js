@@ -6,7 +6,7 @@ const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
 const gi = data.genreIndex;
 if (!gi) { console.log('无 genreIndex'); process.exit(0); }
 
-const GENRE_TAGS = ['悬疑', '喜剧', '恐怖', '犯罪', '爱情'];
+const GENRE_TAGS = ['悬疑', '喜剧', '恐怖', '爱情'];
 const seenMovie = new Set();
 const seenDrama = new Set();
 let total = 0;
