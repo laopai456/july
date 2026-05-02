@@ -237,7 +237,7 @@ const NON_VARIETY_TYPES = ['纪录片', '电影', '电视剧', '动画'];
 
 const NON_VARIETY_TITLES = ['不讨好的勇气', '哈哈不哈哈'];
 
-const CHINESE_REGIONS = ['中国大陆', '中国香港', '中国台湾'];
+const CHINESE_REGIONS = ['中国大陆', '中国香港'];
 
 function isChineseVariety(title, genres, region) {
   if (!title) return true;
