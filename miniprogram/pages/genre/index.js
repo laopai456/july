@@ -201,7 +201,8 @@ Page({
 
   applySectionData() {
     const { currentGenre, currentSection } = this.data
-    const data = this._genreDataCache[currentGenre]
+    const cacheKey = currentGenre === HIDDEN_TAG ? HIDDEN_API_KEY : currentGenre
+    const data = this._genreDataCache[cacheKey]
     if (!data) return
 
     const rawList = (data[currentSection] || [])
