@@ -12,7 +12,8 @@ const GENRE_TAGS = [
   { tag: '悬疑', movieCount: 150, dramaCount: 50 },
   { tag: '喜剧', movieCount: 150, dramaCount: 50 },
   { tag: '恐怖', movieCount: 150, dramaCount: 50 },
-  { tag: '爱情', movieCount: 150, dramaCount: 50 }
+  { tag: '爱情', movieCount: 150, dramaCount: 50 },
+  { tag: '情色', movieCount: 150, dramaCount: 50 }
 ];
 
 const DISPLAY_COUNT = 50;
@@ -128,6 +129,7 @@ async function fetchGenreSection(tag, type, targetCount, indexMap, args) {
         casts: item.casts || [],
         genres: item.genres || [],
         abstract: item.abstract || '',
+        region: item.region || '',
         lastUpdate: now
       });
     }
@@ -168,10 +170,23 @@ async function processGenre(genreConfig, args) {
   const movieResult = await fetchGenreSection(tag, 'movie', genreConfig.movieCount, movieMap, args);
   const dramaResult = await fetchGenreSection(tag, 'drama', genreConfig.dramaCount, dramaMap, args);
 
+  let movieItems = movieResult.items;
+  let dramaItems = dramaResult.items;
+
+  if (tag === '情色') {
+    const BLOCKED_REGIONS = ['中国大陆', '中国香港', '中国台湾'];
+    const isAllowed = (item) => !BLOCKED_REGIONS.some(r => (item.region || '').includes(r));
+    const beforeM = movieItems.length;
+    const beforeD = dramaItems.length;
+    movieItems = movieItems.filter(isAllowed);
+    dramaItems = dramaItems.filter(isAllowed);
+    console.log('情色地区过滤: 电影 ' + beforeM + '→' + movieItems.length + ', 热剧 ' + beforeD + '→' + dramaItems.length);
+  }
+
   const genreIndex = allData.genreIndex || {};
   genreIndex[tag] = {
-    movie: movieResult.items,
-    drama: dramaResult.items,
+    movie: movieItems,
+    drama: dramaItems,
     movieRawIndex: movieResult.index,
     dramaRawIndex: dramaResult.index,
     updatedAt: new Date().toISOString()

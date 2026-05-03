@@ -1,6 +1,8 @@
 const userStore = require('../../utils/userStore.js')
 
 const GENRE_LIST = ['悬疑', '喜剧', '恐怖', '爱情']
+const HIDDEN_TAG = '隐秘'
+const HIDDEN_API_KEY = '情色'
 const CACHE_KEY = 'genre_cache'
 const CACHE_EXPIRE = 30 * 60 * 1000
 const QUICK_LOAD_COUNT = 10
@@ -22,6 +24,9 @@ Page({
   _genreDataCache: {},
   _summaryCache: {},
   _fullLoadPending: null,
+  _loveTapCount: 0,
+  _loveTapTimer: null,
+  _hiddenMode: false,
 
   onLoad() {
     this._genreDataCache = {}
@@ -59,6 +64,26 @@ Page({
 
   onGenreChange(e) {
     const genre = e.currentTarget.dataset.genre
+
+    if (genre === '爱情' && !this._hiddenMode) {
+      clearTimeout(this._loveTapTimer)
+      this._loveTapCount++
+      if (this._loveTapCount >= 5) {
+        this._loveTapCount = 0
+        this._hiddenMode = true
+        this._fullLoadPending = null
+        this.setData({
+          genreList: [...GENRE_LIST, HIDDEN_TAG],
+          currentGenre: HIDDEN_TAG,
+          list: [],
+          loading: true
+        })
+        this.loadGenreData()
+        return
+      }
+      this._loveTapTimer = setTimeout(() => { this._loveTapCount = 0 }, 2000)
+    }
+
     if (genre === this.data.currentGenre) return
 
     this._fullLoadPending = null
@@ -83,7 +108,7 @@ Page({
 
   async loadGenreData() {
     const { currentGenre } = this.data
-    const cacheKey = currentGenre
+    const cacheKey = currentGenre === HIDDEN_TAG ? HIDDEN_API_KEY : currentGenre
 
     if (this._genreDataCache[cacheKey]) {
       this.applySectionData()
