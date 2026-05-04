@@ -432,13 +432,14 @@ app.get('/api/variety/status', (req, res) => {
 
 app.get('/api/image-proxy', async (req, res) => {
   const imageUrl = req.query.url;
-  const ALLOWED_HOSTS = ['image.tmdb.org', 'img.doubanio.com', 'img2.doubanio.com', 'img3.doubanio.com', 'img4.doubanio.com', 'img5.doubanio.com', 'img6.doubanio.com', 'img7.doubanio.com', 'img8.doubanio.com', 'img9.doubanio.com'];
+  const ALLOWED_DOMAINS = ['image.tmdb.org', 'doubanio.com'];
   if (!imageUrl) {
     return res.status(400).json({ error: 'missing url' });
   }
   let host = '';
   try { host = new URL(imageUrl).hostname; } catch (e) {}
-  if (!ALLOWED_HOSTS.includes(host)) {
+  const allowed = ALLOWED_DOMAINS.some(d => host === d || host.endsWith('.' + d));
+  if (!allowed) {
     return res.status(400).json({ error: 'invalid url' });
   }
   try {
