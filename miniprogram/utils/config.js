@@ -36,3 +36,10 @@ const config = {
 }
 
 module.exports = config
+
+function proxyTmdbCover(url) {
+  if (!url || !url.includes('image.tmdb.org')) return url
+  return config.apiBase + '/api/tmdb-image?url=' + encodeURIComponent(url)
+}
+
+module.exports.proxyTmdbCover = proxyTmdbCover

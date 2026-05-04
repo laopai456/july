@@ -1,4 +1,5 @@
 const userStore = require('../../utils/userStore.js')
+const { proxyTmdbCover } = require('../../utils/config.js')
 
 const TABS = ['综艺', '电影', '热剧']
 
@@ -361,7 +362,7 @@ Page({
           region: toRegionCode(item.region) || 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+          poster: proxyTmdbCover((item.cover || '').replace(/[\s`'"''""]/g, '').trim()),
           rating: parseFloat(item.rate) || 0,
           hotScore: item.hotScore || 0,
           airMonth: item.airMonth || 0,
@@ -413,7 +414,7 @@ Page({
           region: toRegionCode(item.region) || 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+          poster: proxyTmdbCover((item.cover || '').replace(/[\s`'"''""]/g, '').trim()),
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
           description: item.summary || '',
@@ -463,7 +464,7 @@ Page({
           region: regionMap[sub] || 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+          poster: proxyTmdbCover((item.cover || '').replace(/[\s`'"''""]/g, '').trim()),
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
           description: item.summary || '',
@@ -504,7 +505,7 @@ Page({
           region: 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: item.genres || [],
-          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+          poster: proxyTmdbCover((item.cover || '').replace(/[\s`'"''""]/g, '').trim()),
           rating: parseFloat(item.rate) || 0,
           hotScore: item.hotScore || 0,
           airMonth: item.airMonth || 0,
@@ -551,7 +552,7 @@ Page({
         region: toRegionCode(item.region) || 'cn',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+        poster: proxyTmdbCover((item.cover || '').replace(/[\s`'"''""]/g, '').trim()),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -596,7 +597,7 @@ Page({
         region: regionMap[subCategory] || 'cn',
         year: item.year ? parseInt(item.year) : 0,
         genres: item.genres || [],
-        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+        poster: proxyTmdbCover((item.cover || '').replace(/[\s`'"''""]/g, '').trim()),
         rating: parseFloat(item.rate) || 0,
         ratingSource: 'douban',
         description: item.summary || '',
@@ -838,7 +839,7 @@ Page({
           region: toRegionCode(item.region) || 'cn',
           year: item.year ? parseInt(item.year) : 0,
           genres: [],
-          poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+          poster: proxyTmdbCover((item.cover || '').replace(/[\s`'"''""]/g, '').trim()),
           rating: parseFloat(item.rate) || 0,
           ratingSource: 'douban',
           description: '',

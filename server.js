@@ -430,6 +430,26 @@ app.get('/api/variety/status', (req, res) => {
   });
 });
 
+app.get('/api/tmdb-image', async (req, res) => {
+  const imageUrl = req.query.url;
+  if (!imageUrl || !imageUrl.startsWith('https://image.tmdb.org/')) {
+    return res.status(400).json({ error: 'invalid url' });
+  }
+  try {
+    const response = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      timeout: 10000
+    });
+    const contentType = response.headers['content-type'] || 'image/jpeg';
+    res.set('Content-Type', contentType);
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.set('Access-Control-Allow-Origin', '*');
+    res.send(response.data);
+  } catch (e) {
+    res.status(404).json({ error: 'image not found' });
+  }
+});
+
 app.listen(3000, () => {
   console.log('Server running on port 3000');
 });

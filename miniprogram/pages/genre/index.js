@@ -1,4 +1,5 @@
 const userStore = require('../../utils/userStore.js')
+const { proxyTmdbCover } = require('../../utils/config.js')
 
 const GENRE_LIST = ['悬疑', '喜剧', '恐怖', '爱情']
 const HIDDEN_TAG = '隐秘'
@@ -193,7 +194,7 @@ Page({
         title: item.title,
         type: type,
         genres: item.genres || [],
-        poster: (item.cover || '').replace(/[\s`'"''""]/g, '').trim(),
+        poster: proxyTmdbCover((item.cover || '').replace(/[\s`'"''""]/g, '').trim()),
         rating: parseFloat(item.rate) || 0,
         year: item.year || '',
         description: item.summary || item.abstract || '',
