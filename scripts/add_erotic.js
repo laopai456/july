@@ -179,6 +179,7 @@ async function main() {
 
   await fixCovers(qs.movie);
 
+  qs.movie = qs.movie.filter(m => parseInt(m.year) >= 2000);
   qs.movie.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0));
   qs.movie = qs.movie.slice(0, MAX_ITEMS);
   gi['情色'] = qs;

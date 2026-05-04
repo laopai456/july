@@ -21,7 +21,7 @@ const API_SOURCES = [
 
 const EROTIC_TYPES = [
   '伦理片', '伦理', '韩国伦理', '港台三级', '西方伦理', '日本伦理',
-  '情色', '成人', '写真热舞', '两性课堂', '福利', '深夜',
+  '情色', '成人', '两性课堂', '福利', '深夜',
 ];
 
 function httpGet(url, timeout = 10000) {
@@ -172,6 +172,7 @@ async function main() {
     added++;
   }
 
+  qs.movie = qs.movie.filter(m => parseInt(m.year) >= 2000);
   qs.movie.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0));
   qs.movie = qs.movie.slice(0, MAX_ITEMS);
   gi['情色'] = qs;
