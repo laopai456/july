@@ -206,7 +206,7 @@ Page({
     if (!data) return
 
     const rawList = (data[currentSection] || [])
-    const list = userStore.filterWatched(rawList).slice(0, 50)
+    const list = userStore.filterWatched(rawList).slice(0, 30)
     this.setData({
       list,
       loading: false
