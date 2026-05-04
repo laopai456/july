@@ -63,13 +63,13 @@ const TMDB_ALIASES = {
   '海岸线': 'The Coast Guard',
   '触不到的恋人': 'Il Mare',
   '谎言之恋': 'Lies',
-  '坏小子': 'Nappeun namja',
-  '恋之罪': 'Guilty of Romance',
+  '坏小子': '나쁜 남자',
+  '恋之罪': '恋の罪',
 };
 
 function tmdbSearch(query, year) {
   return new Promise((resolve) => {
-    let p = '/3/search/movie?api_key=' + TMDB_KEY + '&query=' + encodeURIComponent(query) + '&language=zh-CN';
+    let p = '/3/search/movie?api_key=' + TMDB_KEY + '&query=' + encodeURIComponent(query) + '&language=zh-CN&include_adult=true';
     if (year) p += '&primary_release_year=' + year;
     https.get('https://api.themoviedb.org' + p, (res) => {
       let d = '';
