@@ -172,7 +172,13 @@ async function main() {
     added++;
   }
 
-  qs.movie = qs.movie.filter(m => parseInt(m.year) >= 2000);
+  qs.movie = qs.movie.filter(m => {
+    if (parseInt(m.year) < 2000) return false;
+    if ((m.region || '').includes('中国大陆')) return false;
+    if (['正片', 'HD', 'HD中字', '伦理', '伦理片', '日语', '西班牙语', '伦理片（上半场）'].includes(m.region)) { m.region = ''; }
+    if (m.region && m.region.length > 10) m.region = m.region.split(',')[0].split(' ')[0];
+    return true;
+  });
   qs.movie.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0));
   qs.movie = qs.movie.slice(0, MAX_ITEMS);
   gi['情色'] = qs;
