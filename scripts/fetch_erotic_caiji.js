@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const DATA_PATH = path.join(__dirname, '..', 'data.json');
-const MAX_ITEMS = 200;
+const MAX_ITEMS = 1000;
 
 const API_SOURCES = [
   { name: '非凡资源', url: 'http://cj.ffzyapi.com/api.php/provide/vod/' },

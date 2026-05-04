@@ -3,7 +3,7 @@ const path = require('path');
 const https = require('https');
 const DATA_PATH = path.join(__dirname, '..', 'data.json');
 const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
-const MAX_ITEMS = 200;
+const MAX_ITEMS = 1000;
 
 const MOVIES = [
   { doubanId: '3006462', title: '霜花店', year: '2008', rate: '7.1', region: '韩国', abstract: '高丽末年，王与亲卫队长洪麟关系亲密，在朝廷压力下王命洪麟与王妃同房以延续血脉，三人陷入了危险的爱情与背叛之中。', genres: ['剧情', '历史', '情色'] },
