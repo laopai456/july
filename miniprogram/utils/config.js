@@ -39,7 +39,7 @@ module.exports = config
 
 function proxyCover(url) {
   if (!url) return url
-  if (url.includes('image.tmdb.org') || url.includes('doubanio.com')) {
+  if (url.includes('image.tmdb.org')) {
     return config.apiBase + '/api/image-proxy?url=' + encodeURIComponent(url)
   }
   return url
