@@ -3,7 +3,7 @@ const path = require('path');
 const https = require('https');
 const DATA_PATH = path.join(__dirname, '..', 'data.json');
 const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
-const MAX_ITEMS = 50;
+const MAX_ITEMS = 200;
 
 const MOVIES = [
   { doubanId: '3006462', title: '霜花店', year: '2008', rate: '7.1', region: '韩国', abstract: '高丽末年，王与亲卫队长洪麟关系亲密，在朝廷压力下王命洪麟与王妃同房以延续血脉，三人陷入了危险的爱情与背叛之中。', genres: ['剧情', '历史', '情色'] },
@@ -39,6 +39,27 @@ const MOVIES = [
   { doubanId: '1292267', title: '钢琴教师', year: '2001', rate: '8.0', region: '法国', abstract: '迈克尔·哈内克执导。维也纳音乐学院严格的女教师埃丽卡与年轻男学生瓦尔特之间展开了一段充满施虐与受虐的扭曲关系。', genres: ['剧情', '情色'] },
   { doubanId: '1297565', title: '九首歌', year: '2004', rate: '6.3', region: '英国', abstract: '一男子回忆与女友在伦敦一年间的生活，两人在摇滚演唱会和卧室之间往返，用音乐和性爱记录了一段短暂而炽烈的恋情。', genres: ['剧情', '音乐', '情色'] },
   { doubanId: '1293579', title: '鹅毛笔', year: '2000', rate: '7.8', region: '美国', abstract: '法国作家萨德侯爵被囚禁在疯人院中，他偷偷写作的情色小说在巴黎流传。神父和医生围绕审查与自由展开了激烈的对抗。', genres: ['剧情', '传记', '情色'] },
+  { doubanId: '1294464', title: '花火', year: '1997', rate: '8.6', region: '日本', abstract: '北野武自导自演。退休警察西佳敬为了给病危的妻子最后的幸福，不惜铤而走险抢劫银行。暴力与温柔交织，生命在绝望中绽放如花火。', genres: ['剧情', '犯罪', '情色'] },
+  { doubanId: '25774680', title: '热线电话', year: '2011', rate: '6.5', region: '韩国', abstract: '一名电台DJ接到听众的神秘电话，对方声称要杀人。随着直播的进行，真相逐渐浮出水面，而DJ发现自己也深陷其中。', genres: ['剧情', '悬疑', '情色'] },
+  { doubanId: '1294364', title: '快乐到死', year: '1999', rate: '7.6', region: '韩国', abstract: '全职太太宝罗与失业丈夫的婚姻死气沉沉，她偷偷与前男友重逢并发展婚外情。丈夫发现后从痛苦猜忌走向极端报复。', genres: ['剧情', '情色'] },
+  { doubanId: '1292716', title: '捆着我绑着我', year: '1989', rate: '7.6', region: '西班牙', abstract: '阿尔莫多瓦执导。刚出院的精神病人里奇绑架了女演员玛丽娜，声称要用"爱的囚禁"让她爱上自己。', genres: ['剧情', '爱情', '情色'] },
+  { doubanId: '1293980', title: '云上的日子', year: '1995', rate: '7.7', region: '意大利', abstract: '安东尼奥尼与文德斯联合执导。四个关于爱情与欲望的独立故事，每个故事都探讨了爱的不同面向。', genres: ['剧情', '爱情', '情色'] },
+  { doubanId: '1291548', title: '大开眼戒', year: '1999', rate: '7.7', region: '美国', abstract: '库布里克遗作。医生威廉姆偶然进入一个神秘的上流社会性爱派对，光怪陆离的场面让他对婚姻和人性产生了深深的怀疑。', genres: ['剧情', '悬疑', '情色'] },
+  { doubanId: '1292265', title: '苦月亮', year: '1992', rate: '8.4', region: '英国', abstract: '波兰斯基执导。一对体面的英国夫妇在邮轮上遇到了一对充满破坏欲的情侣，听到了一段从狂热到扭曲的爱情故事。', genres: ['剧情', '爱情', '情色'] },
+  { doubanId: '1292257', title: '情人', year: '1992', rate: '8.2', region: '法国', abstract: '1929年越南，15岁的法国少女在湄公河渡轮上遇到了32岁的中国富商，两人展开了一段跨越种族与阶级的禁忌之恋。', genres: ['剧情', '爱情', '情色'] },
+  { doubanId: '1291996', title: '感官世界', year: '1976', rate: '8.2', region: '日本', abstract: '大岛渚执导。1936年东京真实事件改编，退役妓女阿部定与旅馆老板吉藏陷入了痴迷的肉体关系，最终以震惊日本的命案收场。', genres: ['剧情', '情色'] },
+  { doubanId: '1291844', title: '偷香', year: '1996', rate: '7.6', region: '意大利', abstract: '贝托鲁奇执导。19岁的美国女孩露西来到托斯卡纳乡村，在寻找生父的同时也寻找着自己的初恋和爱情。', genres: ['剧情', '爱情', '情色'] },
+  { doubanId: '1292271', title: '教室别恋', year: '1995', rate: '7.5', region: '瑞典', abstract: '1943年瑞典小镇，15岁少年史汀与37岁的女教师维奥拉发展出一段禁忌之恋。少年的初恋与成年女人的欲望纠缠在一起。', genres: ['剧情', '爱情', '情色'] },
+  { doubanId: '1293869', title: '爱的亡灵', year: '1978', rate: '7.6', region: '日本', abstract: '大岛渚执导。一个被丈夫冷落的妻子与年轻的车夫发展出婚外情，两人合谋杀害丈夫，却在罪恶感的折磨下走向毁灭。', genres: ['剧情', '情色'] },
+  { doubanId: '1292948', title: '巴黎野玫瑰', year: '1986', rate: '8.0', region: '法国', abstract: '性格极端的女孩贝蒂与修理工佐尔格相爱后搬到巴黎追求写作梦想。贝蒂的精神状态逐渐崩溃，爱情走向无法挽回的悲剧。', genres: ['剧情', '爱情', '情色'] },
+  { doubanId: '1291848', title: '布拉格之恋', year: '1988', rate: '8.0', region: '美国', abstract: '改编自米兰·昆德拉《不能承受的生命之轻》。布拉格外科医生托马斯在"轻"与"重"之间游走于多个女人之间。', genres: ['剧情', '爱情', '情色'] },
+  { doubanId: '1296700', title: '同屋三分惊', year: '1994', rate: '8.2', region: '英国', abstract: '丹尼·博伊尔处女作。三个室友发现新室友死于房间并留下一笔巨款，贪婪与猜忌将友谊撕裂。', genres: ['剧情', '悬疑', '情色'] },
+  { doubanId: '1296259', title: '午夜守门人', year: '1974', rate: '7.4', region: '意大利', abstract: '二战后，前纳粹军官在维也纳当旅馆守门人，意外遇到集中营幸存者，两人之间畸形的虐恋关系再度重燃。', genres: ['剧情', '情色'] },
+  { doubanId: '1292925', title: '最后的探戈', year: '1972', rate: '7.6', region: '意大利', abstract: '贝托鲁奇执导。刚丧妻的中年男子在巴黎公寓里与年轻女孩发展出一段纯粹基于肉体的匿名关系。', genres: ['剧情', '情色'] },
+  { doubanId: '1294453', title: '欲孽杀人夜', year: '1986', rate: '7.2', region: '美国', abstract: '迈克尔·曼执导。FBI探员追踪连环杀手，凶手在月圆之夜作案。紧张的追凶过程中，探员自己也逐渐走向黑暗边缘。', genres: ['剧情', '犯罪', '情色'] },
+  { doubanId: '26354424', title: '朴烈', year: '2017', rate: '7.0', region: '韩国', abstract: '日本殖民时期，韩国无政府主义者朴烈与日本女友在东京策划暗杀天皇的行动，两人以极端的方式抵抗帝国主义的压迫。', genres: ['剧情', '历史', '情色'] },
+  { doubanId: '1294372', title: '白日焰火', year: '2014', rate: '7.6', region: '中国大陆', abstract: '东北小城发生碎尸案，落魄警察张自力追踪嫌疑人吴志贞，在冰天雪地中，真相与情欲交织。', genres: ['剧情', '悬疑', '情色'] },
+  { doubanId: '1296148', title: '色戒', year: '2007', rate: '8.7', region: '中国大陆', abstract: '李安执导。抗战时期，岭南大学女生王佳芝被派去色诱汪伪政府特务头目易先生，在伪装的爱情与真实的情感之间走向危险的深渊。', genres: ['剧情', '爱情', '情色'] },
 ];
 
 const NON_EROTIC_IDS = [
@@ -154,7 +175,6 @@ async function main() {
   qs.movie = qs.movie.filter(m => {
     if (NON_EROTIC_IDS.includes(m.doubanId)) { console.log('REMOVE (non-erotic):', m.title); return false; }
     if ((m.region || '').includes('中国大陆')) { console.log('REMOVE (mainland China):', m.title); return false; }
-    if (parseInt(m.year) < 2000) { console.log('REMOVE (year<2000):', m.title, m.year); return false; }
     return true;
   });
 
