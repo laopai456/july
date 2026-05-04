@@ -7,6 +7,18 @@ const CACHE_KEY = 'genre_cache'
 const CACHE_EXPIRE = 30 * 60 * 1000
 const QUICK_LOAD_COUNT = 10
 
+let _isDevEnv = null
+function isDevEnv() {
+  if (_isDevEnv !== null) return _isDevEnv
+  try {
+    const info = wx.getAccountInfoSync()
+    _isDevEnv = info.miniProgram.envVersion === 'develop' || info.miniProgram.envVersion === 'trial'
+  } catch (e) {
+    _isDevEnv = true
+  }
+  return _isDevEnv
+}
+
 Page({
   data: {
     genreList: GENRE_LIST,
@@ -65,7 +77,7 @@ Page({
   onGenreChange(e) {
     const genre = e.currentTarget.dataset.genre
 
-    if (genre === '爱情' && !this._hiddenMode) {
+    if (genre === '爱情' && !this._hiddenMode && isDevEnv()) {
       clearTimeout(this._loveTapTimer)
       this._loveTapCount++
       if (this._loveTapCount >= 5) {
@@ -359,7 +371,7 @@ Page({
 
   onPosterError(e) {
     const index = e.currentTarget.dataset.index
-    const item = this.data.list[index]
-    console.error('图片加载失败:', item?.title)
+    if (index === undefined) return
+    this.setData({ [`list[${index}].poster`]: '' })
   }
 })
