@@ -103,7 +103,9 @@ async function fetchList(tag, start, limit, yearRange = '', sort = '') {
     console.log('\n  [API消息] ' + data.msg);
   }
   if (!data) return { items: [], total: 0 };
-  return { items: data.data || [], total: data.total || 0 };
+  const items = data.data || [];
+  const total = data.total || (items.length < limit ? start + items.length : start + items.length + 1);
+  return { items, total };
 }
 
 async function fetchDetailByTitle(title, doubanId, preferType = null) {
@@ -352,6 +354,7 @@ async function fetchTagTotal(tag, yearRange = '', sort = '') {
 async function fetchWithCurrentYearPriority(tag, hotCount, options = {}) {
   const currentYear = new Date().getFullYear();
   const yearRange = currentYear + ',' + currentYear;
+  const lastYearRange = (currentYear - 1) + ',' + (currentYear - 1);
   const { logLabel = tag, minYearCount = 50, maxYearCount = 200, yearRatio = 0.4, recentCount = 50, yearOnly = false } = options;
 
   const allItems = [];
@@ -383,6 +386,18 @@ async function fetchWithCurrentYearPriority(tag, hotCount, options = {}) {
     }
   }
   console.log('  [' + logLabel + ' 当年最新] ' + recentItems.length + ' 条, 新增 ' + recentNew + ' 条');
+
+  console.log('  [获取' + logLabel + ' - 去年热度补充]');
+  const lastYearItems = await fetchTagItems(tag, Math.min(yearCount, 50), lastYearRange);
+  let lastYearNew = 0;
+  for (const item of lastYearItems) {
+    if (!seenIds.has(item.id)) {
+      seenIds.add(item.id);
+      allItems.push(item);
+      lastYearNew++;
+    }
+  }
+  console.log('  [' + logLabel + ' 去年补充] ' + lastYearItems.length + ' 条, 新增 ' + lastYearNew + ' 条');
 
   if (!yearOnly && hotCount > 0) {
     console.log('  [获取' + logLabel + ' - 往年热门补充]');
