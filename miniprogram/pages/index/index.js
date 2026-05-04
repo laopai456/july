@@ -645,8 +645,8 @@ Page({
 
   onPosterError(e) {
     const index = e.currentTarget.dataset.index
-    const item = this.data.list[index]
-    console.error('图片加载失败:', item?.title, 'URL:', item?.poster?.substring(0, 60))
+    if (index === undefined) return
+    this.setData({ [`list[${index}].poster`]: '' })
   },
 
   showDetail(e) {
