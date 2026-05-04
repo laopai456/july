@@ -63,6 +63,8 @@ const TMDB_ALIASES = {
   '海岸线': 'The Coast Guard',
   '触不到的恋人': 'Il Mare',
   '谎言之恋': 'Lies',
+  '坏小子': 'Nappeun namja',
+  '恋之罪': 'Guilty of Romance',
 };
 
 function tmdbSearch(query, year) {
