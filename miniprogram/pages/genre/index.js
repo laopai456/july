@@ -161,7 +161,7 @@ Page({
       this._genreDataCache[cacheKey] = processed
       this.setCache(cacheKey, processed)
 
-      if (this.data.currentGenre === cacheKey && fullList.length > quickList.length) {
+      if ((this.data.currentGenre === cacheKey || (this.data.currentGenre === HIDDEN_TAG && cacheKey === HIDDEN_API_KEY)) && fullList.length > quickList.length) {
         this.applySectionData()
       }
     } catch (err) {
