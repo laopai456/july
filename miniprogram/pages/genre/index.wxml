@@ -68,6 +68,8 @@
               </view>
             </view>
             <view class="meta">
+              <text wx:if="{{item.region}}">{{item.region}}</text>
+              <text wx:if="{{item.region && item.year}}"> · </text>
               <text>{{item.year}}</text>
             </view>
             <view class="cast-row" wx:if="{{item.castDisplay}}">
@@ -133,6 +135,7 @@
       </view>
 
       <view class="card-tags">
+        <text class="tag" wx:if="{{detailItem.region}}">{{detailItem.region}}</text>
         <text class="tag" wx:if="{{detailItem.year}}">{{detailItem.year}}</text>
         <text class="tag" wx:for="{{detailItem.genres}}" wx:if="{{item}}" wx:key="*this">{{item}}</text>
       </view>

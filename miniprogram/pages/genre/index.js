@@ -197,6 +197,7 @@ Page({
         poster: proxyTmdbCover((item.cover || '').replace(/[\s`'"''""]/g, '').trim()),
         rating: parseFloat(item.rate) || 0,
         year: item.year || '',
+        region: item.region || '',
         description: item.summary || item.abstract || '',
         cast: item.casts || [],
         castDisplay: (item.casts || []).slice(0, 3).join(' / '),
