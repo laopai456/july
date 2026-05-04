@@ -59,10 +59,59 @@ const MOVIES = [
   { doubanId: '1292269', title: '恋爱小说', year: '2002', rate: '7.1', region: '韩国', abstract: '五个年轻人的爱情与友情交织在一起，在青春的尾巴上，每个人都必须面对成长带来的选择与失落。', genres: ['剧情', '爱情', '情色'], cover: 'https://img3.doubanio.com/view/photo/s_ratio_poster/public/p2199634340.jpg' },
   { doubanId: '1293567', title: '春去春又来', year: '2003', rate: '8.9', region: '韩国', abstract: '以四季轮回为结构，讲述一个小和尚从童年到成年的修行历程。金基德以极简主义美学探讨了人性的欲望、罪恶与救赎。', genres: ['剧情', '情色'], cover: 'https://img3.doubanio.com/view/photo/s_ratio_poster/public/p457234037.jpg' },
 ];
-function main() {
+const https = require('https');
+const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
+
+function tmdbSearch(query, year) {
+  return new Promise((resolve) => {
+    let path = '/3/search/movie?api_key=' + TMDB_KEY + '&query=' + encodeURIComponent(query) + '&language=zh-CN';
+    if (year) path += '&primary_release_year=' + year;
+    https.get('https://api.themoviedb.org' + path, (res) => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try {
+          const j = JSON.parse(d);
+          resolve(j.results && j.results.length > 0 ? j.results[0] : null);
+        } catch (e) { resolve(null); }
+      });
+    }).on('error', () => resolve(null));
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fixCovers(movieList) {
+  console.log('\n=== 修复封面 (TMDB) ===');
+  let fixed = 0;
+  for (const m of movieList) {
+    if (m.cover && !m.cover.includes('doubanio.com')) continue;
+    try {
+      const result = await tmdbSearch(m.title, m.year);
+      if (result && result.poster_path) {
+        m.cover = 'https://image.tmdb.org/t/p/w500' + result.poster_path;
+        fixed++;
+        console.log('  FIX:', m.title, '->', result.poster_path);
+      } else {
+        console.log('  MISS:', m.title, '(no TMDB poster)');
+      }
+    } catch (e) {
+      console.log('  ERR:', m.title, e.message);
+    }
+    await sleep(250);
+  }
+  console.log('Fixed covers:', fixed);
+}
+
+async function main() {
   const data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
   const gi = data.genreIndex || {};
   const qs = gi['情色'] || { movie: [], drama: [] };
+
+  const BLOCKED = ['中国大陆', '中国香港', '中国台湾', '法国'];
+  const REMOVE_IDS = ['1293578', '1296148', '1300877', '1294372'];
+  qs.movie = qs.movie.filter(m => !REMOVE_IDS.includes(m.doubanId) && !BLOCKED.some(r => (m.region || '').includes(r)));
+
   const existingIds = new Set();
   for (const item of [...(qs.movie || []), ...(qs.drama || [])]) {
     if (item.doubanId) existingIds.add(String(item.doubanId));
@@ -77,6 +126,9 @@ function main() {
     added++;
     console.log('ADD:', m.title, '(' + m.year + ') rate:' + m.rate);
   }
+
+  await fixCovers(qs.movie);
+
   qs.movie.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0));
   gi['情色'] = qs;
   data.genreIndex = gi;
