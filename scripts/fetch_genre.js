@@ -100,7 +100,20 @@ async function fetchGenreSection(tag, type, targetCount, indexMap, args) {
   }
 
   console.log('共获取 ' + tag + sectionLabel + ' ' + allItems.length + ' 条');
-  if (allItems.length === 0) return { items: [], index: {} };
+  if (allItems.length === 0) {
+    console.log('  [保护] API返回0条，保留已有索引数据');
+    const existingItems = [];
+    for (const [doubanId, item] of indexMap) {
+      const hotScore = calculateHotScore(item.rate, item.year);
+      existingItems.push({ ...item, doubanId, hotScore });
+    }
+    existingItems.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0));
+    const rawIndex = {};
+    for (const [doubanId, item] of indexMap) {
+      rawIndex['douban_' + doubanId] = item;
+    }
+    return { items: existingItems, index: rawIndex };
+  }
 
   let itemsToFetch;
   if (args.full) {
