@@ -62,6 +62,22 @@ const MOVIES = [
   { doubanId: '1293579', title: '鹅毛笔', year: '2000', rate: '7.8', region: '美国', abstract: '法国作家萨德侯爵被囚禁在疯人院中，他偷偷写作的情色小说在巴黎流传。神父和医生围绕审查与自由展开了激烈的对抗。', genres: ['剧情', '传记', '情色'] },
 ];
 
+const TMDB_ALIASES = {
+  '春去春又来': 'Spring, Summer, Fall, Winter... and Spring',
+  '春夏秋冬又一春': 'Spring, Summer, Fall, Winter... and Spring',
+  '不可不信缘': 'The Classic',
+  '萨玛利亚少女': 'Samaritan Girl',
+  '坏小子': 'Bad Guy',
+  '死亡直播': 'The Terror Live',
+  '大话情圣': 'My Scary Girl',
+  '金钱的味道': 'The Taste of Money',
+  '收件人不详': 'Address Unknown',
+  '弓': 'The Bow',
+  '海岸线': 'The Coast Guard',
+  '触不到的恋人': 'Il Mare',
+  '谎言之恋': 'Lies',
+};
+
 function tmdbSearch(query, year) {
   return new Promise((resolve) => {
     let p = '/3/search/movie?api_key=' + TMDB_KEY + '&query=' + encodeURIComponent(query) + '&language=zh-CN';
@@ -85,7 +101,14 @@ async function fixCovers(movieList) {
   for (const m of movieList) {
     if (m.cover && !m.cover.includes('doubanio.com') && m.cover !== '') continue;
     try {
-      const result = await tmdbSearch(m.title, m.year);
+      let result = await tmdbSearch(m.title, m.year);
+      if (!result || !result.poster_path) {
+        const alias = TMDB_ALIASES[m.title];
+        if (alias) {
+          console.log('  RETRY:', m.title, '->', alias);
+          result = await tmdbSearch(alias, m.year);
+        }
+      }
       if (result && result.poster_path) {
         m.cover = 'https://image.tmdb.org/t/p/w500' + result.poster_path;
         fixed++;
