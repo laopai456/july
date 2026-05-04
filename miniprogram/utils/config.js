@@ -40,7 +40,7 @@ module.exports = config
 function proxyCover(url) {
   if (!url) return url
   if (url.includes('image.tmdb.org')) {
-    return config.apiBase + '/api/image-proxy?url=' + encodeURIComponent(url)
+    return url.replace('image.tmdb.org', 'static-mdb.v.geilijiasu.com')
   }
   return url
 }
