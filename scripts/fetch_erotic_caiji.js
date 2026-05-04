@@ -24,6 +24,12 @@ const EROTIC_TYPES = [
   '情色', '成人', '两性课堂', '福利', '深夜',
 ];
 
+const BLOCKED_WORDS = ['动画', '综艺', '纪录片', '短片', '预告', '花絮', '预告片', '特辑', '番外'];
+
+function normalizeTitle(t) {
+  return (t || '').replace(/[\s·\-:：.。！!？?《》【】]/g, '').replace(/（.*?）/g, '').replace(/\(.*?\)/g, '');
+}
+
 function httpGet(url, timeout = 10000) {
   return new Promise((resolve, reject) => {
     const mod = url.startsWith('https') ? https : http;
@@ -115,8 +121,9 @@ async function main() {
         for (const vod of data.list) {
           const title = vod.vod_name || '';
           if (!title) continue;
+          if (BLOCKED_WORDS.some(w => title.includes(w))) continue;
           const year = parseYear(vod);
-          const key = title + '_' + year;
+          const key = normalizeTitle(title);
           if (!allMovies.has(key)) {
             allMovies.set(key, {
               title,
