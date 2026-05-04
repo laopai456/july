@@ -646,7 +646,14 @@ Page({
   onPosterError(e) {
     const index = e.currentTarget.dataset.index
     if (index === undefined) return
-    this.setData({ [`list[${index}].poster`]: '' })
+    const item = this.data.list[index]
+    if (!item) return
+    const poster = item.poster || ''
+    if (poster.endsWith('.jpg')) {
+      this.setData({ [`list[${index}].poster`]: poster.replace(/\.jpg$/, '.webp') })
+    } else {
+      this.setData({ [`list[${index}].poster`]: '' })
+    }
   },
 
   showDetail(e) {
