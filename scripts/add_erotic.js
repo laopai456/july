@@ -53,18 +53,13 @@ const MOVIES = [
   { doubanId: '1292925', title: '美人', year: '2004', rate: '6.8', region: '韩国', abstract: '一位作家爱上了美丽的模特恩雪，但恩雪却与一个有暴力倾向的男人纠缠不清。三角关系中，爱与痛苦交织成一曲悲伤的挽歌。', genres: ['剧情', '爱情', '情色'] },
   { doubanId: '1293577', title: '戏梦巴黎', year: '2003', rate: '8.0', region: '法国', abstract: '1968年巴黎学运期间，一对孪生姐弟邀请美国留学生住进家中，三人在封闭的公寓里编织了一段交织着电影、性与政治的乌托邦之梦。', genres: ['剧情', '爱情', '情色'] },
   { doubanId: '1294218', title: '黑天鹅', year: '2010', rate: '8.6', region: '美国', abstract: '芭蕾舞者妮娜为了争取天鹅湖主角而逐渐走向精神崩溃，完美白天鹅与诱惑黑天鹅的分裂人格在她体内激烈对抗，欲望与恐惧交织成梦魇。', genres: ['剧情', '悬疑', '情色'] },
-  { doubanId: '1291548', title: '大开眼戒', year: '1999', rate: '7.7', region: '美国', abstract: '库布里克遗作。医生威廉姆偶然进入一个神秘的上流社会性爱派对，光怪陆离的场面让他对婚姻和人性产生了深深的怀疑。', genres: ['剧情', '悬疑', '情色'] },
   { doubanId: '1296706', title: '原罪', year: '2001', rate: '7.5', region: '美国', abstract: '19世纪的古巴，咖啡种植园主通过邮购新娘迎娶了一位神秘女子，她的真实身份和不可告人的目的让爱情变成了一场致命的游戏。', genres: ['剧情', '爱情', '情色'] },
   { doubanId: '1293975', title: '不忠', year: '2002', rate: '7.5', region: '美国', abstract: '看似完美的家庭主妇康妮在纽约街头偶遇年轻法国书商，发展出一段危险的婚外情。丈夫发现后，一场意外将三个家庭推向深渊。', genres: ['剧情', '悬疑', '情色'] },
   { doubanId: '1292718', title: '西西里的美丽传说', year: '2000', rate: '8.9', region: '意大利', abstract: '二战时期的西西里小镇，13岁少年雷纳多对美丽少妇玛莲娜一见倾心。战争的残酷、镇民的恶意和少年的幻想交织成一段残酷的青春记忆。', genres: ['剧情', '战争', '情色'] },
   { doubanId: '1292267', title: '钢琴教师', year: '2001', rate: '8.0', region: '法国', abstract: '迈克尔·哈内克执导。维也纳音乐学院严格的女教师埃丽卡与年轻男学生瓦尔特之间展开了一段充满施虐与受虐的扭曲关系。', genres: ['剧情', '情色'] },
-  { doubanId: '1292265', title: '苦月亮', year: '1992', rate: '8.4', region: '英国', abstract: '波兰斯基执导。一对体面的英国夫妇在邮轮上遇到了一对充满破坏欲的情侣，听到了一段从狂热到扭曲的爱情故事，四人命运由此交织。', genres: ['剧情', '爱情', '情色'] },
-  { doubanId: '1292257', title: '情人', year: '1992', rate: '8.2', region: '法国', abstract: '1929年越南，15岁的法国少女在湄公河渡轮上遇到了32岁的中国富商，两人展开了一段跨越种族与阶级的禁忌之恋。', genres: ['剧情', '爱情', '情色'] },
   { doubanId: '1297565', title: '九首歌', year: '2004', rate: '6.3', region: '英国', abstract: '一男子回忆与女友在伦敦一年间的生活，两人在摇滚演唱会和卧室之间往返，用音乐和性爱记录了一段短暂而炽烈的恋情。', genres: ['剧情', '音乐', '情色'] },
   { doubanId: '1293637', title: '欲望都市', year: '2008', rate: '7.5', region: '美国', abstract: '专栏作家凯莉与Mr.Big的感情终于走向婚姻，但婚礼前的背叛让一切陷入混乱。四个纽约女人继续用幽默和勇气面对爱情与欲望。', genres: ['喜剧', '爱情', '情色'] },
   { doubanId: '1293579', title: '鹅毛笔', year: '2000', rate: '7.8', region: '美国', abstract: '法国作家萨德侯爵被囚禁在疯人院中，他偷偷写作的情色小说在巴黎流传。神父和医生围绕审查与自由展开了激烈的对抗。', genres: ['剧情', '传记', '情色'] },
-  { doubanId: '1291996', title: '感官世界', year: '1976', rate: '8.2', region: '日本', abstract: '1936年东京，退役妓女阿部定与旅馆老板吉藏陷入了一段痴迷的肉体关系，最终以震惊日本的命案收场。大岛渚以真实事件改编的情欲杰作。', genres: ['剧情', '情色'] },
-  { doubanId: '1291844', title: '偷香', year: '1996', rate: '7.6', region: '意大利', abstract: '19岁的美国女孩露西来到托斯卡纳乡村，在寻找生父的同时也寻找着自己的初恋和爱情。贝托鲁奇镜头下的青春与欲望如油画般绚烂。', genres: ['剧情', '爱情', '情色'] },
 ];
 
 function tmdbSearch(query, year) {
@@ -111,10 +106,6 @@ async function main() {
   const gi = data.genreIndex || {};
   const qs = gi['情色'] || { movie: [], drama: [] };
 
-  const BLOCKED = ['中国大陆'];
-  qs.movie = qs.movie.filter(m => !BLOCKED.some(r => (m.region || '').includes(r)) && parseInt(m.year) >= 2000);
-  console.log('After filter (block mainland China + year>=2000):', qs.movie.length);
-
   const existingIds = new Set();
   for (const item of [...(qs.movie || []), ...(qs.drama || [])]) {
     if (item.doubanId) existingIds.add(String(item.doubanId));
@@ -129,6 +120,10 @@ async function main() {
     added++;
     console.log('ADD:', m.title, '(' + m.year + ') rate:' + m.rate);
   }
+
+  const BLOCKED = ['中国大陆'];
+  qs.movie = qs.movie.filter(m => !BLOCKED.some(r => (m.region || '').includes(r)) && parseInt(m.year) >= 2000);
+  console.log('After filter (block mainland China + year>=2000):', qs.movie.length);
 
   await fixCovers(qs.movie);
 
