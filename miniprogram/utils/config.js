@@ -37,9 +37,17 @@ const config = {
 
 module.exports = config
 
-function proxyTmdbCover(url) {
-  if (!url || !url.includes('image.tmdb.org')) return url
-  return config.apiBase + '/api/tmdb-image?url=' + encodeURIComponent(url)
+function proxyCover(url) {
+  if (!url) return url
+  if (url.includes('image.tmdb.org') || url.includes('doubanio.com')) {
+    return config.apiBase + '/api/image-proxy?url=' + encodeURIComponent(url)
+  }
+  return url
 }
 
+function proxyTmdbCover(url) {
+  return proxyCover(url)
+}
+
+module.exports.proxyCover = proxyCover
 module.exports.proxyTmdbCover = proxyTmdbCover

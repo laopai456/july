@@ -430,15 +430,22 @@ app.get('/api/variety/status', (req, res) => {
   });
 });
 
-app.get('/api/tmdb-image', async (req, res) => {
+app.get('/api/image-proxy', async (req, res) => {
   const imageUrl = req.query.url;
-  if (!imageUrl || !imageUrl.startsWith('https://image.tmdb.org/')) {
+  const ALLOWED_HOSTS = ['image.tmdb.org', 'img.doubanio.com', 'img2.doubanio.com', 'img3.doubanio.com', 'img4.doubanio.com', 'img5.doubanio.com', 'img6.doubanio.com', 'img7.doubanio.com', 'img8.doubanio.com', 'img9.doubanio.com'];
+  if (!imageUrl) {
+    return res.status(400).json({ error: 'missing url' });
+  }
+  let host = '';
+  try { host = new URL(imageUrl).hostname; } catch (e) {}
+  if (!ALLOWED_HOSTS.includes(host)) {
     return res.status(400).json({ error: 'invalid url' });
   }
   try {
     const response = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
-      timeout: 10000
+      timeout: 10000,
+      headers: { 'Referer': 'https://movie.douban.com/' }
     });
     const contentType = response.headers['content-type'] || 'image/jpeg';
     res.set('Content-Type', contentType);
