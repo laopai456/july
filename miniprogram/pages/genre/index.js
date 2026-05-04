@@ -6,7 +6,7 @@ const HIDDEN_TAG = '隐秘'
 const HIDDEN_API_KEY = '情色'
 const CACHE_KEY = 'genre_cache'
 const CACHE_EXPIRE = 30 * 60 * 1000
-const QUICK_LOAD_COUNT = 10
+const QUICK_LOAD_COUNT = 50
 
 let _isDevEnv = null
 function isDevEnv() {
