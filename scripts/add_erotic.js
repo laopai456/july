@@ -63,9 +63,23 @@ const TMDB_ALIASES = {
   '海岸线': 'The Coast Guard',
   '触不到的恋人': 'Il Mare',
   '谎言之恋': 'Lies',
-  '坏小子': '나쁜 남자',
+  '坏小子': 'tt0307213',
   '恋之罪': '恋の罪',
 };
+
+function tmdbFindByImdb(imdbId) {
+  return new Promise((resolve) => {
+    const p = '/3/find/' + imdbId + '?api_key=' + TMDB_KEY + '&language=zh-CN&external_source=imdb_id';
+    https.get('https://api.themoviedb.org' + p, (res) => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try { const j = JSON.parse(d); resolve(j.movie_results && j.movie_results.length > 0 ? j.movie_results[0] : null); }
+        catch (e) { resolve(null); }
+      });
+    }).on('error', () => resolve(null));
+  });
+}
 
 function tmdbSearch(query, year) {
   return new Promise((resolve) => {
@@ -95,7 +109,11 @@ async function fixCovers(movieList) {
         const alias = TMDB_ALIASES[m.title];
         if (alias) {
           console.log('  RETRY:', m.title, '->', alias);
-          result = await tmdbSearch(alias, m.year);
+          if (alias.startsWith('tt')) {
+            result = await tmdbFindByImdb(alias);
+          } else {
+            result = await tmdbSearch(alias, m.year);
+          }
         }
       }
       if (result && result.poster_path) {
