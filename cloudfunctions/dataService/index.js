@@ -63,11 +63,10 @@ const GENRE_CACHE_TTL = 10 * 60 * 1000
 async function getGenre(event) {
   const { name, section, limit } = event
   const now = Date.now()
-  const useLimit = limit ? '?limit=' + limit : ''
 
   if (!genreCache[name] || now - genreCacheTime > GENRE_CACHE_TTL) {
     try {
-      const res = await axios.get(SERVER_URL + '/api/genre/' + encodeURIComponent(name) + useLimit, { timeout: 10000 })
+      const res = await axios.get(SERVER_URL + '/api/genre/' + encodeURIComponent(name), { timeout: 10000 })
       genreCache[name] = res.data
       genreCacheTime = now
     } catch (e) {
@@ -78,11 +77,28 @@ async function getGenre(event) {
   const data = genreCache[name]
   if (!data) return { subjects: [], total: 0 }
 
+  const sliceCount = limit ? parseInt(limit) : 0
+
   if (section === 'movie') {
-    return { subjects: data.movie || [], total: data.movieTotal || (data.movie || []).length }
+    const all = data.movie || []
+    const subjects = sliceCount > 0 ? all.slice(0, sliceCount) : all
+    return { subjects, total: data.movieTotal || all.length }
   }
   if (section === 'drama') {
-    return { subjects: data.drama || [], total: data.dramaTotal || (data.drama || []).length }
+    const all = data.drama || []
+    const subjects = sliceCount > 0 ? all.slice(0, sliceCount) : all
+    return { subjects, total: data.dramaTotal || all.length }
+  }
+
+  if (sliceCount > 0) {
+    return {
+      movie: (data.movie || []).slice(0, sliceCount),
+      drama: (data.drama || []).slice(0, sliceCount),
+      movieTotal: data.movieTotal || (data.movie || []).length,
+      dramaTotal: data.dramaTotal || (data.drama || []).length,
+      updatedAt: data.updatedAt,
+      source: data.source
+    }
   }
 
   return data
