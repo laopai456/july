@@ -8,10 +8,14 @@ const EROTIC_GENRES = ['情色', '伦理', '成人', '同性', '情色片', '伦
 const CLEAR_GENRES = ['动画', '纪录片', '儿童', '家庭', '戏曲'];
 const NON_EROTIC_IDS = [
   '35345859', '37163391', '10535457', '1892161',
+  '27030639', '27030636',
   'tmdb_1444376', 'tmdb_758866', 'tmdb_1271314', 'tmdb_72021',
   'tmdb_445030', 'tmdb_23150', 'tmdb_526429', 'tmdb_23153',
   'tmdb_23151', 'tmdb_23155', 'tmdb_23154', 'tmdb_23167',
-  'tmdb_23166', 'tmdb_526426',
+  'tmdb_23166', 'tmdb_526426', 'tmdb_47747',
+  'tmdb_318256', 'tmdb_593395', 'tmdb_43950', 'tmdb_347158',
+  'tmdb_424645', 'tmdb_31248', 'tmdb_499441', 'tmdb_60160',
+  'tmdb_1405338', 'tmdb_791177',
 ];
 
 function doubanGet(urlPath) {
