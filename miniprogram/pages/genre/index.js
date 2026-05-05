@@ -189,7 +189,15 @@ Page({
   processGenreResult(result) {
     const processSection = (items, type) => {
       if (!items) return []
-      return items.map((item, index) => ({
+      const seen = new Set()
+      const deduped = []
+      for (const item of items) {
+        const id = item.doubanId || item.id
+        if (!id || seen.has(id)) continue
+        seen.add(id)
+        deduped.push(item)
+      }
+      return deduped.map((item, index) => ({
         doubanId: item.doubanId || item.id,
         title: item.title,
         type: type,
