@@ -101,7 +101,7 @@ async function main() {
   }
 
   // ========== 第4步: 抓取新增详情 ==========
-  const newResults = await fetchDetailsBatch(itemsToFetch, { useAbstract: true });
+  const newResults = await fetchDetailsBatch(itemsToFetch, { useAbstract: true, preferType: 'tv' });
 
   console.log('\n详情获取完成: ' + newResults.length + ' 条');
 

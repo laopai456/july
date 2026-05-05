@@ -420,11 +420,16 @@ async function fetchDetailForItem(item, options = {}) {
   const { preferType = null, useAbstract = false } = options;
 
   const detail = await fetchDetailByTitle(item.title, item.id, preferType);
+
+  if (preferType && detail && detail.type && detail.type !== preferType) {
+    return null;
+  }
+
   let abstract = null;
   let summary = '';
-  if (useAbstract) {
-    abstract = await fetchSubjectAbstract(item.id);
-    summary = await fetchSubjectSummary(item.id);
+  if (useAbstract && detail && detail.id) {
+    abstract = await fetchSubjectAbstract(detail.id);
+    summary = await fetchSubjectSummary(detail.id);
   }
 
   let year = '';
