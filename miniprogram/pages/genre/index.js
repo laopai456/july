@@ -7,6 +7,7 @@ const HIDDEN_API_KEY = '情色'
 const CACHE_KEY = 'genre_cache'
 const CACHE_EXPIRE = 30 * 60 * 1000
 const QUICK_LOAD_COUNT = 50
+const DISPLAY_COUNT = 50
 
 let _isDevEnv = null
 function isDevEnv() {
@@ -228,7 +229,7 @@ Page({
     if (!data) return
 
     const rawList = (data[currentSection] || [])
-    const list = userStore.filterWatched(rawList).slice(0, 1000)
+    const list = userStore.filterWatched(rawList).slice(0, DISPLAY_COUNT)
     this.setData({
       list,
       loading: false
