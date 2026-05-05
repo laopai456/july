@@ -53,19 +53,13 @@ async function main() {
   const allItems = [];
   const seenIds = new Set();
 
-  const results = await parallelLimit(
-    DRAMA_TAGS.map(({ tag, countries, subCategory, yearCount, hotCount }) =>
-      () => fetchWithCurrentYearPriority(tag, hotCount, {
-        yearCount,
-        logLabel: subCategory,
-        extraParams: countries ? { countries } : {}
-      }).then(items => ({ subCategory, items }))
-    ),
-    RATE_LIMIT.maxConcurrent
-  );
-
-  for (const { subCategory, items } of results) {
+  for (const { tag, countries, subCategory, yearCount, hotCount } of DRAMA_TAGS) {
     console.log('\n【获取 ' + subCategory + '】');
+    const items = await fetchWithCurrentYearPriority(tag, hotCount, {
+      yearCount,
+      logLabel: subCategory,
+      extraParams: countries ? { countries } : {}
+    });
     for (const item of items) {
       if (!seenIds.has(item.id)) {
         seenIds.add(item.id);
