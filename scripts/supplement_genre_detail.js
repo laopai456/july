@@ -6,6 +6,13 @@ const DATA_PATH = path.join(__dirname, '..', 'data.json');
 
 const EROTIC_GENRES = ['情色', '伦理', '成人', '同性', '情色片', '伦理片'];
 const CLEAR_GENRES = ['动画', '纪录片', '儿童', '家庭', '戏曲'];
+const NON_EROTIC_IDS = [
+  '35345859', '37163391', '10535457', '1892161',
+  'tmdb_1444376', 'tmdb_758866', 'tmdb_1271314', 'tmdb_72021',
+  'tmdb_445030', 'tmdb_23150', 'tmdb_526429', 'tmdb_23153',
+  'tmdb_23151', 'tmdb_23155', 'tmdb_23154', 'tmdb_23167',
+  'tmdb_23166', 'tmdb_526426',
+];
 
 function doubanGet(urlPath) {
   return new Promise((resolve, reject) => {
@@ -73,6 +80,13 @@ async function main() {
     const idx = i + 1;
     if (idx % 20 === 0) {
       console.log(`  progress: ${idx}/${movies.length} (updated:${updated} removed:${removed})`);
+    }
+
+    if (NON_EROTIC_IDS.includes(String(item.doubanId))) {
+      movies.splice(i, 1);
+      removed++;
+      console.log(`  [移除-黑名单] ${item.title} (${item.doubanId})`);
+      continue;
     }
 
     const hasDetail = item.abstract && item.directors && item.directors.length > 0;
@@ -147,9 +161,7 @@ async function main() {
       removed++;
       console.log(`  [移除] ${item.title} (${item.year}) genres=[${genresToCheck}]`);
     } else if (!matched && genresToCheck.length === 0) {
-      movies.splice(i, 1);
-      removed++;
-      console.log(`  [移除] ${item.title} (${item.year}) 无genres且无法匹配豆瓣`);
+      console.log(`  [保留-未验证] ${item.title} (${item.year}) 无genres且无法匹配豆瓣`);
     }
   }
 

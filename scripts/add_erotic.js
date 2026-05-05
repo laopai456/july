@@ -68,6 +68,11 @@ const NON_EROTIC_IDS = [
   '1292264', '1294218', '1293637', '1294373', '1294457', '1293972',
   '1294015', '1294368', '1291543', '1291546', '1291549', '1293961',
   '1291850', '1291853', '1300877', '1293578',
+  '35345859', '37163391', '10535457', '1892161',
+  'tmdb_1444376', 'tmdb_758866', 'tmdb_1271314', 'tmdb_72021',
+  'tmdb_445030', 'tmdb_23150', 'tmdb_526429', 'tmdb_23153',
+  'tmdb_23151', 'tmdb_23155', 'tmdb_23154', 'tmdb_23167',
+  'tmdb_23166', 'tmdb_526426',
 ];
 
 const TMDB_ALIASES = {
@@ -173,7 +178,7 @@ async function main() {
 
   qs.movie = qs.movie.filter(m => {
     if (NON_EROTIC_IDS.includes(m.doubanId)) { console.log('REMOVE (non-erotic):', m.title); return false; }
-    if ((m.region || '').includes('中国大陆')) { console.log('REMOVE (mainland China):', m.title); return false; }
+    if ((m.region || '').includes('中国大陆') && !['1294372', '1296148'].includes(m.doubanId)) { console.log('REMOVE (mainland China):', m.title); return false; }
     return true;
   });
 
