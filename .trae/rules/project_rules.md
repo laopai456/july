@@ -1,5 +1,15 @@
 # 项目规则
 
+## 项目上下文
+
+- **架构**：微信小程序 + Express 后端，数据存 `data.json`（不入 Git）
+- **抓取脚本** `scripts/`：fetch_drama.js(热剧)、fetch_movie.js(电影)、fetch_variety.js(综艺)、fetch_erotic_caiji.js(隐秘)、公共库 `scripts/lib/douban.js`
+- **前端** `miniprogram/pages/`：index(首页)、genre(分类页，隐秘模式点5次爱情激活)、watched(已看)、favorites(收藏)、detail(详情)
+- **数据链路**：抓取脚本 → data.json → server.js formatItem()（白名单式返回） → 云函数/直连API → 前端 fetchXxx/loadXxx → applyTabData/缓存
+- **关键约束**：formatItem 是白名单式返回，新增字段必须手动加入；隐秘榜单显示50部，本地缓存上限1000部
+- **热剧抓取**：用 `tags=电视剧` + `countries=国家` 替代旧的 `tags=韩剧/日剧/国产剧`，避免按类型标签分类的剧集漏抓；详情获取加 `preferType: 'tv'` 过滤电影
+- **服务器部署**：`git pull → 跑抓取脚本 → pm2 restart movie-api`，三步缺一不可；脚本必须串行跑，并行会触发豆瓣限流封禁
+
 ## Git 提交
 - 每次代码修改完成后，自动执行 `git add` + `git commit`，无需用户确认。
 - commit message 使用中文，格式：`type(scope): 描述`。
