@@ -17,6 +17,21 @@ const NON_EROTIC_IDS = [
   'tmdb_424645', 'tmdb_31248', 'tmdb_499441', 'tmdb_60160',
   'tmdb_1405338', 'tmdb_791177',
 ];
+const NON_EROTIC_TITLES = [
+  '啊，荒野', '啊荒野', 'あゝ、荒野', 'ああ荒野', '荒野 前篇', '荒野 后篇',
+  '驾驶我的车', '鬼城杀', '骨及所有', '骸骨及一切',
+  '麻辣教师GTO', '日本食人鲨', '四墓惊魂',
+  '空之境界', '来自深渊', '游戏人生',
+  '地狱骑士', '德伯力克', '辣妞征集',
+  '安娜的迷宫', '比基尼复仇者', '黑骚特警组',
+  '小勇者们',
+];
+
+function isNonEroticTitle(title) {
+  if (!title) return false;
+  const t = title.replace(/[\s,，·:：！!？?。、]/g, '');
+  return NON_EROTIC_TITLES.some(k => t.includes(k.replace(/[\s,，·:：！!？?。、]/g, '')));
+}
 
 function doubanGet(urlPath) {
   return new Promise((resolve, reject) => {
@@ -90,6 +105,13 @@ async function main() {
       movies.splice(i, 1);
       removed++;
       console.log(`  [移除-黑名单] ${item.title} (${item.doubanId})`);
+      continue;
+    }
+
+    if (isNonEroticTitle(item.title)) {
+      movies.splice(i, 1);
+      removed++;
+      console.log(`  [移除-标题黑名单] ${item.title} (${item.doubanId})`);
       continue;
     }
 

@@ -5,6 +5,22 @@ const DATA_PATH = path.join(__dirname, '..', 'data.json');
 const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
 const MAX_ITEMS = 1000;
 
+const NON_EROTIC_TITLES = [
+  '啊，荒野', '啊荒野', 'あゝ、荒野', 'ああ荒野', '荒野 前篇', '荒野 后篇',
+  '驾驶我的车', '鬼城杀', '骨及所有', '骸骨及一切',
+  '麻辣教师GTO', '日本食人鲨', '四墓惊魂',
+  '空之境界', '来自深渊', '游戏人生',
+  '地狱骑士', '德伯力克', '辣妞征集',
+  '安娜的迷宫', '比基尼复仇者', '黑骚特警组',
+  '小勇者们',
+];
+
+function isNonEroticTitle(title) {
+  if (!title) return false;
+  const t = title.replace(/[\s,，·:：！!？?。、]/g, '');
+  return NON_EROTIC_TITLES.some(k => t.includes(k.replace(/[\s,，·:：！!？?。、]/g, '')));
+}
+
 const MOVIES = [
   { doubanId: '3006462', title: '霜花店', year: '2008', rate: '7.1', region: '韩国', abstract: '高丽末年，王与亲卫队长洪麟关系亲密，在朝廷压力下王命洪麟与王妃同房以延续血脉，三人陷入了危险的爱情与背叛之中。', genres: ['剧情', '历史', '情色'] },
   { doubanId: '25798160', title: '人间中毒', year: '2014', rate: '6.6', region: '韩国', abstract: '越战英雄金镇平在军营中偶遇下属之妻钟佳欣，两人从克制到沦陷，在压抑的军队环境中发展出一段危险的禁忌之恋。', genres: ['剧情', '爱情', '情色'] },
@@ -182,6 +198,7 @@ async function main() {
 
   qs.movie = qs.movie.filter(m => {
     if (NON_EROTIC_IDS.includes(m.doubanId)) { console.log('REMOVE (non-erotic):', m.title); return false; }
+    if (isNonEroticTitle(m.title)) { console.log('REMOVE (non-erotic title):', m.title); return false; }
     if ((m.region || '').includes('中国大陆') && !['1294372', '1296148'].includes(m.doubanId)) { console.log('REMOVE (mainland China):', m.title); return false; }
     return true;
   });
