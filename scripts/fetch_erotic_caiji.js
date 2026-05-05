@@ -161,7 +161,7 @@ async function main() {
     const rate = parseFloat(m.rate) || 0;
     const hotScore = Math.round(rate * 10 + 150);
     qs.movie.push({
-      doubanId: 'cai_' + Buffer.from(m.title).toString('hex').substring(0, 12),
+      doubanId: 'cai_' + Buffer.from(m.title + '_' + m.year + '_' + m.region + '_' + m.source).toString('hex').substring(0, 20),
       title: m.title,
       rate: m.rate,
       year: m.year,
