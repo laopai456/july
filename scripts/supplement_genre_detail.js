@@ -3,7 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 const DATA_PATH = path.join(__dirname, '..', 'data.json');
-const FALLBACK_GENRE = '情色';
+
+const EROTIC_GENRES = ['情色', '伦理', '成人', '同性', '情色片', '伦理片'];
+const CLEAR_GENRES = ['动画', '纪录片', '儿童', '家庭', '戏曲'];
 
 function doubanGet(urlPath) {
   return new Promise((resolve, reject) => {
@@ -17,6 +19,13 @@ function doubanGet(urlPath) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function isEroticGenre(genres) {
+  if (!genres || genres.length === 0) return null;
+  if (genres.some(g => EROTIC_GENRES.includes(g))) return true;
+  if (genres.some(g => CLEAR_GENRES.includes(g))) return false;
+  return null;
+}
 
 function applyDetail(item, subject) {
   let changed = false;
@@ -45,7 +54,7 @@ function applyDetail(item, subject) {
 
 async function main() {
   console.log('========================================');
-  console.log('情色数据详情补充（含TMDB来源）');
+  console.log('情色数据详情补充 + 分类清洗');
   console.log('========================================');
 
   const data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
@@ -54,30 +63,43 @@ async function main() {
   const movies = qs.movie || [];
 
   let updated = 0;
-  let fallback = 0;
+  let removed = 0;
   let skipped = 0;
   let failed = 0;
+  const removeReasons = {};
 
-  for (let i = 0; i < movies.length; i++) {
+  for (let i = movies.length - 1; i >= 0; i--) {
     const item = movies[i];
-    if (i > 0 && i % 20 === 0) {
-      console.log(`  progress: ${i}/${movies.length} (updated:${updated} fallback:${fallback} failed:${failed})`);
+    const idx = i + 1;
+    if (idx % 20 === 0) {
+      console.log(`  progress: ${idx}/${movies.length} (updated:${updated} removed:${removed})`);
     }
 
     const hasDetail = item.abstract && item.directors && item.directors.length > 0;
     const hasGenre = item.genres && item.genres.length > 0;
     if (hasDetail && hasGenre) {
-      skipped++;
+      const genreCheck = isEroticGenre(item.genres);
+      if (genreCheck === false) {
+        const reason = item.genres.join(',');
+        removeReasons[reason] = (removeReasons[reason] || 0) + 1;
+        movies.splice(i, 1);
+        removed++;
+        console.log(`  [移除] ${item.title} (${item.year}) genres=[${item.genres}]`);
+      } else {
+        skipped++;
+      }
       continue;
     }
 
     const doubanId = String(item.doubanId || '');
     let matched = false;
+    let genresFromDouban = null;
 
     if (doubanId && !doubanId.startsWith('tmdb_')) {
       try {
         const abstract = await doubanGet('subject_abstract?subject_id=' + doubanId);
         if (abstract && abstract.subject) {
+          genresFromDouban = abstract.subject.types || null;
           if (applyDetail(item, abstract.subject)) {
             updated++;
             matched = true;
@@ -94,13 +116,14 @@ async function main() {
         if (suggest && suggest.length > 0) {
           const found = suggest.find(s => s.type === 'movie' || s.type === 'tv');
           if (found) {
-            item.doubanId = found.id;
-            item.cover = found.img || item.cover;
-            item.rate = found.rate || item.rate;
             await sleep(400);
 
             const abstract = await doubanGet('subject_abstract?subject_id=' + found.id);
             if (abstract && abstract.subject) {
+              genresFromDouban = abstract.subject.types || null;
+              item.doubanId = found.id;
+              item.cover = found.img || item.cover;
+              if (found.rate) item.rate = found.rate;
               if (applyDetail(item, abstract.subject)) {
                 updated++;
                 matched = true;
@@ -114,17 +137,38 @@ async function main() {
       await sleep(400);
     }
 
-    if (!matched && (!item.genres || item.genres.length === 0)) {
-      item.genres = [FALLBACK_GENRE];
-      fallback++;
+    const genresToCheck = genresFromDouban || item.genres || [];
+    const genreCheck = isEroticGenre(genresToCheck);
+
+    if (genreCheck === false) {
+      const reason = genresToCheck.join(',');
+      removeReasons[reason] = (removeReasons[reason] || 0) + 1;
+      movies.splice(i, 1);
+      removed++;
+      console.log(`  [移除] ${item.title} (${item.year}) genres=[${genresToCheck}]`);
+    } else if (!matched && genresToCheck.length === 0) {
+      movies.splice(i, 1);
+      removed++;
+      console.log(`  [移除] ${item.title} (${item.year}) 无genres且无法匹配豆瓣`);
     }
   }
 
-  console.log(`\n  done: updated=${updated} fallback=${fallback} skipped=${skipped} failed=${failed}`);
+  qs.movie = movies;
+  gi['情色'] = qs;
+  data.genreIndex = gi;
 
   fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
-  console.log(`\nsaved! total ${movies.length} items processed`);
-  console.log('========================================');
+
+  console.log(`\n========================================`);
+  console.log(`结果: updated=${updated} removed=${removed} skipped=${skipped} failed=${failed}`);
+  console.log(`保留: ${movies.length} 部`);
+  if (Object.keys(removeReasons).length > 0) {
+    console.log(`\n移除原因统计:`);
+    Object.entries(removeReasons).sort((a, b) => b[1] - a[1]).forEach(([reason, count]) => {
+      console.log(`  [${reason}]: ${count} 部`);
+    });
+  }
+  console.log(`========================================`);
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
