@@ -159,3 +159,47 @@ fetch_variety.js (写入 data.json)
 - 用户反馈问题后，按数据链路**从头到尾排查**，不要只改最末端的过滤逻辑
 - 排查顺序：data.json 数据是否正确 → server.js 是否传字段 → 前端是否接收字段 → 前端过滤是否生效
 - 每修一处，重新验证整条链路
+
+### 错误 7：伪ID生成不够唯一导致 wx:key 重复（已发生 1 次）
+
+**现象**：隐秘榜单大量 `Do not set same key "cai_xxx" in wx:key` 警告，点击简介后重复出现。
+
+**根因**：采集站脚本用 `Buffer.from(title).toString('hex').substring(0, 12)` 生成 doubanId，12个hex字符=6字节=最多2个汉字，短标题（如"年轻"、"新婚"、"斯巴"）产生完全相同的ID。同时前端 processGenreResult 不做 doubanId 去重，data.json 里有重复ID的数据照单全收。
+
+**防范规则**：
+- 伪ID生成必须拼接足够多的区分字段（标题+年份+地区+来源），截取长度≥20字符
+- 前端所有列表数据处理函数必须加 `Set` 去重，不能假设数据源无重复
+- **自查**：新增数据来源时，验证 doubanId 唯一性：`node -e "const d=require('./data.json'); const ids=d.xxx.map(m=>m.doubanId); console.log(new Set(ids).size, ids.length)"`
+
+### 错误 8：豆瓣标签体系不完整导致剧集漏抓（已发生 2 次）
+
+**现象**：《夺命许愿》（韩剧，类型标签"剧情/恐怖"）和《钢铁森林》（国产剧，类型标签"剧情/犯罪"）不在榜单中。
+
+**根因**：豆瓣的聚合标签（"韩剧"/"国产剧"）不是所有该地区剧集都会打上。按类型标签分类的剧集（恐怖、犯罪等）用 `tags=韩剧` 搜不到。
+
+**防范规则**：
+- 按地区抓取剧集必须用 `tags=电视剧` + `countries=国家`，不要依赖聚合标签
+- 详情获取加 `preferType: 'tv'` 严格过滤电影，防止电影混入剧集榜单
+- 新增抓取来源时，先用 API 验证搜索结果是否包含预期影片
+
+### 错误 9：并行抓取触发豆瓣限流封禁（已发生 1 次）
+
+**现象**：`parallelLimit(maxConcurrent: 2)` 同时跑2个tag，请求交替发出，实际间隔1.5-2.5秒，被豆瓣封禁。
+
+**根因**：两个 tag 共享同一个 `waitForRateLimit`，但并行执行时请求交替发出，实际频率是单tag的2倍。
+
+**防范规则**：
+- 豆瓣抓取脚本必须**串行执行**，一个tag跑完再跑下一个
+- `RATE_LIMIT.minDelay` 设为3秒以上，批次间隔10秒以上
+- 被封后等待至少2小时再重试，不要立即重跑
+
+### 错误 10：本地代码未push就让服务器pull（已发生 1 次）
+
+**现象**：服务器 `git pull` 显示 "Already up to date"，跑的还是旧代码，因为本地8个commit没push到GitHub。
+
+**根因**：本地 commit 和 push 是分开的，容易遗忘 push 步骤。
+
+**防范规则**：
+- 每次本地 commit 后，**必须立即 `git push`**，不要攒多个commit
+- 服务器部署前，先在本地确认 `git status` 显示 `up to date with 'origin/main'`
+- 如果服务器 pull 后显示 "Already up to date" 但行为不对，检查本地是否忘了 push
