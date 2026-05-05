@@ -10,9 +10,9 @@ const {
 const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
 
 const DRAMA_TAGS = [
-  { tag: '国产剧', yearCount: 20, hotCount: 40 },
-  { tag: '韩剧', yearCount: 20, hotCount: 40 },
-  { tag: '日剧', yearCount: 20, hotCount: 40 }
+  { tag: '电视剧', countries: '中国大陆,中国香港,中国台湾', subCategory: '国产剧', yearCount: 20, hotCount: 40 },
+  { tag: '电视剧', countries: '韩国', subCategory: '韩剧', yearCount: 20, hotCount: 40 },
+  { tag: '电视剧', countries: '日本', subCategory: '日剧', yearCount: 20, hotCount: 40 }
 ];
 
 const EXCLUDED_GENRES = ['动画', '纪录片'];
@@ -54,19 +54,22 @@ async function main() {
   const seenIds = new Set();
 
   const results = await parallelLimit(
-    DRAMA_TAGS.map(({ tag, yearCount, hotCount }) =>
-      () => fetchWithCurrentYearPriority(tag, hotCount, { yearCount, logLabel: tag })
-        .then(items => ({ tag, items }))
+    DRAMA_TAGS.map(({ tag, countries, subCategory, yearCount, hotCount }) =>
+      () => fetchWithCurrentYearPriority(tag, hotCount, {
+        yearCount,
+        logLabel: subCategory,
+        extraParams: countries ? { countries } : {}
+      }).then(items => ({ subCategory, items }))
     ),
     RATE_LIMIT.maxConcurrent
   );
 
-  for (const { tag, items } of results) {
-    console.log('\n【获取 ' + tag + '】');
+  for (const { subCategory, items } of results) {
+    console.log('\n【获取 ' + subCategory + '】');
     for (const item of items) {
       if (!seenIds.has(item.id)) {
         seenIds.add(item.id);
-        allItems.push({ ...item, subCategory: tag });
+        allItems.push({ ...item, subCategory });
       }
     }
   }
