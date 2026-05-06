@@ -190,13 +190,13 @@ async function main() {
   console.log(`已验证 (关键词命中): ${alreadyValid.length} 部`);
 
   if (needValidate.length > 0) {
-    console.log(`\n--- Keywords 验证 ---`);
-    let kept = 0, removed = 0, uncertain = 0;
+    console.log(`\n--- Keywords 验证 (必须确认有情色关键词才保留) ---`);
+    let kept = 0, removed = 0, noKeyword = 0;
 
     for (let i = 0; i < needValidate.length; i++) {
       const m = needValidate[i];
       if ((i + 1) % 50 === 0) {
-        console.log(`  progress: ${i + 1}/${needValidate.length} (kept:${kept} removed:${removed} uncertain:${uncertain})`);
+        console.log(`  progress: ${i + 1}/${needValidate.length} (kept:${kept} removed:${removed} noKeyword:${noKeyword})`);
       }
 
       const isErotic = await validateMovieKeywords(m.tmdbId, m.title);
@@ -208,18 +208,12 @@ async function main() {
         allMovies.delete(String(m.tmdbId));
         removed++;
       } else {
-        const genreCheck = await validateMovieGenres(m.tmdbId);
-        if (genreCheck === false) {
-          allMovies.delete(String(m.tmdbId));
-          removed++;
-        } else {
-          m.needValidate = false;
-          uncertain++;
-        }
+        allMovies.delete(String(m.tmdbId));
+        noKeyword++;
       }
     }
 
-    console.log(`\n  验证结果: kept=${kept} removed=${removed} uncertain=${uncertain}`);
+    console.log(`\n  验证结果: kept=${kept} removed=${removed} noKeyword=${noKeyword}`);
   }
 
   const list = [...allMovies.values()].sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0));
@@ -240,9 +234,36 @@ async function main() {
   fs.writeFileSync(OUTPUT_RAW, JSON.stringify(list, null, 2), 'utf8');
   console.log(`\nSaved to: ${OUTPUT_RAW}`);
 
-  console.log(`\n--- 合并到 data.json ---`);
+  console.log(`\n--- 清理 data.json 中已有的非情色 TMDB 条目 ---`);
   const data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
   const movies = data.genreIndex['情色'].movie || [];
+
+  const rawMap = new Map();
+  for (const m of list) {
+    rawMap.set(String(m.tmdbId), m);
+  }
+
+  let cleaned = 0;
+  for (let i = movies.length - 1; i >= 0; i--) {
+    const m = movies[i];
+    if (!m.doubanId || !m.doubanId.startsWith('tmdb_')) continue;
+    const tmdbId = m.doubanId.replace('tmdb_', '');
+    if (rawMap.has(tmdbId)) continue;
+    if (isNonEroticTitle(m.title)) {
+      console.log(`  [清理-标题黑名单] ${m.title} (${m.doubanId})`);
+      movies.splice(i, 1);
+      cleaned++;
+      continue;
+    }
+    if ((m.genres || []).length === 0 && (m.abstract || '').length < 20) {
+      console.log(`  [清理-无详情] ${m.title} (${m.doubanId})`);
+      movies.splice(i, 1);
+      cleaned++;
+    }
+  }
+  console.log(`  清理: ${cleaned} 部无详情/黑名单条目`);
+
+  data.genreIndex['情色'].movie = movies;
   const existingIds = new Set(movies.map(m => String(m.doubanId)));
   const existingTitles = new Set(movies.map(m => (m.title + '_' + m.year).toLowerCase().replace(/[\s·:：！!？?]/g, '')));
 
