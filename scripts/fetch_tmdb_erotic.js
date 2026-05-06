@@ -14,7 +14,6 @@ const SOURCES = [
   { name: 'KR-19', params: 'certification_country=KR&certification=19&with_original_language=ko', needValidate: true },
   { name: 'KR-erotic', params: 'with_keywords=256466|155477&with_original_language=ko', needValidate: false },
   { name: 'KR-seduction', params: 'with_keywords=195089&with_original_language=ko', needValidate: false },
-  { name: 'KR-affair', params: 'with_keywords=9826&with_original_language=ko', needValidate: true },
   { name: 'JP-R18+', params: 'certification_country=JP&certification=R18%2B&with_original_language=ja&with_release_type=3&without_genres=16', needValidate: true },
   { name: 'PH-R18', params: 'certification_country=PH&certification=R-18&with_original_language=tl', needValidate: false },
   { name: 'TH-18', params: 'certification_country=TH&certification=18&with_original_language=th', needValidate: false },
@@ -22,16 +21,11 @@ const SOURCES = [
 ];
 
 const EROTIC_KEYWORD_IDS = new Set([
-  256466, 155477, 195089, 9826, 41260,
-  33743, 210659, 210658, 195114,
-  206397, 239546, 242074, 247099,
-  1612, 33832, 156136,
+  256466, 155477, 195089, 41260,
 ]);
 const EROTIC_KEYWORD_NAMES = [
-  'erotic', 'softcore', 'seduction', 'extramarital affair', 'sex comedy',
-  'sex', 'nudity', 'sexual', 'sensual', 'passion', 'desire',
-  'erotica', 'love affair', 'adultery', 'affair', 'taboo',
-  '情色', '色情', '诱惑', '不伦', '情欲',
+  'erotic', 'softcore', 'seduction', 'erotica',
+  '情色', '色情', '诱惑',
 ];
 
 const NON_EROTIC_GENRE_IDS = new Set([16, 99, 10751, 10402]);
@@ -43,7 +37,10 @@ const NON_EROTIC_TITLES = [
   '空之境界', '来自深渊', '游戏人生',
   '地狱骑士', '德伯力克', '辣妞征集',
   '安娜的迷宫', '比基尼复仇者', '黑骚特警组',
-  '小勇者们',
+  '小勇者们', '哭声', '燃烧', '母亲',
+  '追击者', '孤胆特工', '恶人传', '记忆之夜',
+  '熔炉', '黄海', '甜蜜的人生', '走到尽头',
+  '看见恶魔', '荒野', '恶女',
 ];
 
 function tmdbGet(urlPath) {
@@ -162,7 +159,7 @@ async function main() {
   console.log('TMDB 情色片批量抓取 + keywords 验证');
   console.log('========================================');
 
-  const VALIDATE_SOURCES = new Set(['KR-19', 'JP-R18+', 'GLOBAL-softcore', 'KR-affair']);
+  const VALIDATE_SOURCES = new Set(['KR-19', 'JP-R18+', 'GLOBAL-softcore']);
 
   let allMovies = new Map();
 
