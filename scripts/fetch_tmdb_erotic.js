@@ -8,16 +8,42 @@ const DATA_PATH = path.join(__dirname, '..', 'data.json');
 const MIN_YEAR = 2005;
 const MAX_PAGES = 5;
 const PAGE_DELAY = 300;
+const KEYWORD_DELAY = 250;
 
 const SOURCES = [
-  { name: 'KR-19', params: 'certification_country=KR&certification=19&with_original_language=ko' },
-  { name: 'KR-erotic', params: 'with_keywords=256466|155477&with_original_language=ko' },
-  { name: 'KR-seduction', params: 'with_keywords=195089&with_original_language=ko' },
-  { name: 'KR-affair', params: 'with_keywords=9826&with_original_language=ko' },
-  { name: 'JP-R18+', params: 'certification_country=JP&certification=R18%2B&with_original_language=ja&with_release_type=3&without_genres=16' },
-  { name: 'PH-R18', params: 'certification_country=PH&certification=R-18&with_original_language=tl' },
-  { name: 'TH-18', params: 'certification_country=TH&certification=18&with_original_language=th' },
-  { name: 'GLOBAL-erotic', params: 'with_keywords=256466&vote_count.gte=20' },
+  { name: 'KR-19', params: 'certification_country=KR&certification=19&with_original_language=ko', needValidate: true },
+  { name: 'KR-erotic', params: 'with_keywords=256466|155477&with_original_language=ko', needValidate: false },
+  { name: 'KR-seduction', params: 'with_keywords=195089&with_original_language=ko', needValidate: false },
+  { name: 'KR-affair', params: 'with_keywords=9826&with_original_language=ko', needValidate: false },
+  { name: 'JP-R18+', params: 'certification_country=JP&certification=R18%2B&with_original_language=ja&with_release_type=3&without_genres=16', needValidate: true },
+  { name: 'PH-R18', params: 'certification_country=PH&certification=R-18&with_original_language=tl', needValidate: false },
+  { name: 'TH-18', params: 'certification_country=TH&certification=18&with_original_language=th', needValidate: false },
+  { name: 'GLOBAL-erotic', params: 'with_keywords=256466&vote_count.gte=20', needValidate: false },
+];
+
+const EROTIC_KEYWORD_IDS = new Set([
+  256466, 155477, 195089, 9826, 41260,
+  33743, 210659, 210658, 195114,
+  206397, 239546, 242074, 247099,
+  1612, 33832, 156136,
+]);
+const EROTIC_KEYWORD_NAMES = [
+  'erotic', 'softcore', 'seduction', 'extramarital affair', 'sex comedy',
+  'sex', 'nudity', 'sexual', 'sensual', 'passion', 'desire',
+  'erotica', 'love affair', 'adultery', 'affair', 'taboo',
+  '情色', '色情', '诱惑', '不伦', '情欲',
+];
+
+const NON_EROTIC_GENRE_IDS = new Set([16, 99, 10751, 10402]);
+
+const NON_EROTIC_TITLES = [
+  '啊，荒野', '啊荒野', 'あゝ、荒野', 'ああ荒野', '荒野 前篇', '荒野 后篇',
+  '驾驶我的车', '鬼城杀', '骨及所有', '骸骨及一切',
+  '麻辣教师GTO', '日本食人鲨', '四墓惊魂',
+  '空之境界', '来自深渊', '游戏人生',
+  '地狱骑士', '德伯力克', '辣妞征集',
+  '安娜的迷宫', '比基尼复仇者', '黑骚特警组',
+  '小勇者们',
 ];
 
 function tmdbGet(urlPath) {
@@ -31,6 +57,48 @@ function tmdbGet(urlPath) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function isNonEroticTitle(title) {
+  if (!title) return false;
+  const t = title.replace(/[\s,，·:：！!？?。、]/g, '');
+  return NON_EROTIC_TITLES.some(k => t.includes(k.replace(/[\s,，·:：！!？?。、]/g, '')));
+}
+
+function hasEroticKeyword(keywordList) {
+  if (!keywordList || keywordList.length === 0) return false;
+  for (const kw of keywordList) {
+    if (EROTIC_KEYWORD_IDS.has(kw.id)) return true;
+    const name = (kw.name || '').toLowerCase();
+    if (EROTIC_KEYWORD_NAMES.some(ek => name.includes(ek))) return true;
+  }
+  return false;
+}
+
+async function validateMovieKeywords(tmdbId, title) {
+  try {
+    const data = await tmdbGet(`/movie/${tmdbId}/keywords?api_key=${TMDB_KEY}`);
+    await sleep(KEYWORD_DELAY);
+    if (data.keywords && data.keywords.length > 0) {
+      return hasEroticKeyword(data.keywords);
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function validateMovieGenres(tmdbId) {
+  try {
+    const data = await tmdbGet(`/movie/${tmdbId}?api_key=${TMDB_KEY}&language=zh-CN`);
+    await sleep(KEYWORD_DELAY);
+    if (!data || !data.genres) return null;
+    const genreIds = data.genres.map(g => g.id);
+    if (genreIds.some(id => NON_EROTIC_GENRE_IDS.has(id))) return false;
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
 
 async function fetchSource(src, allMovies) {
   console.log(`\n[${src.name}]`);
@@ -61,6 +129,7 @@ async function fetchSource(src, allMovies) {
         year = parseInt(m.release_date.substring(0, 4));
       }
       if (year < MIN_YEAR) continue;
+      if (isNonEroticTitle(m.title || m.original_title)) continue;
 
       allMovies.set(id, {
         tmdbId: m.id,
@@ -73,6 +142,7 @@ async function fetchSource(src, allMovies) {
         poster: m.poster_path ? `https://image.tmdb.org/t/p/w300${m.poster_path}` : '',
         overview: m.overview || '',
         source: src.name,
+        needValidate: src.needValidate,
       });
       pageCount++;
       sourceCount++;
@@ -89,7 +159,7 @@ async function fetchSource(src, allMovies) {
 
 async function main() {
   console.log('========================================');
-  console.log('TMDB 情色片批量抓取（Node.js 版）');
+  console.log('TMDB 情色片批量抓取 + keywords 验证');
   console.log('========================================');
 
   let allMovies = new Map();
@@ -98,6 +168,7 @@ async function main() {
     try {
       const existing = JSON.parse(fs.readFileSync(OUTPUT_RAW, 'utf8').replace(/^\uFEFF/, ''));
       for (const m of existing) {
+        m.needValidate = false;
         allMovies.set(String(m.tmdbId), m);
       }
       console.log(`已加载 ${allMovies.size} 条已有数据`);
@@ -110,13 +181,58 @@ async function main() {
     await fetchSource(src, allMovies);
   }
 
-  const list = [...allMovies.values()].sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0));
+  const needValidate = [...allMovies.values()].filter(m => m.needValidate);
+  const alreadyValid = [...allMovies.values()].filter(m => !m.needValidate);
 
   console.log(`\n========================================`);
-  console.log(`TMDB total: ${list.length} movies (>= ${MIN_YEAR})`);
+  console.log(`原始抓取: ${allMovies.size} 部`);
+  console.log(`需验证 (KR-19/JP-R18+): ${needValidate.length} 部`);
+  console.log(`已验证 (关键词命中): ${alreadyValid.length} 部`);
 
-  console.log(`\nTop 15:`);
-  for (let i = 0; i < Math.min(15, list.length); i++) {
+  if (needValidate.length > 0) {
+    console.log(`\n--- Keywords 验证 ---`);
+    let kept = 0, removed = 0, uncertain = 0;
+
+    for (let i = 0; i < needValidate.length; i++) {
+      const m = needValidate[i];
+      if ((i + 1) % 50 === 0) {
+        console.log(`  progress: ${i + 1}/${needValidate.length} (kept:${kept} removed:${removed} uncertain:${uncertain})`);
+      }
+
+      const isErotic = await validateMovieKeywords(m.tmdbId, m.title);
+
+      if (isErotic === true) {
+        m.needValidate = false;
+        kept++;
+      } else if (isErotic === false) {
+        allMovies.delete(String(m.tmdbId));
+        removed++;
+      } else {
+        const genreCheck = await validateMovieGenres(m.tmdbId);
+        if (genreCheck === false) {
+          allMovies.delete(String(m.tmdbId));
+          removed++;
+        } else {
+          m.needValidate = false;
+          uncertain++;
+        }
+      }
+    }
+
+    console.log(`\n  验证结果: kept=${kept} removed=${removed} uncertain=${uncertain}`);
+  }
+
+  const list = [...allMovies.values()].sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0));
+
+  for (const m of list) {
+    delete m.needValidate;
+  }
+
+  console.log(`\n========================================`);
+  console.log(`验证后保留: ${list.length} 部`);
+
+  console.log(`\nTop 20:`);
+  for (let i = 0; i < Math.min(20, list.length); i++) {
     const m = list[i];
     console.log(`  ${i + 1}. ${m.title} (${m.year}) ${m.language} r=${m.rating} v=${m.voteCount} [${m.source}]`);
   }
@@ -129,22 +245,6 @@ async function main() {
   const movies = data.genreIndex['情色'].movie || [];
   const existingIds = new Set(movies.map(m => String(m.doubanId)));
   const existingTitles = new Set(movies.map(m => (m.title + '_' + m.year).toLowerCase().replace(/[\s·:：！!？?]/g, '')));
-
-  const NON_EROTIC_TITLES = [
-    '啊，荒野', '啊荒野', 'あゝ、荒野', 'ああ荒野', '荒野 前篇', '荒野 后篇',
-    '驾驶我的车', '鬼城杀', '骨及所有', '骸骨及一切',
-    '麻辣教师GTO', '日本食人鲨', '四墓惊魂',
-    '空之境界', '来自深渊', '游戏人生',
-    '地狱骑士', '德伯力克', '辣妞征集',
-    '安娜的迷宫', '比基尼复仇者', '黑骚特警组',
-    '小勇者们',
-  ];
-
-  function isNonEroticTitle(title) {
-    if (!title) return false;
-    const t = title.replace(/[\s,，·:：！!？?。、]/g, '');
-    return NON_EROTIC_TITLES.some(k => t.includes(k.replace(/[\s,，·:：！!？?。、]/g, '')));
-  }
 
   let added = 0, dupId = 0, dupTitle = 0, blocked = 0;
 
