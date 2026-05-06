@@ -14,7 +14,7 @@ const SOURCES = [
   { name: 'KR-19', params: 'certification_country=KR&certification=19&with_original_language=ko', needValidate: true },
   { name: 'KR-erotic', params: 'with_keywords=256466|155477&with_original_language=ko', needValidate: false },
   { name: 'KR-seduction', params: 'with_keywords=195089&with_original_language=ko', needValidate: false },
-  { name: 'KR-affair', params: 'with_keywords=9826&with_original_language=ko', needValidate: false },
+  { name: 'KR-affair', params: 'with_keywords=9826&with_original_language=ko', needValidate: true },
   { name: 'JP-R18+', params: 'certification_country=JP&certification=R18%2B&with_original_language=ja&with_release_type=3&without_genres=16', needValidate: true },
   { name: 'PH-R18', params: 'certification_country=PH&certification=R-18&with_original_language=tl', needValidate: false },
   { name: 'TH-18', params: 'certification_country=TH&certification=18&with_original_language=th', needValidate: false },
@@ -162,13 +162,15 @@ async function main() {
   console.log('TMDB 情色片批量抓取 + keywords 验证');
   console.log('========================================');
 
+  const VALIDATE_SOURCES = new Set(['KR-19', 'JP-R18+', 'GLOBAL-softcore', 'KR-affair']);
+
   let allMovies = new Map();
 
   if (fs.existsSync(OUTPUT_RAW)) {
     try {
       const existing = JSON.parse(fs.readFileSync(OUTPUT_RAW, 'utf8').replace(/^\uFEFF/, ''));
       for (const m of existing) {
-        m.needValidate = false;
+        m.needValidate = VALIDATE_SOURCES.has(m.source);
         allMovies.set(String(m.tmdbId), m);
       }
       console.log(`已加载 ${allMovies.size} 条已有数据`);
