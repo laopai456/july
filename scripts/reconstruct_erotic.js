@@ -28,6 +28,7 @@ const FORCE_REMOVE_TITLES = [
   '追击者', '孤胆特工', '恶人传', '记忆之夜',
   '熔炉', '黄海', '甜蜜的人生', '走到尽头',
   '看见恶魔', '荒野', '恶女', '无可奈何',
+  '驭险迷情',
 ];
 
 function isForceRemove(title) {

@@ -147,7 +147,7 @@ Page({
         return
       }
 
-      const processed = this.processGenreResult(result)
+      const processed = this.processGenreResult(result, cacheKey)
       this._genreDataCache[cacheKey] = processed
       this.applySectionData()
       this.fullLoad(cacheKey)
@@ -165,7 +165,7 @@ Page({
       const result = await this.callDataService('getGenre', { name: cacheKey })
       if (!result || this._fullLoadPending !== cacheKey) return
 
-      const processed = this.processGenreResult(result)
+      const processed = this.processGenreResult(result, cacheKey)
 
       const quickData = this._genreDataCache[cacheKey]
       const { currentSection } = this.data
@@ -187,7 +187,8 @@ Page({
     }
   },
 
-  processGenreResult(result) {
+  processGenreResult(result, cacheKey) {
+    const isHidden = cacheKey === HIDDEN_API_KEY
     const processSection = (items, type) => {
       if (!items) return []
       const seen = new Set()
@@ -208,9 +209,9 @@ Page({
         year: item.year || '',
         region: item.region || '',
         description: item.summary || item.abstract || '',
-        cast: item.casts || [],
-        castDisplay: (item.casts || []).slice(0, 3).join(' / '),
-        director: (item.directors || [])[0] || '',
+        cast: isHidden ? [] : (item.casts || []),
+        castDisplay: isHidden ? '' : (item.casts || []).slice(0, 3).join(' / '),
+        director: isHidden ? '' : (item.directors || [])[0] || '',
         hotScore: item.hotScore || 0,
         rank: index + 1
       })).sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
