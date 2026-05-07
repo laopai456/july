@@ -193,6 +193,35 @@ async function main() {
     console.log(`  ${i + 1}. ${m.title} (${m.year}) ${m.region || '?'} r=${m.rate} [${confirmed_by}]`);
   }
 
+  const noCover = final.filter(m => !m.cover || m.cover.trim() === '');
+  console.log(`\n空封面: ${noCover.length} 部`);
+  for (const m of noCover) {
+    console.log(`  - ${m.title} (${m.year}) ${m.doubanId}`);
+  }
+
+  if (noCover.length > 0) {
+    console.log(`\n--- 第3轮：补全空封面 (TMDB搜索) ---`);
+    let fixed = 0;
+    for (const m of noCover) {
+      try {
+        const query = m.title;
+        const urlPath = `/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=zh-CN&include_adult=true${m.year ? '&primary_release_year=' + m.year : ''}`;
+        const result = await tmdbGet(urlPath);
+        await sleep(300);
+        if (result && result.results && result.results.length > 0 && result.results[0].poster_path) {
+          m.cover = `https://image.tmdb.org/t/p/w500${result.results[0].poster_path}`;
+          fixed++;
+          console.log(`  [补全] ${m.title} -> ${result.results[0].poster_path}`);
+        } else {
+          console.log(`  [未找到] ${m.title}`);
+        }
+      } catch (e) {
+        console.log(`  [错误] ${m.title}: ${e.message}`);
+      }
+    }
+    console.log(`  封面补全: ${fixed}/${noCover.length}`);
+  }
+
   data.genreIndex['情色'].movie = final;
   fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
 
