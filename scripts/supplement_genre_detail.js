@@ -4,8 +4,8 @@ const path = require('path');
 
 const DATA_PATH = path.join(__dirname, '..', 'data.json');
 
-const EROTIC_GENRES = ['情色', '伦理', '成人', '同性', '情色片', '伦理片'];
-const CLEAR_GENRES = ['动画', '纪录片', '儿童', '家庭', '戏曲'];
+const EROTIC_GENRES = ['情色', '伦理', '成人', '情色片', '伦理片'];
+const CLEAR_GENRES = ['动画', '纪录片', '儿童', '家庭', '戏曲', '同性'];
 const NON_EROTIC_IDS = [
   '35345859', '37163391', '10535457', '1892161',
   '27030639', '27030636',

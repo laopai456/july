@@ -24,7 +24,7 @@ const EROTIC_TYPES = [
   '情色', '成人', '两性课堂', '福利', '深夜',
 ];
 
-const BLOCKED_WORDS = ['动画', '综艺', '纪录片', '短片', '预告', '花絮', '预告片', '特辑', '番外'];
+const BLOCKED_WORDS = ['动画', '综艺', '纪录片', '短片', '预告', '花絮', '预告片', '特辑', '番外', '同性'];
 
 function normalizeTitle(t) {
   return (t || '').replace(/[\s·\-:：.。！!？?《》【】]/g, '').replace(/（.*?）/g, '').replace(/\(.*?\)/g, '');

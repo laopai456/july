@@ -5,7 +5,7 @@ const data = require('../data.json');
 const all = [...(data.genreIndex['情色'].movie || []), ...(data.genreIndex['情色'].drama || [])];
 
 const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
-const EROTIC_GENRES = ['情色', '伦理', '成人', '同性'];
+const EROTIC_GENRES = ['情色', '伦理', '成人'];
 const CAI_EROTIC_GENRES = ['伦理片', '韩国伦理', '日本伦理', '西方伦理', '港台三级', '伦理', '两性课堂', '情色', '成人'];
 const JP_KR_REGIONS = ['韩国', '日本', '南韩'];
 const FORCE_KEEP_TITLES = ['白日焰火', '色戒', '玩物', '上流社会'];
@@ -18,6 +18,8 @@ const STRICT_THRESHOLD = 100;
 
 function isForceRemove(t) { if(!t)return false; const s=t.replace(/[\s,，·:：！!？?。、]/g,''); return FORCE_REMOVE_TITLES.some(k=>s.includes(k.replace(/[\s,，·:：！!？?。、]/g,''))); }
 function isForceKeep(t) { return FORCE_KEEP_TITLES.some(k=>t.includes(k)); }
+const ANIME_TITLES = ['秋日天空','为什么老师','拔作岛','玛琪娜','黑暗精灵','鹰峰同学','快藏起来','穿上衣服','动画','ANIMATION','驭险谜情','裙子里','仁光受难'];
+function isAnime(m) { return ANIME_TITLES.some(k => (m.title||'').includes(k)); }
 function hasCaiEroticGenre(g) { return (g||[]).some(x=>CAI_EROTIC_GENRES.includes(x)); }
 function getRegionPriority(r) { if(!r)return 2; return JP_KR_REGIONS.some(x=>r.includes(x))?0:2; }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -86,6 +88,7 @@ async function main() {
 
   for (const m of all) {
     if (isForceRemove(m.title)) continue;
+    if (isAnime(m)) continue;
     if (parseInt(m.year) < 2010 && !isForceKeep(m.title)) continue;
     if ((m.region || '').includes('中国大陆') && !isForceKeep(m.title)) continue;
     const id = m.doubanId || '';
@@ -137,9 +140,15 @@ async function main() {
     }
 
     const hasErotic = genres.some(g => EROTIC_GENRES.includes(g));
+    const hasAnimation = genres.some(g => g === '动画');
+    const hasGay = genres.some(g => g === '同性');
     verified++;
 
-    if (hasErotic) {
+    if (hasAnimation) {
+      strictRejected.push({ ...m, reason: `动画[${genres.join('/')}]`, _dbGenres: genres.join('/') });
+    } else if (hasGay) {
+      strictRejected.push({ ...m, reason: `同性[${genres.join('/')}]`, _dbGenres: genres.join('/') });
+    } else if (hasErotic) {
       strictVerified.push({ ...m, _verified: '豆瓣确认', _dbGenres: genres.join('/') });
     } else {
       strictRejected.push({ ...m, reason: `非情色[${genres.join('/')}]`, _dbGenres: genres.join('/') });
