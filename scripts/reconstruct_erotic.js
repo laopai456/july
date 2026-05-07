@@ -19,6 +19,10 @@ const FORCE_KEEP_IDS = new Set([
   '20502443', '27168151', 'tmdb_847258',
 ]);
 
+const FORCE_KEEP_TITLES = new Set([
+  '隐藏的面孔', '痴人之爱', '东西向洞',
+]);
+
 const FORCE_REMOVE_TITLES = [
   '啊，荒野', '啊荒野', 'あゝ、荒野', 'ああ荒野', '荒野 前篇', '荒野 后篇',
   '驾驶我的车', '鬼城杀', '骨及所有', '骸骨及一切',
@@ -31,6 +35,8 @@ const FORCE_REMOVE_TITLES = [
   '熔炉', '黄海', '甜蜜的人生', '走到尽头',
   '看见恶魔', '荒野', '恶女', '无可奈何',
   '驭险迷情', '驭险谜情',
+  '裙子里面是野兽',
+  '绝杀空手道', '变性记', '海边的女孩',
 ];
 
 function isForceRemove(title) {
@@ -109,7 +115,7 @@ async function main() {
     if ((m.region || '').includes('中国大陆') && !FORCE_KEEP_IDS.has(m.doubanId)) { removed.mainland++; continue; }
     if (hasExcludedGenre(m.genres)) { removed.excludedGenre++; continue; }
 
-    if (FORCE_KEEP_IDS.has(m.doubanId)) {
+    if (FORCE_KEEP_IDS.has(m.doubanId) || FORCE_KEEP_TITLES.has(m.title)) {
       confirmed.push({ ...m, _priority: getRegionPriority(m.region), _confirmed: 'force' });
       continue;
     }

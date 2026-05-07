@@ -25,6 +25,7 @@ const NON_EROTIC_TITLES = [
   '地狱骑士', '德伯力克', '辣妞征集',
   '安娜的迷宫', '比基尼复仇者', '黑骚特警组',
   '小勇者们', '驭险迷情', '驭险谜情',
+  '裙子里面是野兽',
 ];
 
 function isNonEroticTitle(title) {

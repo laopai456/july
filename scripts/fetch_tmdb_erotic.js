@@ -42,6 +42,7 @@ const NON_EROTIC_TITLES = [
   '熔炉', '黄海', '甜蜜的人生', '走到尽头',
   '看见恶魔', '荒野', '恶女',
   '驭险迷情', '驭险谜情',
+  '裙子里面是野兽',
 ];
 
 function tmdbGet(urlPath) {
