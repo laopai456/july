@@ -16,6 +16,7 @@ const JP_KR_REGIONS = ['韩国', '日本', '南韩', '北韩'];
 
 const FORCE_KEEP_IDS = new Set([
   '1294372', '1296148',
+  '20502443', '27168151',
 ]);
 
 const FORCE_REMOVE_TITLES = [
