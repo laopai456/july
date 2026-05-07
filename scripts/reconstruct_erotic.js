@@ -222,28 +222,49 @@ async function main() {
   const caiInTop = topDisplay.filter(m => m._confirmed === 'cai' && !FORCE_KEEP_TITLES.has(m.title));
 
   if (caiInTop.length > 0) {
-    console.log(`\n--- 第2.5轮：豆瓣验证 Top ${DISPLAY_COUNT} 中的 cai_ 条目 (${caiInTop.length}部) ---`);
+    console.log(`\n--- 第2.5轮：豆瓣+TMDB验证 Top ${DISPLAY_COUNT} 中的 cai_ 条目 (${caiInTop.length}部) ---`);
     let verified = 0, rejected = 0, notFound = 0;
     const rejectedIds = new Set();
+
+    const NON_EROTIC_GENRE_IDS = new Set([16, 99, 10751, 10402]);
+    const EROTIC_GENRE_IDS = new Set();
 
     for (let i = 0; i < caiInTop.length; i++) {
       const m = caiInTop[i];
       process.stdout.write(`  [${i + 1}/${caiInTop.length}] ${m.title} (${m.year}) -> `);
 
+      let genres = null;
+      let source = '';
+
       const search = await searchDoubanId(m.title, m.year);
       await sleep(1200);
 
-      if (!search || !search.id) {
-        console.log(`豆瓣未搜到，保留`);
-        notFound++;
-        continue;
+      if (search && search.id) {
+        genres = await getDoubanGenres(search.id);
+        await sleep(1200);
+        if (genres) source = '豆瓣';
       }
 
-      const genres = await getDoubanGenres(search.id);
-      await sleep(1200);
+      if (!genres) {
+        try {
+          const urlPath = `/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(m.title)}&language=zh-CN&include_adult=true${m.year ? '&primary_release_year=' + m.year : ''}`;
+          const result = await tmdbGet(urlPath);
+          await sleep(300);
+          if (result && result.results && result.results.length > 0) {
+            const genreIds = result.results[0].genre_ids || [];
+            const genreMap = { 16: '动画', 18: '剧情', 27: '恐怖', 28: '动作', 35: '喜剧', 36: '历史', 37: '西部', 53: '悬疑', 80: '犯罪', 99: '纪录片', 878: '科幻', 9648: '悬疑', 10402: '音乐', 10749: '爱情', 10751: '家庭', 10752: '战争' };
+            genres = genreIds.map(id => genreMap[id] || `genre_${id}`);
+            source = 'TMDB';
+
+            const hasEroticTmdb = genreIds.some(id => EROTIC_GENRE_IDS.has(id));
+            const hasNonEroticTmdb = genreIds.some(id => NON_EROTIC_GENRE_IDS.has(id));
+            if (!hasEroticTmdb && !hasNonEroticTmdb && genres.length === 0) genres = null;
+          }
+        } catch (e) { /* ignore */ }
+      }
 
       if (!genres) {
-        console.log(`无法获取genres，保留`);
+        console.log(`两源均未搜到，保留`);
         notFound++;
         continue;
       }
@@ -252,14 +273,14 @@ async function main() {
       const hasExclude = genres.some(g => EXCLUDED_GENRES.includes(g));
 
       if (hasExclude) {
-        console.log(`❌ 排除类型 [${genres.join('/')}]`);
+        console.log(`❌ 排除类型 [${genres.join('/')}] (${source})`);
         rejectedIds.add(m.doubanId);
         rejected++;
       } else if (hasErotic) {
-        console.log(`✅ 确认 [${genres.join('/')}]`);
+        console.log(`✅ 确认 [${genres.join('/')}] (${source})`);
         verified++;
       } else {
-        console.log(`❌ 非情色 [${genres.join('/')}]`);
+        console.log(`❌ 非情色 [${genres.join('/')}] (${source})`);
         rejectedIds.add(m.doubanId);
         rejected++;
       }
