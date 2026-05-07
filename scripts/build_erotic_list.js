@@ -18,7 +18,7 @@ const STRICT_THRESHOLD = 100;
 
 function isForceRemove(t) { if(!t)return false; const s=t.replace(/[\s,，·:：！!？?。、]/g,''); return FORCE_REMOVE_TITLES.some(k=>s.includes(k.replace(/[\s,，·:：！!？?。、]/g,''))); }
 function isForceKeep(t) { return FORCE_KEEP_TITLES.some(k=>t.includes(k)); }
-const ANIME_TITLES = ['秋日天空','为什么老师','拔作岛','玛琪娜','黑暗精灵','鹰峰同学','快藏起来','穿上衣服','动画','ANIMATION','驭险迷情','裙子里','仁光受难'];
+const ANIME_TITLES = ['秋日天空','为什么老师','拔作岛','玛琪娜','黑暗精灵','鹰峰同学','快藏起来','穿上衣服','动画','ANIMATION','驭险迷情','驭险谜情','裙子里','仁光受难'];
 function isAnime(m) { return ANIME_TITLES.some(k => (m.title||'').includes(k)); }
 function hasCaiEroticGenre(g) { return (g||[]).some(x=>CAI_EROTIC_GENRES.includes(x)); }
 function getRegionPriority(r) { if(!r)return 2; return JP_KR_REGIONS.some(x=>r.includes(x))?0:2; }
