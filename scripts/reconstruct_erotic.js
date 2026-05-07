@@ -40,6 +40,7 @@ const FORCE_REMOVE_TITLES = [
   '驭险迷情', '驭险谜情',
   '裙子里面是野兽',
   '绝杀空手道', '变性记', '海边的女孩',
+  '空中的眼睛和蜗牛', '我们2017',
 ];
 
 function isForceRemove(title) {
