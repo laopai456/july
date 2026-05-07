@@ -11,6 +11,7 @@ const EROTIC_KEYWORD_IDS = new Set([256466, 155477, 195089, 41260]);
 const EROTIC_KEYWORD_NAMES = ['erotic', 'softcore', 'seduction', 'erotica'];
 const EROTIC_GENRES = ['情色', '伦理', '成人', '情色片', '伦理片'];
 const EXCLUDED_GENRES = ['动画', '同性'];
+const BLOCKED_KEYWORDS = ['动画', 'ANIMATION', '动漫', '同性'];
 const JP_KR_REGIONS = ['韩国', '日本', '南韩', '北韩'];
 
 const FORCE_KEEP_IDS = new Set([
@@ -57,6 +58,12 @@ function hasExcludedGenre(genres) {
   return (genres || []).some(g => EXCLUDED_GENRES.includes(g));
 }
 
+function hasBlockedKeyword(title) {
+  if (!title) return false;
+  const t = title.toUpperCase();
+  return BLOCKED_KEYWORDS.some(k => t.includes(k.toUpperCase()));
+}
+
 async function hasEroticKeyword(tmdbId) {
   try {
     const data = await tmdbGet(`/movie/${tmdbId}/keywords?api_key=${TMDB_KEY}`);
@@ -92,10 +99,11 @@ async function main() {
 
   const confirmed = [];
   const needValidate = [];
-  const removed = { year: 0, titleBlacklist: 0, mainland: 0, noGenre: 0, excludedGenre: 0 };
+  const removed = { year: 0, titleBlacklist: 0, mainland: 0, noGenre: 0, excludedGenre: 0, blockedKeyword: 0 };
 
   for (const m of movies) {
     if (isForceRemove(m.title)) { removed.titleBlacklist++; continue; }
+    if (hasBlockedKeyword(m.title)) { removed.blockedKeyword++; continue; }
     if (parseInt(m.year) < MIN_YEAR && !FORCE_KEEP_IDS.has(m.doubanId)) { removed.year++; continue; }
     if ((m.region || '').includes('中国大陆') && !FORCE_KEEP_IDS.has(m.doubanId)) { removed.mainland++; continue; }
     if (hasExcludedGenre(m.genres)) { removed.excludedGenre++; continue; }
@@ -127,7 +135,7 @@ async function main() {
   console.log(`  采集站(cai_): ${confirmed.filter(m => m._confirmed === 'cai').length}`);
   console.log(`  强制保留: ${confirmed.filter(m => m._confirmed === 'force').length}`);
   console.log(`  需TMDB验证: ${needValidate.length}`);
-  console.log(`  移除: 年份=${removed.year} 黑名单=${removed.titleBlacklist} 大陆=${removed.mainland} 排除类型=${removed.excludedGenre} 无标签=${removed.noGenre}`);
+  console.log(`  移除: 年份=${removed.year} 黑名单=${removed.titleBlacklist} 关键词=${removed.blockedKeyword} 大陆=${removed.mainland} 排除类型=${removed.excludedGenre} 无标签=${removed.noGenre}`);
 
   if (needValidate.length > 0) {
     console.log(`\n--- 第2轮：TMDB keywords 验证 ---`);
