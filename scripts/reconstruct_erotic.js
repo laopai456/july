@@ -218,16 +218,21 @@ async function main() {
     return { ...rest, _confirmed };
   });
 
-  const topDisplay = final.slice(0, DISPLAY_COUNT);
-  const caiInTop = topDisplay.filter(m => m._confirmed === 'cai' && !FORCE_KEEP_TITLES.has(m.title));
+  let verifyRound = 0;
+  const allRejectedIds = new Set();
+  const NON_EROTIC_GENRE_IDS = new Set([16, 99, 10751, 10402]);
+  const EROTIC_GENRE_IDS = new Set();
 
-  if (caiInTop.length > 0) {
-    console.log(`\n--- 第2.5轮：豆瓣+TMDB验证 Top ${DISPLAY_COUNT} 中的 cai_ 条目 (${caiInTop.length}部) ---`);
+  while (true) {
+    const topDisplay = final.slice(0, DISPLAY_COUNT);
+    const caiInTop = topDisplay.filter(m => m._confirmed === 'cai' && !FORCE_KEEP_TITLES.has(m.title));
+
+    if (caiInTop.length === 0) break;
+
+    verifyRound++;
+    console.log(`\n--- 第2.5轮 (第${verifyRound}遍)：豆瓣+TMDB验证 Top ${DISPLAY_COUNT} 中的 cai_ 条目 (${caiInTop.length}部) ---`);
     let verified = 0, rejected = 0, notFound = 0;
     const rejectedIds = new Set();
-
-    const NON_EROTIC_GENRE_IDS = new Set([16, 99, 10751, 10402]);
-    const EROTIC_GENRE_IDS = new Set();
 
     for (let i = 0; i < caiInTop.length; i++) {
       const m = caiInTop[i];
@@ -287,21 +292,21 @@ async function main() {
     }
 
     if (rejectedIds.size > 0) {
+      for (const id of rejectedIds) allRejectedIds.add(id);
       const before = final.length;
       for (let i = final.length - 1; i >= 0; i--) {
         if (rejectedIds.has(final[i].doubanId)) final.splice(i, 1);
       }
-      console.log(`  移除 ${rejectedIds.size} 部非情色条目，${before} -> ${final.length}`);
-      while (final.length < MAX_ITEMS && confirmed.length > final.length) {
-        const next = confirmed[final.length];
-        if (next && !rejectedIds.has(next.doubanId)) {
-          const { _priority, _confirmed, ...rest } = next;
-          final.push(rest);
-        } else break;
-      }
+      console.log(`  移除 ${rejectedIds.size} 部，${before} -> ${final.length}`);
     }
 
-    console.log(`  验证结果: 确认=${verified} 移除=${rejected} 未搜到=${notFound}`);
+    console.log(`  第${verifyRound}遍结果: 确认=${verified} 移除=${rejected} 未搜到=${notFound}`);
+
+    if (rejected === 0) break;
+  }
+
+  if (verifyRound > 0) {
+    console.log(`\n  验证完成: 共${verifyRound}遍，累计移除 ${allRejectedIds.size} 部非情色条目`);
   }
 
   const stats = {
