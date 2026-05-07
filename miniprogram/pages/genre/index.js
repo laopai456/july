@@ -8,6 +8,7 @@ const CACHE_KEY = 'genre_cache'
 const CACHE_EXPIRE = 30 * 60 * 1000
 const QUICK_LOAD_COUNT = 50
 const DISPLAY_COUNT = 50
+const HIDDEN_BLOCKED_KEYWORDS = ['动画', 'ANIMATION', '动漫', '同性']
 
 let _isDevEnv = null
 function isDevEnv() {
@@ -196,6 +197,10 @@ Page({
       for (const item of items) {
         const id = item.doubanId || item.id
         if (!id || seen.has(id)) continue
+        if (isHidden) {
+          const title = (item.title || '').toUpperCase()
+          if (HIDDEN_BLOCKED_KEYWORDS.some(k => title.includes(k.toUpperCase()))) continue
+        }
         seen.add(id)
         deduped.push(item)
       }
