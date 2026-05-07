@@ -5,7 +5,10 @@ const path = require('path');
 const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
 const DATA_PATH = path.join(__dirname, '..', 'data.json');
 const MAX_ITEMS = 200;
+const DISPLAY_COUNT = 50;
 const MIN_YEAR = 2010;
+
+const COOKIE = 'bid=rmXci4zuhOM; ll="108296"; ct=y; dbcl2="294605645:jC7dIJCo830"; ck=0r2i; ap_v=0,6.0';
 
 const EROTIC_KEYWORD_IDS = new Set([256466, 155477, 195089, 41260]);
 const EROTIC_KEYWORD_NAMES = ['erotic', 'softcore', 'seduction', 'erotica'];
@@ -56,6 +59,43 @@ function tmdbGet(urlPath) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function httpGet(url, headers) {
+  return new Promise((resolve, reject) => {
+    https.get(url, { headers, timeout: 10000 }, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => resolve({ status: res.statusCode, body: d }));
+    }).on('error', reject);
+  });
+}
+
+async function searchDoubanId(title, year) {
+  const res = await httpGet(`https://movie.douban.com/j/subject_suggest?q=${encodeURIComponent(title)}`, {
+    'User-Agent': 'Mozilla/5.0', 'Referer': 'https://movie.douban.com/', 'Cookie': COOKIE
+  });
+  if (res.status !== 200) return null;
+  try {
+    const d = JSON.parse(res.body);
+    if (!Array.isArray(d) || d.length === 0) return null;
+    const norm = t => (t || '').replace(/[\s·～~：:！!？?]/g, '');
+    const byTitleAndYear = d.find(r => norm(r.title) === norm(title) && r.year === String(year));
+    if (byTitleAndYear) return byTitleAndYear;
+    const byYear = d.find(r => r.year === String(year));
+    if (byYear) return byYear;
+    return d[0];
+  } catch { return null; }
+}
+
+async function getDoubanGenres(doubanId) {
+  const res = await httpGet(`https://movie.douban.com/subject/${doubanId}/`, {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Accept': 'text/html', 'Referer': 'https://movie.douban.com/', 'Cookie': COOKIE
+  });
+  if (res.status !== 200) return null;
+  const spans = res.body.match(/<span\s+property="v:genre">([^<]*)<\/span>/g);
+  return spans ? spans.map(g => g.replace(/<[^>]*>/g, '')) : null;
+}
 
 function hasEroticGenre(genres) {
   return (genres || []).some(g => EROTIC_GENRES.includes(g));
@@ -175,8 +215,73 @@ async function main() {
 
   const final = confirmed.slice(0, MAX_ITEMS).map(m => {
     const { _priority, _confirmed, ...rest } = m;
-    return rest;
+    return { ...rest, _confirmed };
   });
+
+  const topDisplay = final.slice(0, DISPLAY_COUNT);
+  const caiInTop = topDisplay.filter(m => m._confirmed === 'cai' && !FORCE_KEEP_TITLES.has(m.title));
+
+  if (caiInTop.length > 0) {
+    console.log(`\n--- 第2.5轮：豆瓣验证 Top ${DISPLAY_COUNT} 中的 cai_ 条目 (${caiInTop.length}部) ---`);
+    let verified = 0, rejected = 0, notFound = 0;
+    const rejectedIds = new Set();
+
+    for (let i = 0; i < caiInTop.length; i++) {
+      const m = caiInTop[i];
+      process.stdout.write(`  [${i + 1}/${caiInTop.length}] ${m.title} (${m.year}) -> `);
+
+      const search = await searchDoubanId(m.title, m.year);
+      await sleep(1200);
+
+      if (!search || !search.id) {
+        console.log(`豆瓣未搜到，保留`);
+        notFound++;
+        continue;
+      }
+
+      const genres = await getDoubanGenres(search.id);
+      await sleep(1200);
+
+      if (!genres) {
+        console.log(`无法获取genres，保留`);
+        notFound++;
+        continue;
+      }
+
+      const hasErotic = genres.some(g => EROTIC_GENRES.includes(g));
+      const hasExclude = genres.some(g => EXCLUDED_GENRES.includes(g));
+
+      if (hasExclude) {
+        console.log(`❌ 排除类型 [${genres.join('/')}]`);
+        rejectedIds.add(m.doubanId);
+        rejected++;
+      } else if (hasErotic) {
+        console.log(`✅ 确认 [${genres.join('/')}]`);
+        verified++;
+      } else {
+        console.log(`❌ 非情色 [${genres.join('/')}]`);
+        rejectedIds.add(m.doubanId);
+        rejected++;
+      }
+    }
+
+    if (rejectedIds.size > 0) {
+      const before = final.length;
+      for (let i = final.length - 1; i >= 0; i--) {
+        if (rejectedIds.has(final[i].doubanId)) final.splice(i, 1);
+      }
+      console.log(`  移除 ${rejectedIds.size} 部非情色条目，${before} -> ${final.length}`);
+      while (final.length < MAX_ITEMS && confirmed.length > final.length) {
+        const next = confirmed[final.length];
+        if (next && !rejectedIds.has(next.doubanId)) {
+          const { _priority, _confirmed, ...rest } = next;
+          final.push(rest);
+        } else break;
+      }
+    }
+
+    console.log(`  验证结果: 确认=${verified} 移除=${rejected} 未搜到=${notFound}`);
+  }
 
   const stats = {
     genre: confirmed.filter(m => m._confirmed === 'genre').length,
@@ -229,7 +334,10 @@ async function main() {
     console.log(`  封面补全: ${fixed}/${noCover.length}`);
   }
 
-  data.genreIndex['情色'].movie = final;
+  data.genreIndex['情色'].movie = final.map(m => {
+    const { _confirmed, ...rest } = m;
+    return rest;
+  });
   fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
 
   console.log(`\ndata.json 已更新`);
