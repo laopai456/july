@@ -18,7 +18,6 @@ const BLOCKED_KEYWORDS = ['动画', 'ANIMATION', '动漫', '同性'];
 const JP_KR_REGIONS = ['韩国', '日本', '南韩', '北韩'];
 
 const FORCE_KEEP_IDS = new Set([
-  '1294372', '1296148',
   '20502443', '27168151', 'tmdb_847258',
   '25835285', '10487226',
 ]);

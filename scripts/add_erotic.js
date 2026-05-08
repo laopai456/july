@@ -74,8 +74,6 @@ const MOVIES = [
   { doubanId: '1292925', title: '最后的探戈', year: '1972', rate: '7.6', region: '意大利', abstract: '贝托鲁奇执导。刚丧妻的中年男子在巴黎公寓里与年轻女孩发展出一段纯粹基于肉体的匿名关系。', genres: ['剧情', '情色'] },
   { doubanId: '1294453', title: '欲孽杀人夜', year: '1986', rate: '7.2', region: '美国', abstract: '迈克尔·曼执导。FBI探员追踪连环杀手，凶手在月圆之夜作案。紧张的追凶过程中，探员自己也逐渐走向黑暗边缘。', genres: ['剧情', '犯罪', '情色'] },
   { doubanId: '26354424', title: '朴烈', year: '2017', rate: '7.0', region: '韩国', abstract: '日本殖民时期，韩国无政府主义者朴烈与日本女友在东京策划暗杀天皇的行动，两人以极端的方式抵抗帝国主义的压迫。', genres: ['剧情', '历史', '情色'] },
-  { doubanId: '1294372', title: '白日焰火', year: '2014', rate: '7.6', region: '中国大陆', abstract: '东北小城发生碎尸案，落魄警察张自力追踪嫌疑人吴志贞，在冰天雪地中，真相与情欲交织。', genres: ['剧情', '悬疑', '情色'] },
-  { doubanId: '1296148', title: '色戒', year: '2007', rate: '8.7', region: '中国大陆', abstract: '李安执导。抗战时期，岭南大学女生王佳芝被派去色诱汪伪政府特务头目易先生，在伪装的爱情与真实的情感之间走向危险的深渊。', genres: ['剧情', '爱情', '情色'] },
   { doubanId: '35752366', title: 'B级文件', year: '2022', rate: '4.8', region: '韩国', abstract: '手机维修员意外复原了财阀政客家暴儿媳的照片证据，揭露了豪门背后儿媳沦为性奴的黑暗真相。', genres: ['剧情', '惊悚', '犯罪'] },
   { doubanId: '20502443', title: '玩物', year: '2013', rate: '6.2', region: '韩国', abstract: '改编自张紫妍事件，揭露韩国娱乐圈女星被财阀和政客蹂躏的黑暗内幕，权色交易与权力性侵触目惊心。', genres: ['剧情', '犯罪'] },
   { doubanId: '27168151', title: '上流社会', year: '2018', rate: '6.2', region: '韩国', abstract: '大学教授夫妇为挤入顶层社会，妻子被财阀大佬潜规则，丈夫出轨女助理，权色交易与豪门淫乱将两人推向深渊。', genres: ['剧情', '爱情'] },
@@ -203,7 +201,7 @@ async function main() {
   qs.movie = qs.movie.filter(m => {
     if (NON_EROTIC_IDS.includes(m.doubanId)) { console.log('REMOVE (non-erotic):', m.title); return false; }
     if (isNonEroticTitle(m.title)) { console.log('REMOVE (non-erotic title):', m.title); return false; }
-    if ((m.region || '').includes('中国大陆') && !['1294372', '1296148'].includes(m.doubanId)) { console.log('REMOVE (mainland China):', m.title); return false; }
+    if ((m.region || '').includes('中国大陆')) { console.log('REMOVE (mainland China):', m.title); return false; }
     return true;
   });
 
