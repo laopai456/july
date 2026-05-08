@@ -343,22 +343,32 @@ async function main() {
     console.log(`  - ${m.title} (${m.year}) ${m.doubanId}`);
   }
 
+  const TITLE_ALIASES = {
+    '热线电话': ['Hotline', 'The Call Up'],
+    '女继承人': ['Gangnam Daughter-in-law', '강남 며느리'],
+  };
+
   if (noCover.length > 0) {
     console.log(`\n--- 第3轮：补全空封面 (TMDB搜索) ---`);
     let fixed = 0;
     for (const m of noCover) {
       try {
-        const query = m.title;
-        const urlPath = `/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=zh-CN&include_adult=true${m.year ? '&primary_release_year=' + m.year : ''}`;
-        const result = await tmdbGet(urlPath);
-        await sleep(300);
-        if (result && result.results && result.results.length > 0 && result.results[0].poster_path) {
-          m.cover = `https://image.tmdb.org/t/p/w500${result.results[0].poster_path}`;
-          fixed++;
-          console.log(`  [补全] ${m.title} -> ${result.results[0].poster_path}`);
-        } else {
-          console.log(`  [未找到] ${m.title}`);
+        const queries = [m.title];
+        if (TITLE_ALIASES[m.title]) queries.push(...TITLE_ALIASES[m.title]);
+        let found = false;
+        for (const query of queries) {
+          if (found) break;
+          const urlPath = `/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=zh-CN&include_adult=true${m.year ? '&primary_release_year=' + m.year : ''}`;
+          const result = await tmdbGet(urlPath);
+          await sleep(300);
+          if (result && result.results && result.results.length > 0 && result.results[0].poster_path) {
+            m.cover = `https://image.tmdb.org/t/p/w500${result.results[0].poster_path}`;
+            fixed++;
+            console.log(`  [补全] ${m.title} (${query}) -> ${result.results[0].poster_path}`);
+            found = true;
+          }
         }
+        if (!found) console.log(`  [未找到] ${m.title}`);
       } catch (e) {
         console.log(`  [错误] ${m.title}: ${e.message}`);
       }
