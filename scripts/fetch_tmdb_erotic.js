@@ -1,6 +1,7 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
 
 const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
 const OUTPUT_RAW = path.join(__dirname, '..', 'tmdb_raw.json');
@@ -301,7 +302,7 @@ async function main() {
   movies.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0));
   data.genreIndex['情色'].movie = movies;
 
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+  safeWriteData(data, { scriptName: 'fetch_tmdb_erotic' });
 
   console.log(`新增: ${added} | 重复ID: ${dupId} | 重复标题: ${dupTitle} | 黑名单: ${blocked}`);
   console.log(`data.json 情色总数: ${movies.length}`);

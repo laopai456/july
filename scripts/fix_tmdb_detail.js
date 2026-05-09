@@ -1,8 +1,8 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
 
-const DATA_PATH = path.join(__dirname, '..', 'data.json');
 const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
 
 const TMDB_GENRE_MAP = {
@@ -201,7 +201,7 @@ async function main() {
   movies.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0));
   data.genreIndex['情色'].movie = movies;
 
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+  safeWriteData(data, { scriptName: 'fix_tmdb_detail' });
 
   console.log(`\n========================================`);
   console.log(`结果: updated=${updated} removed=${removed} skipped=${skipped} failed=${failed}`);

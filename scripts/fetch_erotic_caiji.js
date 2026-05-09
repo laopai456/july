@@ -2,8 +2,7 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-
-const DATA_PATH = path.join(__dirname, '..', 'data.json');
+const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
 const MAX_ITEMS = 1000;
 
 const API_SOURCES = [
@@ -190,7 +189,7 @@ async function main() {
   qs.movie = qs.movie.slice(0, MAX_ITEMS);
   gi['情色'] = qs;
   data.genreIndex = gi;
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+  safeWriteData(data, { scriptName: 'fetch_erotic_caiji' });
 
   const regions = {};
   qs.movie.forEach(m => { regions[m.region || '未知'] = (regions[m.region || '未知'] || 0) + 1; });

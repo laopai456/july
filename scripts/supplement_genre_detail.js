@@ -1,8 +1,7 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-
-const DATA_PATH = path.join(__dirname, '..', 'data.json');
+const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
 
 const EROTIC_GENRES = ['情色', '伦理', '成人', '情色片', '伦理片'];
 const CLEAR_GENRES = ['动画', '纪录片', '儿童', '家庭', '戏曲', '同性'];
@@ -196,7 +195,7 @@ async function main() {
   gi['情色'] = qs;
   data.genreIndex = gi;
 
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+  safeWriteData(data, { scriptName: 'supplement_genre_detail' });
 
   console.log(`\n========================================`);
   console.log(`结果: updated=${updated} removed=${removed} skipped=${skipped} failed=${failed}`);

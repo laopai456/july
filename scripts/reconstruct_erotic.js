@@ -1,9 +1,9 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
 
 const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
-const DATA_PATH = path.join(__dirname, '..', 'data.json');
 const MAX_ITEMS = 200;
 const DISPLAY_COUNT = 50;
 const MIN_YEAR = 2010;
@@ -380,7 +380,7 @@ async function main() {
     const { _confirmed, ...rest } = m;
     return rest;
   });
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+  safeWriteData(data, { scriptName: 'reconstruct_erotic' });
 
   console.log(`\ndata.json 已更新`);
   console.log(`========================================`);

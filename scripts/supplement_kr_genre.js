@@ -1,8 +1,7 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-
-const DATA_PATH = path.join(__dirname, '..', 'data.json');
+const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
 
 function doubanGet(urlPath) {
   return new Promise((resolve, reject) => {
@@ -130,7 +129,7 @@ async function main() {
   qs.movie.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0));
   gi['情色'] = qs;
   data.genreIndex = gi;
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+  safeWriteData(data, { scriptName: 'supplement_kr_genre' });
 
   const krTotal = qs.movie.filter(i => (i.region && i.region.includes('韩国')) || i.supplement).length;
   console.log(`\nAdded ${added}, total ${qs.movie.length} movies, KR-related: ${krTotal}`);

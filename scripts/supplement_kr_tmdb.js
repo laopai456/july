@@ -1,8 +1,7 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-
-const DATA_PATH = path.join(__dirname, '..', 'data.json');
+const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
 const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
 
 const SUPPLEMENT = [
@@ -119,7 +118,7 @@ async function main() {
   qs.movie.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0));
   gi['\u60c5\u8272'] = qs;
   data.genreIndex = gi;
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+  safeWriteData(data, { scriptName: 'supplement_kr_tmdb' });
 
   const krCount = qs.movie.filter(i => i.region === '\u97e9\u56fd' || i.supplement).length;
   console.log(`\nAdded ${added}, total ${qs.movie.length} movies, KR: ${krCount}`);

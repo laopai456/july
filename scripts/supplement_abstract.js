@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-
-const DATA_PATH = path.join(__dirname, '..', 'data.json');
+const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
 const TMDB_RAW_PATH = path.join(__dirname, '..', 'tmdb_raw.json');
 
 const data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
@@ -35,7 +34,7 @@ movies.forEach(item => {
   }
 });
 
-fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+safeWriteData(data, { scriptName: 'supplement_abstract' });
 console.log(`updated: ${updated} / ${movies.length}`);
 
 const withAbstract = movies.filter(i => i.abstract && i.abstract.length > 0);

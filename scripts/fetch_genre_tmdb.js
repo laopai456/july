@@ -1,8 +1,7 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-
-const DATA_PATH = path.join(__dirname, '..', 'data.json');
+const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
 const TMDB_RAW_PATH = path.join(__dirname, '..', 'tmdb_raw.json');
 const BLOCKED_REGIONS = ['中国大陆', '中国香港', '中国台湾'];
 
@@ -130,7 +129,7 @@ function mergeToDataJson(newItems) {
   gi['情色'] = existing;
   data.genreIndex = gi;
 
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+  safeWriteData(data, { scriptName: 'fetch_genre_tmdb' });
   console.log(`\nmerged: +${added}, total movie=${existing.movie.length}`);
   return { added, total: existing.movie.length };
 }
