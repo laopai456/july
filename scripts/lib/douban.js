@@ -182,7 +182,7 @@ function extractYear(text) {
   return '';
 }
 
-function calculateHotScore(rating, year) {
+function calculateHotScore(rating, year, rank) {
   const currentYear = new Date().getFullYear();
   const itemYear = parseInt(year);
 
@@ -193,11 +193,12 @@ function calculateHotScore(rating, year) {
 
   const yearDiff = Math.max(0, currentYear - itemYear);
   const rate = parseFloat(rating) || 0;
+  const rankBonus = (rank !== undefined && rank < 10) ? (10 - rank) : 0;
 
   if (yearDiff === 0) {
-    if (rate === 0) return 220;
-    if (rate >= 8.5) return 220 + Math.round((rate - 8.5) * 20);
-    if (rate >= 7.5) return Math.round(rate * 25);
+    if (rate === 0) return 220 + rankBonus;
+    if (rate >= 8.5) return 220 + Math.round((rate - 8.5) * 20) + rankBonus;
+    if (rate >= 7.5) return Math.round(rate * 25) + rankBonus;
     if (rate >= 5) return Math.round(rate * 20);
     return Math.round(rate * 15);
   }
