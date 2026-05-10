@@ -49,6 +49,7 @@ const FORCE_REMOVE_TITLES = [
   '绝杀空手道', '变性记', '海边的女孩',
   '空中的眼睛和蜗牛', '我们2017',
   '朴烈', '妹妹太爱我了怎么办', '爱的健身房', 'Oh！透明人间',
+  '热线电话',
 ];
 
 function isForceRemove(title) {
@@ -354,7 +355,6 @@ async function main() {
   }
 
   const TITLE_ALIASES = {
-    '热线电话': ['Hotline', 'The Call Up'],
     '女继承人': ['Gangnam Daughter-in-law', '강남 며느리'],
   };
 
