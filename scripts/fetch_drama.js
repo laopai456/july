@@ -11,7 +11,7 @@ const {
 const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
 
 const DRAMA_TAGS = [
-  { tag: '电视剧', countries: '中国大陆,中国香港,中国台湾', subCategory: '国产剧', yearCount: 20, hotCount: 40 },
+  { tag: '电视剧', countries: '中国大陆,中国香港,中国台湾', subCategory: '国产剧', yearCount: 80, hotCount: 40 },
   { tag: '电视剧', countries: '韩国', subCategory: '韩剧', yearCount: 20, hotCount: 40 },
   { tag: '电视剧', countries: '日本', subCategory: '日剧', yearCount: 20, hotCount: 40 }
 ];
@@ -59,7 +59,6 @@ async function main() {
     const items = await fetchWithCurrentYearPriority(tag, hotCount, {
       yearCount,
       logLabel: subCategory,
-      lastYearCount: subCategory === '国产剧' ? 100 : undefined,
       extraParams: countries ? { countries } : {}
     });
     for (const item of items) {
