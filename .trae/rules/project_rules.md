@@ -48,11 +48,22 @@
 - 检查定时任务：`crontab -l | grep daily_update`
 
 ## 隐秘榜单验证规则
-- 所有 cai_ 条目的 Top 50 验证流程：豆瓣搜标题 → 获取 genres → 有情色字段保留，有排除字段移除，其余视为非情色移除
-- 验证使用双源交叉：豆瓣优先，豆瓣搜不到则用 TMDB genres fallback
-- **性喜剧豁免规则**：如果验证时 genres 不含情色但含「喜剧」，且该条目的原始爬取 genres 包含情色/伦理关键词 → 认定为性喜剧，予以保留
-- 手动维护的 `SEX_COMEDY_TITLES` 列表中的标题直接跳过验证，强制保留（用于豆瓣/TMDB 都无法识别的性喜剧）
-- 中国大陆禁止，无豁免
+- **核心脚本**：`scripts/reconstruct_erotic.js`，从 data.json 的 `genreIndex['情色']` 读取、过滤、排序、验证后写回
+- **数据来源**：采集站（cai_）、TMDB（tmdb_）、手动添加（add_erotic.js）、豆瓣详情补充（supplement_genre_detail.js）
+- **多层级过滤流程**：
+  1. **标题黑名单**（`FORCE_REMOVE_TITLES`）：硬编码非情色/动画标题，直接移除
+  2. **关键词过滤**（`hasBlockedKeyword`）：标题含「动画」「动漫」「同性」等关键词移除
+  3. **错误ID过滤**（`BLOCKED_IDS`）：已发现绑定错误豆瓣ID的条目直接屏蔽
+  4. **年份过滤**（MIN_YEAR=2010）：2010前的只保留在 `FORCE_KEEP_IDS` 中的
+  5. **中国大陆禁止**：`region` 含「中国大陆」直接移除，FORCE_KEEP_IDS 不再豁免
+  6. **排除类型**（`EXCLUDED_GENRES`）：genres 含「动画」「同性」移除
+  7. **情色类型确认**（`hasEroticGenre`）：genres 含「情色」「伦理」「成人」等直接确认
+  8. **强制保留**（`FORCE_KEEP_IDS` + `FORCE_KEEP_TITLES`）：手动白名单，绕过上述规则
+- **验证循环**：对 cai_ 条目中进入 Top 50 的，用豆瓣 + TMDB 双源交叉验证 genres，非情色移除，移除后替补自动重验，直到 Top 50 无未验证 cai_ 条目
+- **性喜剧豁免**：genres 不含情色但含「喜剧」+ 原始爬取 genres 含情色/伦理关键词 → 性喜剧，保留。`SEX_COMEDY_TITLES` 列表直接跳过验证
+- **封面补全**：第3轮自动用 TMDB 搜索补空封面，支持韩文/英文别名搜索
+- **数据安全**：所有写入 data.json 的脚本均使用 `scripts/lib/safe_write.js` 的 `safeWriteData()`，写入前自动检测各分类条目数是否归零（防误删），写入前自动备份到 `data.json.bak`
+- **敏感词提交保护**：commit message 中「情色」→「情*」等替换，防止 GitHub 仓库被标记
 
 ## 计划/规格文档规范
 - 写入 `docs/superpowers/plans/` 或 `docs/superpowers/specs/`
@@ -302,3 +313,27 @@ fetch_variety.js (写入 data.json)
 - 修改数据字段名后，必须用 `grep 旧字段名` 搜索所有 `.wxml`、`.js`、`.json` 文件，逐一确认引用已更新
 - `wx:key` 必须使用数据中实际存在的唯一字段，不能猜测字段名
 - 前端方法绑定（`bindtap="methodName"`）修改后，必须在微信开发者工具中编译验证，确认无 `methodName is not defined` 警告
+
+---
+
+## 隐秘榜单后续优化方向
+
+### 短期优化（可立即执行）
+
+1. **封面覆盖率提升**：`TITLE_ALIASES` 仍有部分条目缺封面，可通过采集站源站直接获取 `vod_pic`，或接入更多镜像源
+2. **验证白名单化**：目前 cai_ 条目验证后的正确数据只写入 data.json，未持久化到脚本。建议将已验证确认的 cai_ 条目 doubanId 写入 `FORCE_KEEP_IDS`，后续重建无需重复验证
+3. **替补验证优化**：当前验证循环每遍只查 Top 50，替补上来的逐批验证效率较低。可改为先批量验证所有 cai_ 条目再去重排序
+
+### 中期优化（需一定开发量）
+
+4. **自动去重**：目前重复条目靠 `BLOCKED_IDS` 手动屏蔽，应改为 `reconstruct_erotic.js` 自动检测同标题+同年份的条目，保留已验证的来源优先级最高者
+5. **豆瓣/TMDB 双写豆瓣ID**：cai_ 条目验证时搜到了真实豆瓣 ID，应更新到 data.json 中替代伪 ID，方便后续详情补全
+6. **验证结果持久化**：将 `_confirmed` 字段保留在 data.json 中（当前在写文件前移除），下次重建时直接复用，减少 API 请求
+7. **用户反馈入口**：小程序端增加"反馈"按钮，用户可举报榜中非情色条目，后端记录后人工审核
+
+### 长期方向（需要架构调整）
+
+8. **数据源质量把控**：采集站数据质量参差不齐，应优先从 TMDB 获取全量数据，采集站仅作为封面补全
+9. **运营后台**：建设 Simple Admin 界面，运营可直接拉黑/保留/编辑条目，不依赖修改代码
+10. **AI 辅助分类**：接入 LLM 对不明确的条目做标题+简介分析，判断是否属于隐秘题材
+11. **动态准入标准**：从硬编码常量改为外部配置文件（如 `erotic_config.json`），黑名单/白名单/地区/年份规则可热更新
