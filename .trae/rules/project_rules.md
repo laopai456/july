@@ -324,6 +324,22 @@ fetch_variety.js (写入 data.json)
 2. **验证白名单化**：目前 cai_ 条目验证后的正确数据只写入 data.json，未持久化到脚本。建议将已验证确认的 cai_ 条目 doubanId 写入 `FORCE_KEEP_IDS`，后续重建无需重复验证
 3. **替补验证优化**：当前验证循环每遍只查 Top 50，替补上来的逐批验证效率较低。可改为先批量验证所有 cai_ 条目再去重排序
 
+### 稳定性与防报错（按严重度排序）
+
+**CRITICAL（会导致脚本崩溃）：**
+1. **`add_erotic.js` 顶级 `main()` 缺 `.catch()`**：其他脚本都有 `main().catch(e => { ... })`，这个没有。一旦 data.json 损坏或 TMDB 网络异常，Node 直接 `UnhandledPromiseRejectionWarning` 崩溃退出，不做任何清理
+2. **`genreIndex['情色']` 为 undefined 时访问 `.movie`**：reconstruct_erotic.js L156、fetch_erotic_caiji.js L150-L162 均无防御性判断。如果 data.json 结构异常（如被其他进程损坏导致 `genreIndex` 或 `genreIndex['情色']` 缺失），`TypeError: Cannot read property 'movie' of undefined` 直接崩溃
+3. **`fetch_erotic_caiji.js` 空对象 `{}` 导致 `.push` 崩溃**：`gi['情色']` 默认值 `{ movie: [], drama: [] }` 只在 `gi['情色']` 为 falsy 时生效。如果它是空对象 `{}`，`qs.movie.push()` 抛出 `TypeError: Cannot read property 'push' of undefined`
+
+**HIGH（网络/文件异常会导致崩溃）：**
+4. **全部脚本 `JSON.parse(fs.readFileSync(DATA_PATH))` 无 try-catch**：5 个文件共 6 处。data.json 被进程损坏、权限不足、磁盘满时全部崩溃
+5. **`safe_write.js` `copyFileSync`/`writeFileSync` 无 try-catch**：备份或写入失败时脚本直接崩溃，虽然备份逻辑正确，但调用方没有得到错误通知
+6. **验证循环中网络错误导致整个脚本退出**：reconstruct_erotic.js 第 2.5 轮验证的 for 循环中，`searchDoubanId`、`getDoubanGenres`、`tmdbGet` 都没有 try-catch，单次网络超时/DNS 失败会让跑了 30 分钟的验证全部丢失
+
+**MEDIUM（逻辑缺陷可能导致验证不准）：**
+7. **`EROTIC_GENRE_IDS` 为空 Set**：reconstruct_erotic.js 第 237 行初始化为空 Set，且从未填充，导致 TMDB genre_ids 通道永远无法确认任何条目为情色
+8. **TMDB genreMap 映射不完整**：只有约 12 个 genre ID，未覆盖的 ID 变成 `genre_xxx`，验证时既不被识别为情色也不被识别为排除类型
+
 ### 中期优化（需一定开发量）
 
 4. **自动去重**：目前重复条目靠 `BLOCKED_IDS` 手动屏蔽，应改为 `reconstruct_erotic.js` 自动检测同标题+同年份的条目，保留已验证的来源优先级最高者
