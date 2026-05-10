@@ -59,6 +59,7 @@ async function main() {
     const items = await fetchWithCurrentYearPriority(tag, hotCount, {
       yearCount,
       logLabel: subCategory,
+      lastYearCount: subCategory === '国产剧' ? 100 : undefined,
       extraParams: countries ? { countries } : {}
     });
     for (const item of items) {

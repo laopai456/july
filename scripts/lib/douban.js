@@ -355,7 +355,9 @@ async function fetchWithCurrentYearPriority(tag, hotCount, options = {}) {
   const currentYear = new Date().getFullYear();
   const yearRange = currentYear + ',' + currentYear;
   const lastYearRange = (currentYear - 1) + ',' + (currentYear - 1);
-  const { logLabel = tag, minYearCount = 50, maxYearCount = 200, yearRatio = 0.4, recentCount = 50, yearOnly = false, extraParams = {} } = options;
+  const { logLabel = tag, minYearCount: optMinYear = 50, maxYearCount = 200, yearRatio = 0.4, recentCount = 50, yearOnly = false, extraParams = {}, yearCount: optYearCount, lastYearCount: optLastYear } = options;
+  const minYearCount = optYearCount !== undefined ? optYearCount : optMinYear;
+  const lastYearCount = optLastYear !== undefined ? optLastYear : 50;
 
   const allItems = [];
   const seenIds = new Set();
@@ -388,7 +390,7 @@ async function fetchWithCurrentYearPriority(tag, hotCount, options = {}) {
   console.log('  [' + logLabel + ' 当年最新] ' + recentItems.length + ' 条, 新增 ' + recentNew + ' 条');
 
   console.log('  [获取' + logLabel + ' - 去年热度补充]');
-  const lastYearItems = await fetchTagItems(tag, Math.min(yearCount, 50), lastYearRange, '', extraParams);
+  const lastYearItems = await fetchTagItems(tag, Math.min(yearCount, lastYearCount), lastYearRange, '', extraParams);
   let lastYearNew = 0;
   for (const item of lastYearItems) {
     if (!seenIds.has(item.id)) {
