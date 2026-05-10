@@ -40,6 +40,13 @@
 - 不要从服务器 push 到 GitHub，只从本地 push，服务器只 pull
 - 服务器部署变更顺序：`git pull → 跑抓取脚本 → pm2 restart movie-api`，三步缺一不可
 
+## 每日定时更新
+- 服务器 crontab 每天 12:00 执行 `/opt/movie-api/scripts/daily_update.sh`
+- 该脚本跑 `fetch_all.js`（综艺→电影→热剧）+ `fetch_genre.js`（标签索引）
+- **严禁**在每日更新中加入隐秘数据重建（`reconstruct_erotic.js`），隐秘数据只由手动执行，避免触发豆瓣限流
+- 如果加了新的抓取脚本，需要手动更新 `daily_update.sh` 和 `fetch_all.js`
+- 检查定时任务：`crontab -l | grep daily_update`
+
 ## 计划/规格文档规范
 - 写入 `docs/superpowers/plans/` 或 `docs/superpowers/specs/`
 - 必须自包含：新会话的 AI 无需读取任何其他文件即可理解并执行

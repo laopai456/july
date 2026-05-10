@@ -113,6 +113,7 @@ july/
 │       ├── douban.js            # 豆瓣 API 封装
 │       └── incremental.js       # 增量更新工具
 ├── server.js                    # 后端服务（Express，部署到 43.167.233.80:3000）
+├── scripts/daily_update.sh       # 每日定时抓取脚本（crontab 12:00，不含隐秘数据）
 ├── data.json                    # 数据存储（gitignore，服务器独有）
 └── project.config.json
 ```
