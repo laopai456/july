@@ -2,7 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const { isChineseVariety } = require('./scripts/lib/douban');
+const { isChineseVariety, calculateHotScore } = require('./scripts/lib/douban');
 const app = express();
 
 app.use(express.json());
@@ -67,7 +67,7 @@ function formatItem(item) {
     directors: item.directors || (item.director ? [item.director] : []),
     casts: item.casts || item.cast || [],
     subCategory: item.subCategory || '',
-    hotScore: item.hotScore || 0,
+    hotScore: calculateHotScore(item.rate || item.rating || '0', item.year || ''),
     airMonth: item.airMonth || 0,
     region: item.region || ''
   };

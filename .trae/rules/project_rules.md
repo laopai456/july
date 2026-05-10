@@ -314,6 +314,40 @@ fetch_variety.js (写入 data.json)
 - `wx:key` 必须使用数据中实际存在的唯一字段，不能猜测字段名
 - 前端方法绑定（`bindtap="methodName"`）修改后，必须在微信开发者工具中编译验证，确认无 `methodName is not defined` 警告
 
+### 错误 18：热力分算法修改后需要重跑抓取脚本（已发生 1 次）
+
+**现象**：修改了 `calculateHotScore` 算法后，小程序上的排序没有变化，以为需要重跑全部抓取脚本。
+
+**根因**：`hotScore` 在抓取脚本中计算后硬编码到 `data.json`，`server.js` 的 `formatItem` 直接读取预存值 `item.hotScore`。导致修改评分算法后必须重跑抓取脚本才能生效。
+
+**防范规则**：
+- **热力分等可变算法必须在 `server.js` 的 `formatItem` 中实时计算**，不要在抓取脚本中预存
+- `server.js` 已改为 `calculateHotScore(item.rate, item.year)` 实时计算
+- 修改 `calculateHotScore` 算法后只需 `pm2 restart movie-api`，不需要重跑抓取脚本
+- 抓取脚本中的 `calculateHotScore` 仅用于排序和截取（决定哪些进入 data.json），实际展示分数由 server.js 实时计算
+
+### 错误 19：豆瓣 subject_suggest API 的 type 字段无法区分电视剧和电影（已发现）
+
+**现象**：`preferType: 'tv'` 过滤器拒绝所有新剧，因为 `subject_suggest` API 对所有内容都返回 `type: "movie"`。
+
+**根因**：豆瓣 `subject_suggest` API 不区分电视剧和电影，type 字段统一为 `"movie"`。但 `episode` 字段可以区分——电视剧有集数（如 `"28"`），电影为空字符串。
+
+**防范规则**：
+- 区分电视剧/电影必须用 `episode` 字段，不能用 `type` 字段
+- `fetchDetailByTitle` 中 `preferType === 'tv'` 已改为检查 `episode` 是否非空
+- `fetchDetailForItem` 中已改为检查 `episode === ''` 过滤电影
+
+### 错误 20：豆瓣 new_search_subjects 基于标签搜索会漏掉新内容（已发现）
+
+**现象**：新上映的热门国产剧（如黑夜告白、低智商犯罪）在 `tags=电视剧&countries=中国大陆` 搜索中找不到。
+
+**根因**：`new_search_subjects` 基于用户打的标签搜索，新内容经常缺少标签。而 `search_subjects` API 基于 `type=tv/movie` 分类系统，覆盖更全。
+
+**防范规则**：
+- 抓取脚本已增加 `fetchExploreSubjects` 补充步骤，用 `search_subjects` API 发现标签搜索漏掉的内容
+- `search_subjects` 的 `type=tv` 包含综艺，热剧脚本的 `EXCLUDED_GENRES` 必须包含 `'真人秀'`、`'脱口秀'`
+- 电影用 `type=movie&tag=热门`，综艺用 `type=tv&tag=综艺`
+
 ---
 
 ## 隐秘榜单后续优化方向
