@@ -115,8 +115,8 @@ async function fetchDetailByTitle(title, doubanId, preferType = null) {
     const matched = data.find(item => item.id === doubanId);
     if (matched) return matched;
   }
-  if (preferType) {
-    const typed = data.find(item => item.type === preferType);
+  if (preferType === 'tv') {
+    const typed = data.find(item => item.episode && item.episode !== '');
     if (typed) return typed;
   }
   return data[0];
@@ -423,7 +423,7 @@ async function fetchDetailForItem(item, options = {}) {
 
   const detail = await fetchDetailByTitle(item.title, item.id, preferType);
 
-  if (preferType && detail && detail.type && detail.type !== preferType) {
+  if (preferType === 'tv' && detail && detail.episode !== undefined && detail.episode === '') {
     return null;
   }
 
