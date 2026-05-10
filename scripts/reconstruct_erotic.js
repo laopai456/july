@@ -30,6 +30,9 @@ const FORCE_KEEP_TITLES = new Set([
   '隐藏的面孔', '痴人之爱', '东西向洞',
 ]);
 
+const SEX_COMEDY_TITLES = new Set([
+]);
+
 const FORCE_REMOVE_TITLES = [
   '啊，荒野', '啊荒野', 'あゝ、荒野', 'ああ荒野', '荒野 前篇', '荒野 后篇',
   '驾驶我的车', '鬼城杀', '骨及所有', '骸骨及一切',
@@ -45,6 +48,7 @@ const FORCE_REMOVE_TITLES = [
   '裙子里面是野兽',
   '绝杀空手道', '变性记', '海边的女孩',
   '空中的眼睛和蜗牛', '我们2017',
+  '朴烈', '妹妹太爱我了怎么办', '爱的健身房', 'Oh！透明人间',
 ];
 
 function isForceRemove(title) {
@@ -161,7 +165,7 @@ async function main() {
     if ((m.region || '').includes('中国大陆') && !FORCE_KEEP_IDS.has(m.doubanId)) { removed.mainland++; continue; }
     if (hasExcludedGenre(m.genres)) { removed.excludedGenre++; continue; }
 
-    if (FORCE_KEEP_IDS.has(m.doubanId) || FORCE_KEEP_TITLES.has(m.title)) {
+    if (FORCE_KEEP_IDS.has(m.doubanId) || FORCE_KEEP_TITLES.has(m.title) || SEX_COMEDY_TITLES.has(m.title)) {
       confirmed.push({ ...m, _priority: getRegionPriority(m.region), _confirmed: 'force' });
       continue;
     }
@@ -282,6 +286,9 @@ async function main() {
 
       const hasErotic = genres.some(g => EROTIC_GENRES.includes(g));
       const hasExclude = genres.some(g => EXCLUDED_GENRES.includes(g));
+      const hasComedy = genres.some(g => g === '喜剧');
+      const originalHasErotic = (m.genres || []).some(g => EROTIC_GENRES.some(e => g.includes(e)));
+      const isSexComedy = SEX_COMEDY_TITLES.has(m.title) || (hasComedy && originalHasErotic);
 
       if (hasExclude) {
         console.log(`❌ 排除类型 [${genres.join('/')}] (${source})`);
@@ -289,6 +296,9 @@ async function main() {
         rejected++;
       } else if (hasErotic) {
         console.log(`✅ 确认 [${genres.join('/')}] (${source})`);
+        verified++;
+      } else if (isSexComedy) {
+        console.log(`✅ 性喜剧 [${genres.join('/')}] (${source})`);
         verified++;
       } else {
         console.log(`❌ 非情色 [${genres.join('/')}] (${source})`);

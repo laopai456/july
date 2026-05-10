@@ -47,6 +47,13 @@
 - 如果加了新的抓取脚本，需要手动更新 `daily_update.sh` 和 `fetch_all.js`
 - 检查定时任务：`crontab -l | grep daily_update`
 
+## 隐秘榜单验证规则
+- 所有 cai_ 条目的 Top 50 验证流程：豆瓣搜标题 → 获取 genres → 有情色字段保留，有排除字段移除，其余视为非情色移除
+- 验证使用双源交叉：豆瓣优先，豆瓣搜不到则用 TMDB genres fallback
+- **性喜剧豁免规则**：如果验证时 genres 不含情色但含「喜剧」，且该条目的原始爬取 genres 包含情色/伦理关键词 → 认定为性喜剧，予以保留
+- 手动维护的 `SEX_COMEDY_TITLES` 列表中的标题直接跳过验证，强制保留（用于豆瓣/TMDB 都无法识别的性喜剧）
+- 中国大陆禁止，无豁免
+
 ## 计划/规格文档规范
 - 写入 `docs/superpowers/plans/` 或 `docs/superpowers/specs/`
 - 必须自包含：新会话的 AI 无需读取任何其他文件即可理解并执行
