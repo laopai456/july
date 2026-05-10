@@ -17,7 +17,7 @@ const DRAMA_TAGS = [
   { tag: '电视剧', countries: '日本', subCategory: '日剧', yearCount: 20, hotCount: 40 }
 ];
 
-const EXCLUDED_GENRES = ['动画', '纪录片'];
+const EXCLUDED_GENRES = ['动画', '纪录片', '真人秀', '脱口秀'];
 
 const REGION_TO_SUBCATEGORY = {
   '中国大陆': '国产剧', '中国香港': '国产剧', '中国台湾': '国产剧',
