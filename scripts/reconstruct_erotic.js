@@ -173,8 +173,8 @@ async function main() {
       continue;
     }
 
-    if (hasEroticGenre(m.genres)) {
-      confirmed.push({ ...m, _priority: getRegionPriority(m.region), _confirmed: 'genre' });
+    if (hasEroticGenre(m.genres) || m._confirmed === 'cai_verified') {
+      confirmed.push({ ...m, _priority: getRegionPriority(m.region), _confirmed: m._confirmed === 'cai_verified' ? 'cai_verified' : 'genre' });
       continue;
     }
 
@@ -192,7 +192,8 @@ async function main() {
 
   console.log(`\n--- 第1轮：本地筛选 ---`);
   console.log(`  有情色genres: ${confirmed.filter(m => m._confirmed === 'genre').length}`);
-  console.log(`  采集站(cai_): ${confirmed.filter(m => m._confirmed === 'cai').length}`);
+  console.log(`  已验证(cai_verified): ${confirmed.filter(m => m._confirmed === 'cai_verified').length}`);
+  console.log(`  待验证(cai_): ${confirmed.filter(m => m._confirmed === 'cai').length}`);
   console.log(`  强制保留: ${confirmed.filter(m => m._confirmed === 'force').length}`);
   console.log(`  需TMDB验证: ${needValidate.length}`);
   console.log(`  移除: 年份=${removed.year} 黑名单=${removed.titleBlacklist} 关键词=${removed.blockedKeyword} 错误ID=${removed.blockedId} 大陆=${removed.mainland} 排除类型=${removed.excludedGenre} 无标签=${removed.noGenre}`);
@@ -296,9 +297,11 @@ async function main() {
           rejected++;
         } else if (hasErotic) {
           console.log(`✅ 确认 [${genres.join('/')}] (${source})`);
+          m._confirmed = 'cai_verified';
           verified++;
         } else if (isSexComedy) {
           console.log(`✅ 性喜剧 [${genres.join('/')}] (${source})`);
+          m._confirmed = 'cai_verified';
           verified++;
         } else {
           console.log(`❌ 非情色 [${genres.join('/')}] (${source})`);
@@ -331,10 +334,12 @@ async function main() {
 
   const stats = {
     genre: confirmed.filter(m => m._confirmed === 'genre').length,
+    cai_verified: confirmed.filter(m => m._confirmed === 'cai_verified').length,
     cai: confirmed.filter(m => m._confirmed === 'cai').length,
     force: confirmed.filter(m => m._confirmed === 'force').length,
     tmdb: confirmed.filter(m => m._confirmed === 'tmdb_keyword').length,
   };
+  console.log(`\n来源分布: genre=${stats.genre} cai_verified=${stats.cai_verified} cai=${stats.cai} force=${stats.force} tmdb=${stats.tmdb}`);
 
   console.log(`\n========================================`);
   console.log(`最终结果: ${final.length} / ${confirmed.length} (取前${MAX_ITEMS})`);
@@ -347,8 +352,7 @@ async function main() {
   console.log(`\nTop 20:`);
   for (let i = 0; i < Math.min(20, final.length); i++) {
     const m = final[i];
-    const confirmed_by = confirmed.find(c => c.doubanId === m.doubanId)?._confirmed || '?';
-    console.log(`  ${i + 1}. ${m.title} (${m.year}) ${m.region || '?'} r=${m.rate} [${confirmed_by}]`);
+    console.log(`  ${i + 1}. ${m.title} (${m.year}) ${m.region || '?'} r=${m.rate} [${m._confirmed || '?'}]`);
   }
 
   const noCover = final.filter(m => !m.cover || m.cover.trim() === '');
@@ -392,7 +396,7 @@ async function main() {
   if (!data.genreIndex) data.genreIndex = {};
   if (!data.genreIndex['情色']) data.genreIndex['情色'] = {};
   data.genreIndex['情色'].movie = final.map(m => {
-    const { _confirmed, ...rest } = m;
+    const { _priority, ...rest } = m;
     return rest;
   });
   safeWriteData(data, { scriptName: 'reconstruct_erotic' });
