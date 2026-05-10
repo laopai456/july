@@ -153,7 +153,7 @@ async function main() {
   console.log('========================================');
 
   const data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
-  const movies = data.genreIndex['情色'].movie || [];
+  const movies = (data.genreIndex && data.genreIndex['情色'] && data.genreIndex['情色'].movie) || [];
   console.log(`当前总数: ${movies.length}`);
 
   const confirmed = [];
@@ -251,62 +251,63 @@ async function main() {
       const m = caiInTop[i];
       process.stdout.write(`  [${i + 1}/${caiInTop.length}] ${m.title} (${m.year}) -> `);
 
-      let genres = null;
-      let source = '';
+      try {
+        let genres = null;
+        let source = '';
 
-      const search = await searchDoubanId(m.title, m.year);
-      await sleep(1200);
-
-      if (search && search.id) {
-        genres = await getDoubanGenres(search.id);
+        const search = await searchDoubanId(m.title, m.year);
         await sleep(1200);
-        if (genres) source = '豆瓣';
-      }
 
-      if (!genres) {
-        try {
-          const urlPath = `/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(m.title)}&language=zh-CN&include_adult=true${m.year ? '&primary_release_year=' + m.year : ''}`;
-          const result = await tmdbGet(urlPath);
-          await sleep(300);
-          if (result && result.results && result.results.length > 0) {
-            const genreIds = result.results[0].genre_ids || [];
-            const genreMap = { 16: '动画', 18: '剧情', 27: '恐怖', 28: '动作', 35: '喜剧', 36: '历史', 37: '西部', 53: '悬疑', 80: '犯罪', 99: '纪录片', 878: '科幻', 9648: '悬疑', 10402: '音乐', 10749: '爱情', 10751: '家庭', 10752: '战争' };
-            genres = genreIds.map(id => genreMap[id] || `genre_${id}`);
-            source = 'TMDB';
+        if (search && search.id) {
+          genres = await getDoubanGenres(search.id);
+          await sleep(1200);
+          if (genres) source = '豆瓣';
+        }
 
-            const hasEroticTmdb = genreIds.some(id => EROTIC_GENRE_IDS.has(id));
-            const hasNonEroticTmdb = genreIds.some(id => NON_EROTIC_GENRE_IDS.has(id));
-            if (!hasEroticTmdb && !hasNonEroticTmdb && genres.length === 0) genres = null;
-          }
-        } catch (e) { /* ignore */ }
-      }
+        if (!genres) {
+          try {
+            const urlPath = `/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(m.title)}&language=zh-CN&include_adult=true${m.year ? '&primary_release_year=' + m.year : ''}`;
+            const result = await tmdbGet(urlPath);
+            await sleep(300);
+            if (result && result.results && result.results.length > 0) {
+              const genreIds = result.results[0].genre_ids || [];
+              const genreMap = { 16: '动画', 18: '剧情', 27: '恐怖', 28: '动作', 35: '喜剧', 36: '历史', 37: '西部', 53: '悬疑', 80: '犯罪', 99: '纪录片', 878: '科幻', 9648: '悬疑', 10402: '音乐', 10749: '爱情', 10751: '家庭', 10752: '战争' };
+              genres = genreIds.map(id => genreMap[id] || `genre_${id}`);
+              source = 'TMDB';
+            }
+          } catch (e) { /* tmdb fallback failed */ }
+        }
 
-      if (!genres) {
-        console.log(`两源均未搜到，保留`);
+        if (!genres) {
+          console.log(`两源均未搜到，保留`);
+          notFound++;
+          continue;
+        }
+
+        const hasErotic = genres.some(g => EROTIC_GENRES.includes(g));
+        const hasExclude = genres.some(g => EXCLUDED_GENRES.includes(g));
+        const hasComedy = genres.some(g => g === '喜剧');
+        const originalHasErotic = (m.genres || []).some(g => EROTIC_GENRES.some(e => g.includes(e)));
+        const isSexComedy = SEX_COMEDY_TITLES.has(m.title) || (hasComedy && originalHasErotic);
+
+        if (hasExclude) {
+          console.log(`❌ 排除类型 [${genres.join('/')}] (${source})`);
+          rejectedIds.add(m.doubanId);
+          rejected++;
+        } else if (hasErotic) {
+          console.log(`✅ 确认 [${genres.join('/')}] (${source})`);
+          verified++;
+        } else if (isSexComedy) {
+          console.log(`✅ 性喜剧 [${genres.join('/')}] (${source})`);
+          verified++;
+        } else {
+          console.log(`❌ 非情色 [${genres.join('/')}] (${source})`);
+          rejectedIds.add(m.doubanId);
+          rejected++;
+        }
+      } catch (e) {
+        console.log(`⚠️ 验证异常: ${e.message}，保留`);
         notFound++;
-        continue;
-      }
-
-      const hasErotic = genres.some(g => EROTIC_GENRES.includes(g));
-      const hasExclude = genres.some(g => EXCLUDED_GENRES.includes(g));
-      const hasComedy = genres.some(g => g === '喜剧');
-      const originalHasErotic = (m.genres || []).some(g => EROTIC_GENRES.some(e => g.includes(e)));
-      const isSexComedy = SEX_COMEDY_TITLES.has(m.title) || (hasComedy && originalHasErotic);
-
-      if (hasExclude) {
-        console.log(`❌ 排除类型 [${genres.join('/')}] (${source})`);
-        rejectedIds.add(m.doubanId);
-        rejected++;
-      } else if (hasErotic) {
-        console.log(`✅ 确认 [${genres.join('/')}] (${source})`);
-        verified++;
-      } else if (isSexComedy) {
-        console.log(`✅ 性喜剧 [${genres.join('/')}] (${source})`);
-        verified++;
-      } else {
-        console.log(`❌ 非情色 [${genres.join('/')}] (${source})`);
-        rejectedIds.add(m.doubanId);
-        rejected++;
       }
     }
 
@@ -388,6 +389,8 @@ async function main() {
     console.log(`  封面补全: ${fixed}/${noCover.length}`);
   }
 
+  if (!data.genreIndex) data.genreIndex = {};
+  if (!data.genreIndex['情色']) data.genreIndex['情色'] = {};
   data.genreIndex['情色'].movie = final.map(m => {
     const { _confirmed, ...rest } = m;
     return rest;

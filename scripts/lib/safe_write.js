@@ -17,7 +17,14 @@ function getGenreCounts(data) {
 function safeWriteData(data, options = {}) {
   const { allowShrink = false, scriptName = 'unknown' } = options;
 
-  const original = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
+  let original;
+  try {
+    original = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
+  } catch (e) {
+    console.error(`[safeWrite] 读取 data.json 失败: ${e.message}，直接写入`);
+    fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+    return;
+  }
   const before = getGenreCounts(original);
   const after = getGenreCounts(data);
 
@@ -45,10 +52,24 @@ function safeWriteData(data, options = {}) {
     for (const w of warnings) console.warn(`  ${w}`);
   }
 
-  fs.copyFileSync(DATA_PATH, BACKUP_PATH);
-  console.log(`[safeWrite] 备份 -> data.json.bak`);
+  try {
+    fs.copyFileSync(DATA_PATH, BACKUP_PATH);
+    console.log(`[safeWrite] 备份 -> data.json.bak`);
+  } catch (e) {
+    console.warn(`[safeWrite] 备份失败: ${e.message}，继续写入`);
+  }
 
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+  try {
+    fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {
+    console.error(`[safeWrite] 写入失败: ${e.message}`);
+    try {
+      if (fs.existsSync(BACKUP_PATH)) fs.copyFileSync(BACKUP_PATH, DATA_PATH);
+    } catch (e2) {
+      console.error(`[safeWrite] 恢复备份也失败: ${e2.message}`);
+    }
+    process.exit(1);
+  }
 
   const diff = {};
   for (const key of Object.keys({...before, ...after})) {

@@ -147,7 +147,8 @@ async function main() {
 
   const data = JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'));
   const gi = data.genreIndex || {};
-  const qs = gi['情色'] || { movie: [], drama: [] };
+  const raw = gi['情色'];
+  const qs = (raw && raw.movie) ? raw : { movie: [], drama: [] };
 
   const existingTitles = new Set();
   for (const item of [...(qs.movie || []), ...(qs.drama || [])]) {

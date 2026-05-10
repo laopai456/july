@@ -215,4 +215,4 @@ async function main() {
   safeWriteData(data, { scriptName: 'add_erotic' });
   console.log('\nAdded:', added, 'Final total:', qs.movie.length, '(capped at', MAX_ITEMS + ')');
 }
-main();
+main().catch(e => { console.error('fatal:', e); process.exit(1); });
