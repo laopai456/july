@@ -4,6 +4,7 @@ const {
   fetchWithCurrentYearPriority, fetchTagItems,
   fetchDetailsBatch,
   searchSupplementItems,
+  fetchExploreSubjects,
   calculateHotScore,
   parallelLimit,
   getRequestCount, TOTAL_PER_CATEGORY, RATE_LIMIT, sleep
@@ -123,6 +124,18 @@ async function main() {
       console.log('  ' + tag + ': 去重后新增 ' + count + ' 条');
     }
   }
+
+  console.log('\n【探索补充: 电影热门 (search_subjects)】');
+  const exploreMovieItems = await fetchExploreSubjects('movie', '热门', 60);
+  let exploreMovieNew = 0;
+  for (const item of exploreMovieItems) {
+    if (!seenIds.has(item.id)) {
+      seenIds.add(item.id);
+      allItems.push({ ...item, subCategory: '' });
+      exploreMovieNew++;
+    }
+  }
+  console.log('  [电影探索] ' + exploreMovieItems.length + ' 条, 新增 ' + exploreMovieNew + ' 条');
 
   for (const catName of ['中国', '日韩', '欧美']) {
     const supplementItems = await searchSupplementItems('movie_' + catName, seenIds, { subCategory: catName });

@@ -351,6 +351,44 @@ async function fetchTagTotal(tag, yearRange = '', sort = '', extraParams = {}) {
   return result.total;
 }
 
+async function fetchExploreSubjects(type, tag, count) {
+  const items = [];
+  for (let start = 0; start < count; start += RATE_LIMIT.batchSize) {
+    const batchNum = Math.floor(start / RATE_LIMIT.batchSize) + 1;
+    process.stdout.write('\r    [探索批次 ' + batchNum + '] 获取第 ' + (start + 1) + '-' + Math.min(start + RATE_LIMIT.batchSize, count) + ' 条...');
+
+    await waitForRateLimit();
+    try {
+      const response = await axios.get('https://movie.douban.com/j/search_subjects', {
+        params: { type, tag, page_limit: RATE_LIMIT.batchSize, page_start: start },
+        headers: { ...getHeaders(), Referer: 'https://movie.douban.com/' + (type === 'tv' ? 'tv/' : 'explore') },
+        timeout: RATE_LIMIT.requestTimeout
+      });
+      const subjects = response.data && response.data.subjects ? response.data.subjects : [];
+      for (const s of subjects) {
+        items.push({
+          id: s.id,
+          title: s.title,
+          rate: s.rate || '0',
+          cover: s.cover || '',
+          year: s.episodes_info || ''
+        });
+      }
+      if (subjects.length < RATE_LIMIT.batchSize) break;
+    } catch (e) {
+      console.log('\n  [探索] 请求失败: ' + e.message);
+      break;
+    }
+
+    if (start + RATE_LIMIT.batchSize < count) {
+      process.stdout.write(' 等待中...');
+      await sleep(RATE_LIMIT.batchPause);
+    }
+  }
+  console.log(' 完成');
+  return items;
+}
+
 async function fetchWithCurrentYearPriority(tag, hotCount, options = {}) {
   const currentYear = new Date().getFullYear();
   const yearRange = currentYear + ',' + currentYear;
@@ -579,6 +617,7 @@ module.exports = {
   getSubCategory,
   fetchTagItems,
   fetchTagTotal,
+  fetchExploreSubjects,
   fetchWithCurrentYearPriority,
   fetchDetailForItem,
   fetchDetailsBatch,

@@ -4,6 +4,7 @@ const {
   fetchWithCurrentYearPriority,
   fetchDetailsBatch,
   searchSupplementItems,
+  fetchExploreSubjects,
   calculateHotScore,
   parallelLimit,
   getRequestCount, TOTAL_PER_CATEGORY, RATE_LIMIT, sleep
@@ -59,6 +60,7 @@ async function main() {
     const items = await fetchWithCurrentYearPriority(tag, hotCount, {
       yearCount,
       logLabel: subCategory,
+      lastYearCount: subCategory === '国产剧' ? 120 : undefined,
       extraParams: countries ? { countries } : {}
     });
     for (const item of items) {
@@ -67,6 +69,26 @@ async function main() {
         allItems.push({ ...item, subCategory });
       }
     }
+  }
+
+  const EXPLORE_TAGS = [
+    { exploreTag: '国产剧', subCategory: '国产剧', count: 40 },
+    { exploreTag: '韩剧', subCategory: '韩剧', count: 40 },
+    { exploreTag: '日剧', subCategory: '日剧', count: 40 }
+  ];
+
+  for (const { exploreTag, subCategory, count } of EXPLORE_TAGS) {
+    console.log('\n【探索补充: ' + subCategory + ' (search_subjects)】');
+    const exploreItems = await fetchExploreSubjects('tv', exploreTag, count);
+    let newCount = 0;
+    for (const item of exploreItems) {
+      if (!seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        allItems.push({ ...item, subCategory });
+        newCount++;
+      }
+    }
+    console.log('  [' + subCategory + ' 探索] ' + exploreItems.length + ' 条, 新增 ' + newCount + ' 条');
   }
 
   for (const tag of ['国产剧', '韩剧', '日剧']) {

@@ -3,6 +3,7 @@ const { safeWriteData } = require('./lib/safe_write');
 const {
   fetchWithCurrentYearPriority, fetchSubjectAbstract,
   fetchDetailsBatch, searchSupplementItems,
+  fetchExploreSubjects,
   calculateHotScore, isChineseVariety, parallelLimit,
   getRequestCount, TOTAL_PER_CATEGORY, RATE_LIMIT, sleep
 } = require('./lib/douban');
@@ -62,6 +63,18 @@ async function main() {
       if (!seenIds.has(item.id)) { seenIds.add(item.id); allItems.push(item); }
     }
   }
+
+  console.log('\n【探索补充: 综艺热门 (search_subjects)】');
+  const exploreVarietyItems = await fetchExploreSubjects('tv', '综艺', 60);
+  let exploreVarietyNew = 0;
+  for (const item of exploreVarietyItems) {
+    if (!seenIds.has(item.id)) {
+      seenIds.add(item.id);
+      allItems.push(item);
+      exploreVarietyNew++;
+    }
+  }
+  console.log('  [综艺探索] ' + exploreVarietyItems.length + ' 条, 新增 ' + exploreVarietyNew + ' 条');
 
   const supplementItems = await searchSupplementItems('variety', seenIds, {
     schedulePath: __dirname + '/variety_schedule.json'
