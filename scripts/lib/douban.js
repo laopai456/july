@@ -195,9 +195,20 @@ function calculateHotScore(rating, year) {
   const timeScore = Math.max(0, 200 - yearDiff * 40);
 
   const rate = parseFloat(rating) || 0;
-  const rateBonus = rate > 0 ? Math.min(15, Math.round(rate * 1.5)) : 0;
 
-  return timeScore + rateBonus;
+  if (rate === 0) {
+    return Math.round(timeScore * 0.5);
+  }
+
+  if (rate < 5) {
+    return Math.round(timeScore * 0.3);
+  }
+
+  if (rate < 7.5) {
+    return Math.round(timeScore * 0.5 + rate * 1.5);
+  }
+
+  return timeScore + Math.min(15, Math.round(rate * 1.5));
 }
 
 const FOREIGN_KEYWORDS = [
