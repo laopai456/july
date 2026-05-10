@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { safeWriteData } = require('./lib/safe_write');
 const {
   fetchWithCurrentYearPriority, fetchSubjectAbstract,
   fetchDetailsBatch, searchSupplementItems,
@@ -156,7 +157,7 @@ async function main() {
     varietyUpdatedAt: new Date().toISOString()
   };
 
-  fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
+  safeWriteData(dataToSave, { scriptName: 'fetch_variety' });
 
   console.log('\n总榜前10部:');
   finalItems.slice(0, 10).forEach((item, i) => console.log('  ' + (i + 1) + '. ' + item.title + ' (' + (item.year || '未知') + ') - 评分' + item.rate + ' 热力' + item.hotScore));

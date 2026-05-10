@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { safeWriteData } = require('./lib/safe_write');
 const {
   fetchWithCurrentYearPriority,
   fetchDetailsBatch,
@@ -179,7 +180,7 @@ async function main() {
     dramaUpdatedAt: new Date().toISOString()
   };
 
-  fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
+  safeWriteData(dataToSave, { scriptName: 'fetch_drama' });
 
   // ========== 输出统计 ==========
   console.log('\n各分类前5部:');
