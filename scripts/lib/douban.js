@@ -195,10 +195,11 @@ function calculateHotScore(rating, year) {
   const rate = parseFloat(rating) || 0;
 
   if (yearDiff === 0) {
-    if (rate === 0) return 100;
-    if (rate < 5) return Math.round(60 + rate * 3);
-    if (rate < 7.5) return Math.round(100 + rate * 3);
-    return 200 + Math.min(15, Math.round(rate * 1.5));
+    if (rate === 0) return 220;
+    if (rate >= 8.5) return 220 + Math.round((rate - 8.5) * 20);
+    if (rate >= 7.5) return Math.round(rate * 25);
+    if (rate >= 5) return Math.round(rate * 20);
+    return Math.round(rate * 15);
   }
 
   if (yearDiff === 1) {
