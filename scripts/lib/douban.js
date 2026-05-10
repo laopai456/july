@@ -192,23 +192,21 @@ function calculateHotScore(rating, year) {
   }
 
   const yearDiff = Math.max(0, currentYear - itemYear);
-  const timeScore = Math.max(0, 200 - yearDiff * 40);
-
   const rate = parseFloat(rating) || 0;
 
-  if (rate === 0) {
-    return Math.round(timeScore * 0.5);
+  if (yearDiff === 0) {
+    if (rate === 0) return 100;
+    if (rate < 5) return Math.round(60 + rate * 3);
+    if (rate < 7.5) return Math.round(100 + rate * 3);
+    return 200 + Math.min(15, Math.round(rate * 1.5));
   }
 
-  if (rate < 5) {
-    return Math.round(timeScore * 0.3);
+  if (yearDiff === 1) {
+    if (rate < 8.5) return 0;
+    return Math.round(80 + (rate - 8.5) * 10);
   }
 
-  if (rate < 7.5) {
-    return Math.round(timeScore * 0.5 + rate * 1.5);
-  }
-
-  return timeScore + Math.min(15, Math.round(rate * 1.5));
+  return 0;
 }
 
 const FOREIGN_KEYWORDS = [
