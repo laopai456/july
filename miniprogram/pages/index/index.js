@@ -169,7 +169,7 @@ Page({
     if (tabName === '综艺') {
       const rawList = Array.isArray(data) ? data : (data.items || [])
       const currentMonth = new Date().getMonth() + 1
-      const filtered = rawList.filter(item => (!item.airMonth || item.airMonth <= currentMonth) && item.cast && item.cast.length > 0)
+      const filtered = rawList.filter(item => (!item.airMonth || item.airMonth <= currentMonth))
       const list = userStore.filterWatched(filtered).slice(0, 50)
       this.setData({
         list,
@@ -379,7 +379,7 @@ Page({
 
       const currentMonth = new Date().getMonth() + 1
       return allItems
-        .filter(item => (!item.airMonth || item.airMonth <= currentMonth) && item.cast && item.cast.length > 0)
+        .filter(item => (!item.airMonth || item.airMonth <= currentMonth))
         .sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
     } catch (err) {
       console.error('fetchVarietyAll error:', err)
@@ -522,7 +522,7 @@ Page({
 
       const currentMonth = new Date().getMonth() + 1
       return allItems
-        .filter(item => (!item.airMonth || item.airMonth <= currentMonth) && item.cast && item.cast.length > 0)
+        .filter(item => (!item.airMonth || item.airMonth <= currentMonth))
         .sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0)).slice(0, 50)
     } catch (err) {
       console.error('loadVariety error:', err)
