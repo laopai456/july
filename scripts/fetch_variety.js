@@ -149,9 +149,11 @@ async function main() {
   const chineseItems = allResults.filter(item => isChineseVariety(item.title, item.genres, item.region));
   console.log('过滤国外综艺: ' + (allResults.length - chineseItems.length) + ' 条, 剩余 ' + chineseItems.length + ' 条');
 
-  const eligibleItems = chineseItems.filter(item => item.cover);
-  const noCoverCount = chineseItems.length - eligibleItems.length;
-  if (noCoverCount > 0) console.log('过滤无封面: ' + noCoverCount + ' 条, 剩余 ' + eligibleItems.length + ' 条');
+  const eligibleItems = chineseItems.filter(item => item.cover && item.casts && item.casts.length > 0);
+  const noCoverCount = chineseItems.length - chineseItems.filter(item => item.cover).length;
+  const noCastCount = chineseItems.filter(item => item.cover).filter(item => !item.casts || item.casts.length === 0).length;
+  if (noCoverCount > 0) console.log('过滤无封面: ' + noCoverCount + ' 条');
+  if (noCastCount > 0) console.log('过滤无嘉宾(暂不上榜): ' + noCastCount + ' 条, 剩余 ' + eligibleItems.length + ' 条');
 
   function getAirMonth(title) {
     const normTitle = normalizeTitle(title);
