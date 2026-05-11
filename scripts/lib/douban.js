@@ -203,12 +203,10 @@ function calculateHotScore(rating, year, rank) {
     return Math.round(rate * 15);
   }
 
-  if (yearDiff === 1) {
-    if (rate < 8.5) return 0;
-    return Math.round(80 + (rate - 8.5) * 10);
-  }
-
-  return 0;
+  const baseScore = rate > 0 ? Math.round(rate * 12) : 0;
+  const decay = Math.pow(0.45, yearDiff - 1);
+  const score = Math.round(baseScore * decay);
+  return Math.max(score, rate > 0 ? 1 : 0);
 }
 
 const FOREIGN_KEYWORDS = [
