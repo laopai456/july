@@ -54,6 +54,14 @@ async function fetchWithRetry(url, params, retries = 3) {
   }
 }
 
+function sortByHotScore(items) {
+  return items.sort((a, b) => {
+    const sa = calculateHotScore(a.rate || a.rating || '0', a.year || '');
+    const sb = calculateHotScore(b.rate || b.rating || '0', b.year || '');
+    return sb - sa;
+  });
+}
+
 function formatItem(item, rank) {
   return {
     id: item.id,
@@ -78,7 +86,8 @@ app.get('/api/variety', async (req, res) => {
 
   if (localData && localData.variety && localData.variety.length > 0) {
     const filtered = localData.variety.filter(item => isChineseVariety(item.title, item.genres, item.region));
-    const subjects = filtered.map((item, index) => formatItem(item, index));
+    const sorted = sortByHotScore(filtered);
+    const subjects = sorted.map((item, index) => formatItem(item, index));
 
     return res.json({
       subjects,
@@ -116,7 +125,8 @@ app.get('/api/movie/:type', async (req, res) => {
   if (localData) {
     if (localData.movie && localData.movie.length > 0) {
       const filtered = localData.movie.filter(item => item.subCategory === typeMap[type]);
-      const subjects = filtered.map((item, index) => formatItem(item, index));
+      const sorted = sortByHotScore(filtered);
+      const subjects = sorted.map((item, index) => formatItem(item, index));
 
       return res.json({
         subjects,
@@ -168,7 +178,8 @@ app.get('/api/drama/:type', async (req, res) => {
   if (localData) {
     if (localData.drama && localData.drama.length > 0) {
       const filtered = localData.drama.filter(item => item.subCategory === typeMap[type]);
-      const subjects = filtered.map((item, index) => formatItem(item, index));
+      const sorted = sortByHotScore(filtered);
+      const subjects = sorted.map((item, index) => formatItem(item, index));
 
       return res.json({
         subjects,
@@ -220,19 +231,23 @@ app.get('/api/genre/:name', async (req, res) => {
   const sliceCount = limit ? parseInt(limit) : 0;
 
   if (section === 'movie') {
-    const all = (genreData.movie || []).map((item, index) => formatItem(item, index));
+    const sorted = sortByHotScore(genreData.movie || []);
+    const all = sorted.map((item, index) => formatItem(item, index));
     const subjects = sliceCount > 0 ? all.slice(0, sliceCount) : all;
     return res.json({ subjects, total: all.length, source: 'local' });
   }
 
   if (section === 'drama') {
-    const all = (genreData.drama || []).map((item, index) => formatItem(item, index));
+    const sorted = sortByHotScore(genreData.drama || []);
+    const all = sorted.map((item, index) => formatItem(item, index));
     const subjects = sliceCount > 0 ? all.slice(0, sliceCount) : all;
     return res.json({ subjects, total: all.length, source: 'local' });
   }
 
-  const movieAll = (genreData.movie || []).map((item, index) => formatItem(item, index));
-  const dramaAll = (genreData.drama || []).map((item, index) => formatItem(item, index));
+  const movieSorted = sortByHotScore(genreData.movie || []);
+  const dramaSorted = sortByHotScore(genreData.drama || []);
+  const movieAll = movieSorted.map((item, index) => formatItem(item, index));
+  const dramaAll = dramaSorted.map((item, index) => formatItem(item, index));
   res.json({
     movie: sliceCount > 0 ? movieAll.slice(0, sliceCount) : movieAll,
     drama: sliceCount > 0 ? dramaAll.slice(0, sliceCount) : dramaAll,
