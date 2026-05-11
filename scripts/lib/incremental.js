@@ -95,25 +95,40 @@ function buildIndexFromList(listData, idField = 'id') {
   return index;
 }
 
+function isIncompleteItem(existing) {
+  if (!existing) return true;
+  if (!existing.cover) return true;
+  if ((!existing.casts || existing.casts.length === 0) && !existing.abstract) return true;
+  return false;
+}
+
 function compareWithExisting(listData, existingMap, idField = 'id') {
   const newItems = [];
   const existingItems = [];
-  
+  const refetchItems = [];
+
   for (const item of listData) {
     const itemId = item[idField];
     if (existingMap.has(itemId)) {
-      existingItems.push(item);
+      const existing = existingMap.get(itemId);
+      if (isIncompleteItem(existing)) {
+        refetchItems.push(item);
+      } else {
+        existingItems.push(item);
+      }
     } else {
       newItems.push(item);
     }
   }
-  
+
   return {
     newItems,
     existingItems,
+    refetchItems,
     stats: {
       newCount: newItems.length,
-      existingCount: existingItems.length
+      existingCount: existingItems.length,
+      refetchCount: refetchItems.length
     }
   };
 }

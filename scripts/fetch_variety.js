@@ -94,11 +94,13 @@ async function main() {
     itemsToFetch = allItems;
     console.log('强制全量: 需要获取详情 ' + itemsToFetch.length + ' 条\n');
   } else {
-    const { newItems, stats } = compareWithExisting(allItems, indexMap);
+    const { newItems, refetchItems, stats } = compareWithExisting(allItems, indexMap);
     console.log('比对结果:');
     console.log('  新增: ' + stats.newCount + ' 条');
-    console.log('  已存在: ' + stats.existingCount + ' 条 (跳过详情获取)\n');
-    itemsToFetch = newItems;
+    console.log('  已存在: ' + stats.existingCount + ' 条 (跳过详情获取)');
+    if (stats.refetchCount > 0) console.log('  数据不完整需补全: ' + stats.refetchCount + ' 条');
+    console.log('');
+    itemsToFetch = [...newItems, ...refetchItems];
   }
 
   const newResults = await fetchDetailsBatch(itemsToFetch, { useAbstract: true });
@@ -141,6 +143,10 @@ async function main() {
   const chineseItems = allResults.filter(item => isChineseVariety(item.title, item.genres, item.region));
   console.log('过滤国外综艺: ' + (allResults.length - chineseItems.length) + ' 条, 剩余 ' + chineseItems.length + ' 条');
 
+  const eligibleItems = chineseItems.filter(item => item.cover);
+  const noCoverCount = chineseItems.length - eligibleItems.length;
+  if (noCoverCount > 0) console.log('过滤无封面: ' + noCoverCount + ' 条, 剩余 ' + eligibleItems.length + ' 条');
+
   function getAirMonth(title) {
     const normTitle = normalizeTitle(title);
     for (const key of Object.keys(scheduleMap)) {
@@ -152,7 +158,7 @@ async function main() {
     return 0;
   }
 
-  const finalItems = chineseItems
+  const finalItems = eligibleItems
     .map(item => ({ ...item, airMonth: getAirMonth(item.title) }))
     .sort((a, b) => b.hotScore - a.hotScore)
     .slice(0, VARIETY_DISPLAY_COUNT)

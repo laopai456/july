@@ -120,11 +120,13 @@ async function fetchGenreSection(tag, type, targetCount, indexMap, args) {
     itemsToFetch = allItems;
     console.log('强制全量: 需要获取详情 ' + itemsToFetch.length + ' 条\n');
   } else {
-    const { newItems, stats } = compareWithExisting(allItems, indexMap);
+    const { newItems, refetchItems, stats } = compareWithExisting(allItems, indexMap);
     console.log('比对结果:');
     console.log('  新增: ' + stats.newCount + ' 条');
-    console.log('  已存在: ' + stats.existingCount + ' 条 (跳过详情获取)\n');
-    itemsToFetch = newItems;
+    console.log('  已存在: ' + stats.existingCount + ' 条 (跳过详情获取)');
+    if (stats.refetchCount > 0) console.log('  数据不完整需补全: ' + stats.refetchCount + ' 条');
+    console.log('');
+    itemsToFetch = [...newItems, ...refetchItems];
   }
 
   const newResults = await fetchDetailsBatch(itemsToFetch, { useAbstract: true });
