@@ -102,6 +102,16 @@ function isIncompleteItem(existing) {
   return false;
 }
 
+function findIncompleteInIndex(existingMap) {
+  const incomplete = [];
+  for (const [doubanId, item] of existingMap) {
+    if (isIncompleteItem(item)) {
+      incomplete.push({ id: doubanId, title: item.title || '' });
+    }
+  }
+  return incomplete;
+}
+
 function compareWithExisting(listData, existingMap, idField = 'id') {
   const newItems = [];
   const existingItems = [];
@@ -210,6 +220,8 @@ module.exports = {
   loadCategoryData,
   buildIndex,
   buildIndexFromList,
+  isIncompleteItem,
+  findIncompleteInIndex,
   compareWithExisting,
   mergeData,
   saveData,

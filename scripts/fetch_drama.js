@@ -9,7 +9,7 @@ const {
   parallelLimit,
   getRequestCount, TOTAL_PER_CATEGORY, RATE_LIMIT, sleep
 } = require('./lib/douban');
-const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
+const { loadCategoryData, compareWithExisting, findIncompleteInIndex, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
 
 const DRAMA_TAGS = [
   { tag: '电视剧', countries: '中国大陆,中国香港,中国台湾', subCategory: '国产剧', yearCount: 80, hotCount: 40 },
@@ -115,8 +115,14 @@ async function main() {
     console.log('  新增: ' + stats.newCount + ' 条');
     console.log('  已存在: ' + stats.existingCount + ' 条 (跳过详情获取)');
     if (stats.refetchCount > 0) console.log('  数据不完整需补全: ' + stats.refetchCount + ' 条');
+
+    const incompleteInIndex = findIncompleteInIndex(indexMap);
+    const alreadyInFetch = new Set([...newItems, ...refetchItems].map(i => i.id));
+    const extraRefetch = incompleteInIndex.filter(i => !alreadyInFetch.has(i.id));
+    if (extraRefetch.length > 0) console.log('  索引中数据不完整(非当前API结果): ' + extraRefetch.length + ' 条');
     console.log('');
-    itemsToFetch = [...newItems, ...refetchItems];
+
+    itemsToFetch = [...newItems, ...refetchItems, ...extraRefetch];
   }
 
   // ========== 第4步: 抓取新增详情 ==========

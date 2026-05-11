@@ -7,7 +7,7 @@ const {
   calculateHotScore, isChineseVariety, parallelLimit,
   getRequestCount, TOTAL_PER_CATEGORY, RATE_LIMIT, sleep
 } = require('./lib/douban');
-const { loadCategoryData, compareWithExisting, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
+const { loadCategoryData, compareWithExisting, findIncompleteInIndex, parseArgs, printHelp, DATA_FILE } = require('./lib/incremental');
 
 const VARIETY_TAGS = [
   { tag: '综艺', hotCount: 30, recentCount: 50 },
@@ -99,8 +99,14 @@ async function main() {
     console.log('  新增: ' + stats.newCount + ' 条');
     console.log('  已存在: ' + stats.existingCount + ' 条 (跳过详情获取)');
     if (stats.refetchCount > 0) console.log('  数据不完整需补全: ' + stats.refetchCount + ' 条');
+
+    const incompleteInIndex = findIncompleteInIndex(indexMap);
+    const alreadyInFetch = new Set([...newItems, ...refetchItems].map(i => i.id));
+    const extraRefetch = incompleteInIndex.filter(i => !alreadyInFetch.has(i.id));
+    if (extraRefetch.length > 0) console.log('  索引中数据不完整(非当前API结果): ' + extraRefetch.length + ' 条');
     console.log('');
-    itemsToFetch = [...newItems, ...refetchItems];
+
+    itemsToFetch = [...newItems, ...refetchItems, ...extraRefetch];
   }
 
   const newResults = await fetchDetailsBatch(itemsToFetch, { useAbstract: true });
