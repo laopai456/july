@@ -199,14 +199,17 @@ function calculateHotScore(rating, year, rank) {
     if (rate === 0) return 220 + rankBonus;
     if (rate >= 8.5) return 220 + Math.round((rate - 8.5) * 20) + rankBonus;
     if (rate >= 7.5) return Math.round(rate * 25) + rankBonus;
-    if (rate >= 5) return Math.round(rate * 20);
-    return Math.round(rate * 15);
+    if (rate >= 5) return Math.round(rate * 20) + rankBonus;
+    return Math.round(rate * 15) + rankBonus;
   }
 
-  const baseScore = rate > 0 ? Math.round(rate * 12) : 0;
   const decay = Math.pow(0.45, yearDiff - 1);
+  if (rate === 0) {
+    return Math.round(100 * decay) + rankBonus;
+  }
+  const baseScore = Math.round(rate * 12);
   const score = Math.round(baseScore * decay);
-  return Math.max(score, rate > 0 ? 1 : 0);
+  return Math.max(score, 1) + rankBonus;
 }
 
 const FOREIGN_KEYWORDS = [
