@@ -3,3 +3,4 @@ backups/
 *.log
 data.json
 data.b64
+.env

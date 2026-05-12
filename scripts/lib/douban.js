@@ -1,8 +1,9 @@
+require('dotenv').config();
 const axios = require('axios');
 
 const DOUBAN_API = 'https://movie.douban.com/j';
 
-const COOKIE = 'bid=rmXci4zuhOM; ll="108296"; _vwo_uuid_v2=D59C352040A1639E04E09902C371DD105|9678fa318ad695dac8c843b5c1c9a040; _pk_id.100001.8cb4=2c2064abfd652ae3.1775882738.; push_noty_num=0; push_doumail_num=0; __utmv=30149280.29460; __yadk_uid=GuE5SO9dsCF2AGbIx4ZJi1CDvnYI2IJ5; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1778488919%2C%22https%3A%2F%2Fwww.bing.com%2F%22%5D; _pk_ses.100001.8cb4=1; __utma=30149280.179540387.1769946188.1777959713.1778488921.16; __utmz=30149280.1778488921.16.16.utmcsr=bing|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); __utmt=1; dbcl2="294605645:pJCHZb01xDY"; ap_v=0,6.0; ck=2vPC; __utmc=30149280; frodotk_db="f8ed8a046e04480ceac89e0d4a0cd824"; __utmb=30149280.9.10.1778488921';
+const COOKIE = process.env.DOUBAN_COOKIE || '';
 
 const RATE_LIMIT = {
   minDelay: 3000,
