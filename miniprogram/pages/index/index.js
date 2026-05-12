@@ -170,7 +170,7 @@ Page({
       const rawList = Array.isArray(data) ? data : (data.items || [])
       const currentMonth = new Date().getMonth() + 1
       const filtered = rawList.filter(item => (!item.airMonth || item.airMonth <= currentMonth))
-      const list = userStore.filterWatched(filtered).slice(0, 50)
+      const list = userStore.filterWatched(filtered).slice(0, 20)
       this.setData({
         list,
         hasMore: false,
@@ -179,7 +179,7 @@ Page({
       })
     } else {
       const rawList = (data.items[subName] || [])
-      const list = userStore.filterWatched(rawList).slice(0, 30)
+      const list = userStore.filterWatched(rawList).slice(0, 20)
       const subs = SUB_CATEGORIES[tabName]
       this.setData({
         list,
@@ -523,7 +523,7 @@ Page({
       const currentMonth = new Date().getMonth() + 1
       return allItems
         .filter(item => (!item.airMonth || item.airMonth <= currentMonth))
-        .sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0)).slice(0, 50)
+        .sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0)).slice(0, 20)
     } catch (err) {
       console.error('loadVariety error:', err)
       return []
@@ -566,7 +566,7 @@ Page({
       }))
 
       allItems.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
-      return allItems.slice(0, 30)
+      return allItems.slice(0, 20)
     } catch (err) {
       console.error('loadMovie error:', err)
       return []
@@ -611,7 +611,7 @@ Page({
       }))
 
       allItems.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0))
-      const filtered = allItems.slice(0, 30)
+      const filtered = allItems.slice(0, 20)
 
       const countIndex = { '韩剧': 0, '日剧': 1, '国产剧': 2 }[subCategory] || 0
       const counts = [0, 0, 0]
