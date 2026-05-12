@@ -1,8 +1,9 @@
+require('dotenv').config();
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
-const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
+const TMDB_KEY = process.env.TMDB_API_KEY || '';
 
 const SUPPLEMENT = [
   { en: 'A Frozen Flower', zh: '\u971c\u82b1\u5e97', year: 2008 },

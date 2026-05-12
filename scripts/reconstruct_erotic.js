@@ -1,14 +1,15 @@
+require('dotenv').config();
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
 
-const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
+const TMDB_KEY = process.env.TMDB_API_KEY || '';
 const MAX_ITEMS = 200;
 const DISPLAY_COUNT = 50;
 const MIN_YEAR = 2010;
 
-const COOKIE = 'bid=rmXci4zuhOM; ll="108296"; ct=y; dbcl2="294605645:jC7dIJCo830"; ck=0r2i; ap_v=0,6.0';
+const COOKIE = process.env.DOUBAN_COOKIE || '';
 
 const EROTIC_KEYWORD_IDS = new Set([256466, 155477, 195089, 41260]);
 const EROTIC_KEYWORD_NAMES = ['erotic', 'softcore', 'seduction', 'erotica'];

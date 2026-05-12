@@ -1,16 +1,17 @@
+require('dotenv').config();
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const data = require('../data.json');
 const all = [...(data.genreIndex['情色'].movie || []), ...(data.genreIndex['情色'].drama || [])];
 
-const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
+const TMDB_KEY = process.env.TMDB_API_KEY || '';
 const EROTIC_GENRES = ['情色', '伦理', '成人'];
 const CAI_EROTIC_GENRES = ['伦理片', '韩国伦理', '日本伦理', '西方伦理', '港台三级', '伦理', '两性课堂', '情色', '成人'];
 const JP_KR_REGIONS = ['韩国', '日本', '南韩'];
 const FORCE_KEEP_TITLES = ['白日焰火', '色戒', '玩物', '上流社会'];
 const FORCE_REMOVE_TITLES = ['啊，荒野','啊荒野','荒野 前篇','荒野 后篇','驾驶我的车','鬼城杀','骨及所有','骸骨及一切','麻辣教师GTO','日本食人鲨','四墓惊魂','空之境界','来自深渊','游戏人生','地狱骑士','德伯力克','辣妞征集','安娜的迷宫','比基尼复仇者','黑骚特警组','小勇者们','哭声','燃烧','母亲','追击者','孤胆特工','恶人传','记忆之夜','熔炉','黄海','甜蜜的人生','走到尽头','看见恶魔','荒野','恶女','无可奈何','金钱的味道'];
-const COOKIE = 'bid=rmXci4zuhOM; ll="108296"; _vwo_uuid_v2=D59C352040A1639E04E09902C371DD105|9678fa318ad695dac8c843b5c1c9a040; ct=y; _pk_id.100001.8cb4=2c2064abfd652ae3.1775882738.; dbcl2="294605645:jC7dIJCo830"; push_noty_num=0; push_doumail_num=0; __utmv=30149280.29460; __yadk_uid=GuE5SO9dsCF2AGbIx4ZJi1CDvnYI2IJ5; ck=0r2i; ap_v=0,6.0; frodotk_db="a4b959990041755fee2c0ccb00c4601d"; __utma=30149280.179540387.1769946188.1775932681.1776015224.8; __utmc=30149280; __utmz=30149280.1776015224.8.8.utmcsr=bing|utmccn=(organic)|utmcmd=organic|utmctr=(not+provided); __utmt=1; __utmb=30149280.4.10.1776015224';
+const COOKIE = process.env.DOUBAN_COOKIE || '';
 const TMDB_EROTIC_KEYWORD_IDS = new Set([256466, 155477, 195089, 41260]);
 const TMDB_EROTIC_KEYWORD_NAMES = ['erotic', 'softcore', 'seduction', 'erotica'];
 const MAX_ITEMS = 200;

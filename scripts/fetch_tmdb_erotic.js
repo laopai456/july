@@ -1,11 +1,11 @@
+require('dotenv').config();
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { safeWriteData, DATA_PATH } = require('./lib/safe_write');
 
-const TMDB_KEY = '96ac6a609d077c2d49da61e620697ea7';
+const TMDB_KEY = process.env.TMDB_API_KEY || '';
 const OUTPUT_RAW = path.join(__dirname, '..', 'tmdb_raw.json');
-const DATA_PATH = path.join(__dirname, '..', 'data.json');
 const MIN_YEAR = 2005;
 const MAX_PAGES = 5;
 const PAGE_DELAY = 300;

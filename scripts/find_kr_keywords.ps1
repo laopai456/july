@@ -1,4 +1,4 @@
-$apiKey = '96ac6a609d077c2d49da61e620697ea7'
+$apiKey = if ($env:TMDB_API_KEY) { $env:TMDB_API_KEY } else { (Get-Content (Join-Path $PSScriptRoot '..\.env') | Where-Object { $_ -match 'TMDB_API_KEY=(.+)' } | ForEach-Object { $Matches[1] }).Trim() }
 $ids = @(17903, 269955, 50727, 50476, 103750, 56485, 60192, 384127, 27154, 333167, 45202, 287649, 270143)
 $allKw = @{}
 

@@ -1,4 +1,4 @@
-$apiKey = '96ac6a609d077c2d49da61e620697ea7'
+$apiKey = if ($env:TMDB_API_KEY) { $env:TMDB_API_KEY } else { (Get-Content (Join-Path $PSScriptRoot '..\.env') | Where-Object { $_ -match 'TMDB_API_KEY=(.+)' } | ForEach-Object { $Matches[1] }).Trim() }
 
 $movies = @(
     @{en='A Frozen Flower'; zh=[char]0x971c + [char]0x82b1 + [char]0x5e97; year=2008},

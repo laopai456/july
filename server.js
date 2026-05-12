@@ -10,7 +10,7 @@ app.use(express.json());
 
 const DOUBAN_API = 'https://movie.douban.com/j';
 const DATA_FILE = path.join(__dirname, 'data.json');
-const SYNC_SECRET = 'july2026sync';
+const SYNC_SECRET = process.env.SYNC_SECRET || '';
 
 let _dataCache = null;
 let _dataCacheMtime = null;

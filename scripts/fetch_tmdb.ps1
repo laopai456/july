@@ -1,4 +1,4 @@
-$TMDB_API_KEY = '96ac6a609d077c2d49da61e620697ea7'
+$TMDB_API_KEY = if ($env:TMDB_API_KEY) { $env:TMDB_API_KEY } else { (Get-Content (Join-Path $PSScriptRoot '..\.env') | Where-Object { $_ -match 'TMDB_API_KEY=(.+)' } | ForEach-Object { $Matches[1] }).Trim() }
 $OUTPUT = Join-Path $PSScriptRoot '..\tmdb_raw.json'
 $MIN_YEAR = 2005
 
