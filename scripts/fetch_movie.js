@@ -15,32 +15,32 @@ const MOVIE_CATEGORIES = [
   {
     name: '中国',
     tags: [
-      { tag: '电影,中国大陆', yearCount: 20, hotCount: 40 },
-      { tag: '电影,台湾', yearCount: 20, hotCount: 20 },
-      { tag: '电影,香港', yearCount: 20, hotCount: 20 }
+      { tag: '电影,中国大陆', yearCount: 10, hotCount: 10 },
+      { tag: '电影,台湾', yearCount: 10, hotCount: 10 },
+      { tag: '电影,香港', yearCount: 10, hotCount: 10 }
     ]
   },
   {
     name: '日韩',
     tags: [
-      { tag: '电影,日本', yearCount: 20, hotCount: 40 },
-      { tag: '电影,韩国', yearCount: 20, hotCount: 40 },
-      { tag: '电影,泰国', yearCount: 20, hotCount: 20 },
-      { tag: '电影,印度', yearCount: 20, hotCount: 20 }
+      { tag: '电影,日本', yearCount: 10, hotCount: 10 },
+      { tag: '电影,韩国', yearCount: 10, hotCount: 10 },
+      { tag: '电影,泰国', yearCount: 10, hotCount: 10 },
+      { tag: '电影,印度', yearCount: 10, hotCount: 10 }
     ]
   },
   {
     name: '欧美',
     tags: [
-      { tag: '电影,美国', yearCount: 20, hotCount: 40 },
-      { tag: '电影,英国', yearCount: 20, hotCount: 20 },
-      { tag: '电影,法国', yearCount: 20, hotCount: 20 },
-      { tag: '电影,德国', yearCount: 20, hotCount: 20 },
-      { tag: '电影,西班牙', yearCount: 20, hotCount: 20 },
-      { tag: '电影,意大利', yearCount: 20, hotCount: 20 },
-      { tag: '电影,俄罗斯', yearCount: 20, hotCount: 20 },
-      { tag: '电影,加拿大', yearCount: 20, hotCount: 20 },
-      { tag: '电影,澳大利亚', yearCount: 20, hotCount: 20 }
+      { tag: '电影,美国', yearCount: 10, hotCount: 10 },
+      { tag: '电影,英国', yearCount: 10, hotCount: 10 },
+      { tag: '电影,法国', yearCount: 10, hotCount: 10 },
+      { tag: '电影,德国', yearCount: 10, hotCount: 10 },
+      { tag: '电影,西班牙', yearCount: 10, hotCount: 10 },
+      { tag: '电影,意大利', yearCount: 10, hotCount: 10 },
+      { tag: '电影,俄罗斯', yearCount: 10, hotCount: 10 },
+      { tag: '电影,加拿大', yearCount: 10, hotCount: 10 },
+      { tag: '电影,澳大利亚', yearCount: 10, hotCount: 10 }
     ]
   }
 ];

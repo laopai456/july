@@ -73,8 +73,8 @@ async function main() {
 
   const EXPLORE_TAGS = [
     { exploreTag: '国产剧', subCategory: '国产剧', count: 60 },
-    { exploreTag: '韩剧', subCategory: '韩剧', count: 60 },
-    { exploreTag: '日剧', subCategory: '日剧', count: 40 }
+    { exploreTag: '韩剧', subCategory: '韩剧', count: 100 },
+    { exploreTag: '日剧', subCategory: '日剧', count: 50 }
   ];
 
   for (const { exploreTag, subCategory, count } of EXPLORE_TAGS) {
