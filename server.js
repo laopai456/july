@@ -12,6 +12,23 @@ const DOUBAN_API = 'https://movie.douban.com/j';
 const DATA_FILE = path.join(__dirname, 'data.json');
 const SYNC_SECRET = process.env.SYNC_SECRET || '';
 
+const NON_MOVIE_PATTERNS = [
+  '开幕式', '闭幕式', '春晚', '春节联欢晚会', '元宵晚会', '中秋晚会', '跨年晚会',
+  '演唱会', '音乐会', '话剧', '歌剧', '舞剧', '音乐剧',
+  '奥运会', '冬奥会', '世界杯', '亚运会', '全运会', '锦标赛', '决赛',
+  '颁奖典礼', '颁奖礼', '金鸡奖', '金马奖', '金像奖', '奥斯卡',
+  '发布会', '首映礼', '红毯', '脱口秀', '相声', '小品', '元宵喜乐会',
+  '直播', '晚会', '盛典', ' Gala',
+  '超级碗', 'Super Bowl', '格莱美', 'Grammy',
+  '泰勒·汤姆林森'
+];
+
+function isRealMovie(title) {
+  if (!title) return true;
+  const lower = title.toLowerCase();
+  return !NON_MOVIE_PATTERNS.some(p => lower.includes(p.toLowerCase()));
+}
+
 let _dataCache = null;
 let _dataCacheMtime = null;
 
@@ -125,7 +142,7 @@ app.get('/api/movie/:type', async (req, res) => {
 
   if (localData) {
     if (localData.movie && localData.movie.length > 0) {
-      const filtered = localData.movie.filter(item => item.subCategory === typeMap[type]);
+      const filtered = localData.movie.filter(item => item.subCategory === typeMap[type] && isRealMovie(item.title));
       const sorted = sortByHotScore(filtered);
       const subjects = sorted.map((item, index) => formatItem(item, index));
 
