@@ -240,6 +240,7 @@ const FOREIGN_KEYWORDS = [
   'Biong Biong', '黑白厨师', '思想验证区域', '三傻游肯尼亚', '豆豆饭饭', '恋爱女子宿舍',
   '超时空辉夜姬', '泰勒·汤姆林森',
   '格莱美', 'Grammy', '奥斯卡', '金球奖', '艾美奖', 'Emmy',
+  '超级碗', 'Super Bowl',
   '风向GO', '风向go',
   '麻浦帅小伙', 'Rap: Public', '新人歌手曹政奭', '超级乐队',
   '基和皮尔', 'Key & Peele',
@@ -573,7 +574,29 @@ async function searchSupplementItems(category, seenIds, options = {}) {
   console.log('\n[补充搜索: ' + filteredTitles.length + ' 个作品' + (skipped > 0 ? ', 跳过未播出 ' + skipped + ' 个' : '') + ']');
   const items = [];
   for (const title of filteredTitles) {
-    const detail = await fetchDetailByTitle(title);
+    const details = await fetchWithRetry(DOUBAN_API + '/subject_suggest', { q: title });
+    if (!details || details.length === 0) continue;
+    
+    let detail = details[0];
+    if (details.length > 1) {
+      const currentYearStr = String(currentYear);
+      const matchByYear = details.find(d => d.year === currentYearStr);
+      if (matchByYear) {
+        detail = matchByYear;
+        console.log('  优先选择' + currentYear + '年版本: ' + detail.title);
+      } else {
+        const latest = details.reduce((prev, curr) => {
+          const prevYear = parseInt(prev.year) || 0;
+          const currYear = parseInt(curr.year) || 0;
+          return currYear > prevYear ? curr : prev;
+        });
+        if (parseInt(latest.year) > parseInt(detail.year)) {
+          detail = latest;
+          console.log('  选择最新年份版本: ' + detail.title + ' (' + detail.year + ')');
+        }
+      }
+    }
+    
     if (detail && detail.id && !seenIds.has(detail.id)) {
       const year = parseInt(detail.year) || 0;
       if (year > 0 && year < currentYear - 1) {
